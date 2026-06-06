@@ -1754,21 +1754,37 @@ function loginDenganGoogle() {
     // TAMPILKAN LOADING
     document.getElementById('loginLoading').classList.remove('hidden');
     
-    auth.signInWithPopup(provider)
-        .then((result) => {
+    // Menggunakan Redirect agar kompatibel dengan WebView/APK Android & iOS
+    auth.signInWithRedirect(provider).catch((error) => {
+        document.getElementById('loginLoading').classList.add('hidden');
+        alert("Gagal mengalihkan ke Google: " + error.message);
+    });
+}
+
+// Menangkap hasil setelah Google mengalihkan kembali (redirect) ke aplikasi
+auth.getRedirectResult()
+    .then((result) => {
+        if (result.user) {
+            // Sembunyikan loading jika data pengguna berhasil ditangkap
+            document.getElementById('loginLoading').classList.add('hidden');
+            
             const user = result.user;
             currentUser = user.email; // Gunakan email sebagai ID unik
             googleUserName = user.displayName; // Simpan nama asli
+            
+            // Simpan sesi ke penyimpanan lokal
             localStorage.setItem('feathera_session', currentUser);
             localStorage.setItem('feathera_google_name', googleUserName);
+            
+            // Masuk ke aplikasi
             tampilkanApp();
-        })
-        .catch((error) => {
-            // SEMBUNYIKAN LOADING JIKA GAGAL
-            document.getElementById('loginLoading').classList.add('hidden');
-            alert("Gagal login dengan Google: " + error.message);
-        });
-}
+        }
+    })
+    .catch((error) => {
+        // SEMBUNYIKAN LOADING JIKA GAGAL
+        document.getElementById('loginLoading').classList.add('hidden');
+        alert("Gagal login dengan Google: " + error.message);
+    });
 
 function prosesAuth(){
     // TAMPILKAN LOADING
@@ -3607,10 +3623,11 @@ function filterFiles(){
     const emptyStateText = document.querySelector('#emptyState p');
     if (curFilter.l0 === 'favorite') {
         emptyStateText.innerHTML = 'Belum ada memori tersimpan.<br>Silakan edit data spesifik, tandai (✩) lalu simpan.';
+    } else if (curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo') {
+        // Diubah: Pengecekan halaman 'Semua' dipindah ke ATAS agar tidak tertimpa state terkunci
+        emptyStateText.innerHTML = 'Belum ada memori tersimpan.<br>Buka kategori spesifik untuk menambah data.';
     } else if (currentRole === 'none') {
         emptyStateText.innerHTML = 'Belum ada memori disini.<br>Silakan pergi ke Pengaturan (⚙️) dan buka kunci terlebih dahulu untuk menambah data.';
-    } else if (curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo') {
-        emptyStateText.innerHTML = 'Belum ada memori tersimpan.<br>Buka kategori spesifik untuk menambah data.';
     } else {
         emptyStateText.innerHTML = 'Belum ada memori disini.<br>Tekan tombol ➕ untuk upload.';
     }
