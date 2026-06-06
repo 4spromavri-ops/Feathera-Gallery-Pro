@@ -1,0 +1,6 @@
+{
+  "appId": "com.oxid.feathera",
+  "appName": "Feathera Gallery",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
