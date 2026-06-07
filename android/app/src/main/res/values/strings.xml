@@ -1,13 +1,7 @@
-{
-  "appId": "com.oxid.feathera",
-  "appName": "Feathera Gallery",
-  "webDir": "www",
-  "bundledWebRuntime": false,
-  "plugins": {
-    "GoogleAuth": {
-      "scopes": ["profile", "email"],
-      "serverClientId": "324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com",
-      "forceCodeForRefreshToken": true
-    }
-  }
-}
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Feathera Gallery Pro</string>
+    <string name="title_activity_main">Feathera Gallery Pro</string>
+    
+    <string name="server_client_id">324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com</string>
+</resources>
