@@ -2,13 +2,12 @@
   "appId": "com.oxid.feathera",
   "appName": "Feathera Gallery",
   "webDir": "www",
-  "bundledWebRuntime": false
-    "plugins": {
+  "bundledWebRuntime": false,
+  "plugins": {
     "GoogleAuth": {
       "scopes": ["profile", "email"],
       "serverClientId": "324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com",
       "forceCodeForRefreshToken": true
     }
   }
-
 }
