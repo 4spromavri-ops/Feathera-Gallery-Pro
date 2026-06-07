@@ -6,7 +6,7 @@
     "plugins": {
     "GoogleAuth": {
       "scopes": ["profile", "email"],
-      "serverClientId": "GANTI_DENGAN_WEB_CLIENT_ID_ANDA.apps.googleusercontent.com",
+      "serverClientId": "324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com",
       "forceCodeForRefreshToken": true
     }
   }
