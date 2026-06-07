@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "324693466741",
+    "project_id": "feathera-pro",
+    "storage_bucket": "feathera-pro.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:324693466741:android:d06ffca75e5a28bfffe23c",
+        "android_client_info": {
+          "package_name": "com.oxid.feathera"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVwlOiIueq0c-90s2r1_FR8etF8fCdqyw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
