@@ -1780,30 +1780,44 @@ const provider = new firebase.auth.GoogleAuthProvider();
 
 let googleUserName = null; // Menyimpan nama asli dari Google
 
-// [BARU] Menangkap hasil dari signInWithRedirect setelah halaman dimuat ulang
-auth.getRedirectResult().then((result) => {
-    if (result && result.user) {
-        const user = result.user;
-        currentUser = user.email;
-        googleUserName = user.displayName;
-        localStorage.setItem('feathera_session', currentUser);
-        localStorage.setItem('feathera_google_name', googleUserName);
-        tampilkanApp();
-    }
-}).catch((error) => {
-    document.getElementById('loginLoading').classList.add('hidden');
-    alert("Gagal memproses login Google: " + error.message);
-});
-
+ // FUNGSI HELPER: Menyatukan logika keberhasilan login tanpa redundansi
+function prosesLoginBerhasil(result) {
+    const user = result.user || result; // Menyesuaikan objek kembalian Native vs Web
+    currentUser = user.email;
+    googleUserName = user.displayName;
+    localStorage.setItem('feathera_session', currentUser);
+    localStorage.setItem('feathera_google_name', googleUserName);
+    tampilkanApp();
+}
+   
 function loginDenganGoogle() {
-    // TAMPILKAN LOADING
     document.getElementById('loginLoading').classList.remove('hidden');
-    
-    // Mengubah popup menjadi redirect agar kompatibel dengan WebView Capacitor
-    auth.signInWithRedirect(provider).catch((error) => {
-        document.getElementById('loginLoading').classList.add('hidden');
-        alert("Gagal inisiasi login Google: " + error.message);
-    });
+
+    // Deteksi cerdas: Apakah ini di dalam APK (Capacitor) atau Web Browser biasa?
+    const isNative = window.Capacitor && window.Capacitor.isNative;
+
+    if (isNative) {
+        // JALUR 1: APK / NATIVE (Menggunakan Plugin Capacitor)
+        window.Capacitor.Plugins.GoogleAuth.signIn()
+            .then((googleUser) => {
+                // Konversi token Google Native menjadi Kredensial Firebase
+                const credential = firebase.auth.GoogleAuthProvider.credential(googleUser.authentication.idToken);
+                return auth.signInWithCredential(credential);
+            })
+            .then(prosesLoginBerhasil)
+            .catch((error) => {
+                document.getElementById('loginLoading').classList.add('hidden');
+                alert("Gagal login aplikasi: " + error.message);
+            });
+    } else {
+        // JALUR 2: WEB BROWSER BISA (Menggunakan Popup Standar Firebase)
+        auth.signInWithPopup(provider)
+            .then(prosesLoginBerhasil)
+            .catch((error) => {
+                document.getElementById('loginLoading').classList.add('hidden');
+                alert("Gagal login browser: " + error.message);
+            });
+    }
 }
 
 function prosesAuth(){
