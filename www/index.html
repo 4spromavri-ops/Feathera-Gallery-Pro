@@ -1780,24 +1780,30 @@ const provider = new firebase.auth.GoogleAuthProvider();
 
 let googleUserName = null; // Menyimpan nama asli dari Google
 
+// [BARU] Menangkap hasil dari signInWithRedirect setelah halaman dimuat ulang
+auth.getRedirectResult().then((result) => {
+    if (result && result.user) {
+        const user = result.user;
+        currentUser = user.email;
+        googleUserName = user.displayName;
+        localStorage.setItem('feathera_session', currentUser);
+        localStorage.setItem('feathera_google_name', googleUserName);
+        tampilkanApp();
+    }
+}).catch((error) => {
+    document.getElementById('loginLoading').classList.add('hidden');
+    alert("Gagal memproses login Google: " + error.message);
+});
+
 function loginDenganGoogle() {
     // TAMPILKAN LOADING
     document.getElementById('loginLoading').classList.remove('hidden');
     
-    auth.signInWithPopup(provider)
-        .then((result) => {
-            const user = result.user;
-            currentUser = user.email; // Gunakan email sebagai ID unik
-            googleUserName = user.displayName; // Simpan nama asli
-            localStorage.setItem('feathera_session', currentUser);
-            localStorage.setItem('feathera_google_name', googleUserName);
-            tampilkanApp();
-        })
-        .catch((error) => {
-            // SEMBUNYIKAN LOADING JIKA GAGAL
-            document.getElementById('loginLoading').classList.add('hidden');
-            alert("Gagal login dengan Google: " + error.message);
-        });
+    // Mengubah popup menjadi redirect agar kompatibel dengan WebView Capacitor
+    auth.signInWithRedirect(provider).catch((error) => {
+        document.getElementById('loginLoading').classList.add('hidden');
+        alert("Gagal inisiasi login Google: " + error.message);
+    });
 }
 
 function prosesAuth(){
