@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: # Mengizinkan Anda menekan tombol 'Run workflow' secara manual
+  workflow_dispatch:
 
 jobs:
   build:
@@ -29,6 +29,13 @@ jobs:
         npm install
         npx cap add android
         npx @capacitor/assets generate --android
+        
+        # 1. Pindahkan file konfigurasi Firebase ke dalam native Android
+        cp google-services.json android/app/
+        
+        # 2. Sisipkan Client ID ke dalam sistem Android
+        sed -i '/<resources>/a \    <string name="server_client_id">324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com</string>' android/app/src/main/res/values/strings.xml
+        
         npx cap sync android
 
     - name: Build APK
@@ -36,6 +43,12 @@ jobs:
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
+
+    - name: Cetak SHA-1 Fingerprint
+      run: |
+        echo "=== SALIN KODE SHA-1 INI ==="
+        keytool -printcert -jarfile android/app/build/outputs/apk/debug/app-debug.apk | grep SHA1
+        echo "============================"
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
