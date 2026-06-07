@@ -630,6 +630,29 @@ body.dark-mode .note-body { background-image: repeating-linear-gradient(transpar
 .ov-bot-right { bottom: 15px; right: 5px; padding-bottom: 0; line-height: normal; }
 .img-caption { color: #fff; text-shadow: 0 -1px 0 #000, 0 2px 4px rgba(0,0,0,0.8); margin-top: 15px; background: linear-gradient(to bottom, #444, #222); padding: 8px 15px; border-radius: 6px; border: 1px solid #111; box-shadow: 0 4px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); text-align: center; white-space: pre-wrap; font-size: 13px; font-weight: bold; }
 
+/* --- FULLSCREEN IMAGE VIEWER BUTTONS --- */
+.fs-action-group {
+    display: none;
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    gap: 12px;
+    z-index: 25;
+}
+.full-image-container:-webkit-full-screen .fs-action-group { display: flex; }
+.full-image-container:fullscreen .fs-action-group { display: flex; }
+
+/* Sembunyikan semua tombol navigasi dasar (direct child) saat mode fullscreen */
+.full-image-container:-webkit-full-screen > .overlay-btn { display: none !important; }
+.full-image-container:fullscreen > .overlay-btn { display: none !important; }
+
+.full-image-container:-webkit-full-screen { background: #000; width: 100%; height: 100%; justify-content: center; }
+.full-image-container:fullscreen { background: #000; width: 100%; height: 100%; justify-content: center; }
+
+.full-image-container:-webkit-full-screen .full-img { max-height: 100vh; border: none; }
+.full-image-container:fullscreen .full-img { max-height: 100vh; border: none; }
+
+
 #fileInfoContainer { text-align: center; padding: 10px; }
 .file-icon-large { font-size: 64px; margin: 10px 0; display: block; }
 #fileDesc { background: var(--input-bg); padding: 15px; border-radius: 4px; border: 1px solid var(--input-border); box-shadow: var(--input-shadow); margin: 15px 0; text-align: left; font-size: 14px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
@@ -1480,7 +1503,14 @@ body.dark-mode #btnScrollTop {
             <button class="overlay-btn ov-mid-left" onclick="ImgViewer.prev()">❮</button>
             <button class="overlay-btn ov-mid-right" onclick="ImgViewer.next()">❯</button>
             <button class="overlay-btn ov-bot-right" onclick="ImgViewer.viewFull()" title="Layar Penuh">⛶</button>
+            
+            <div id="fsActionGroup" class="fs-action-group">
+                <button class="overlay-btn" id="btnFsDownload" onclick="ImgViewer.downloadCurrent()" title="Download" style="position: static;"></button>
+                <button class="overlay-btn" id="btnFsClose" onclick="ImgViewer.exitFull()" title="Kembali" style="position: static;"></button>
+            </div>
+            
             <img id="imgViewFull" class="full-img" src="" referrerpolicy="no-referrer">
+
             <div id="textViewContainer">
                  <div class="text-view-header"><h3 id="textTitleDisplay">Judul Catatan</h3><button class="text-close-btn" onclick="ImgViewer.close()">✕</button></div>
                  <div id="textContentDisplay" class="note-body"></div>
@@ -1862,56 +1892,18 @@ document.addEventListener("DOMContentLoaded",()=>{
     // [AKHIR] DETEKSI OTOMATIS FOTO FIREBASE
 
     // --- HANDLER TOMBOL KEMBALI (BACK BUTTON) HP ---
-    // Trik "Double Push" agar WebView Android mengenali history dan tidak langsung force close
-    window.history.pushState("feathera_trap", null, "");
-    window.history.pushState("feathera_trap", null, "");
-
-    window.addEventListener('popstate', function(event) {
-        // 1. KUNCI UTAMA: Langsung dorong state baru SECARA SINKRON (tanpa await)
-        // Ini memastikan history stack tidak pernah kosong di mata WebView Android
-        window.history.pushState("feathera_trap", null, "");
+    window.history.pushState({ noBackExitsApp: true }, '');
+    window.addEventListener('popstate', async function(event) {
+        // Tahan state agar aplikasi tidak langsung tertutup
+        window.history.pushState({ noBackExitsApp: true }, '');
         
-        // 2. CEGATAN: Keluar dari Mode Fullscreen
-        if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
-            if (document.exitFullscreen) document.exitFullscreen();
-            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-            else if (document.msExitFullscreen) document.msExitFullscreen();
-            return;
+        // Panggil modal konfirmasi kustom yang sudah seragam
+        const isConfirmed = await customConfirm("Apakah Anda yakin ingin keluar dari Feathera Gallery?");
+        if (isConfirmed) {
+            // Eksekusi keluar aplikasi (kompatibel untuk Browser & PWA Android/iOS)
+            window.history.go(-2);
+            setTimeout(() => window.close(), 300);
         }
-
-        // 3. CEGATAN: Tutup Image Viewer jika terbuka
-        const imageViewer = document.getElementById('modalImageViewer');
-        if (imageViewer && imageViewer.style.display === 'flex') {
-            ImgViewer.close();
-            return;
-        }
-
-        // 4. CEGATAN: Tutup modal lain yang mungkin terbuka (File Viewer, Form, dll)
-        const activeModals = document.querySelectorAll('.modal[style*="display: flex"], .modal[style*="display: block"]');
-        if (activeModals.length > 0) {
-            let isOnlyConfirmModal = activeModals.length === 1 && activeModals[0].id === 'modalConfirm';
-            if (!isOnlyConfirmModal) {
-                activeModals.forEach(m => {
-                    // Tutup semua modal KECUALI modal konfirmasi keluar itu sendiri
-                    if (m.id !== 'modalConfirm') toggleModal(m.id, false);
-                });
-                return;
-            }
-        }
-
-        // 5. Jika layar bersih, jalankan konfirmasi keluar secara Asynchronous
-        (async function prosesKeluar() {
-            const isConfirmed = await customConfirm("Apakah Anda yakin ingin keluar dari Feathera Gallery?");
-            if (isConfirmed) {
-                // Perintah brutal untuk memaksa WebView/Browser tertutup
-                if (navigator.app && navigator.app.exitApp) {
-                    navigator.app.exitApp(); // Berfungsi jika APK di-build dengan Cordova/Ionic
-                } else {
-                    window.history.go(-10); // Mundur ekstrem melampaui history
-                    setTimeout(() => window.close(), 300);
-                }
-            }
-        })();
     });
     // -----------------------------------------------
 
@@ -1919,6 +1911,8 @@ document.addEventListener("DOMContentLoaded",()=>{
     document.getElementById('btnDownloadTxt').innerHTML = SVG_DOWNLOAD + ' Download';
     document.getElementById('btnShareTxt').innerHTML = SVG_SHARE + ' Bagikan';
     document.body.addEventListener('click', tutupSemuaMenu);
+        document.getElementById('btnFsDownload').innerHTML = SVG_DOWNLOAD;
+    document.getElementById('btnFsClose').innerHTML = SVG_CANCEL;
 
     // Fitur klik area kosong untuk menutup Menu Pindah tanpa membatalkan seleksi
     document.getElementById('pasteMenu').addEventListener('click', function(e) {
@@ -3730,7 +3724,7 @@ document.getElementById('textViewContainer').style.display='none',document.getEl
     next:function(){this.index=(this.index+1)%this.list.length,this.render()},
     prev:function(){this.index=(this.index-1+this.list.length)%this.list.length,this.render()},
     toggleSlide:function(){this.timer?(clearInterval(this.timer),this.timer=null,document.getElementById('btnSlideImg').innerText='▶ Slideshow'):(this.timer=setInterval(()=>this.next(),3000),document.getElementById('btnSlideImg').innerText='⏹ Slideshow')},
-    viewFull:function(){const a=document.getElementById('imgViewFull');a.requestFullscreen?a.requestFullscreen():a.webkitRequestFullscreen?a.webkitRequestFullscreen():a.msRequestFullscreen&&a.msRequestFullscreen()},
+    viewFull:function(){const a=document.querySelector('.full-image-container');a.requestFullscreen?a.requestFullscreen():a.webkitRequestFullscreen?a.webkitRequestFullscreen():a.msRequestFullscreen&&a.msRequestFullscreen()},     exitFull:function(){document.exitFullscreen?document.exitFullscreen():document.webkitExitFullscreen?document.webkitExitFullscreen():document.msExitFullscreen&&document.msExitFullscreen()},     downloadCurrent:function(){const a=this.list[this.index];if(!a)return;const b=document.createElement('a');b.download=a.name;a.isLocal&&a.src.startsWith('blob:')?b.href=a.src:(b.href=getDownloadUrl(a.src)||a.src,b.target='_blank');b.click();},
     close:function(){this.timer&&this.toggleSlide(),stopRelatedAnimations(),toggleModal('modalImageViewer', false),document.getElementById('textViewContainer').style.display='none',document.getElementById('imgViewFull').style.display='block'; this.list.forEach(item => { if(item.src && item.src.startsWith('blob:')) { URL.revokeObjectURL(item.src); } }); document.getElementById('imgViewFull').removeAttribute('src'); this.list = [];}
 };
 
