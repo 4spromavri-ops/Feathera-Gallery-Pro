@@ -2,15 +2,13 @@
   "appId": "com.oxid.feathera",
   "appName": "Feathera Gallery",
   "webDir": "www",
-  "bundledWebRuntime": false,
-  "server": {
-    "allowNavigation": [
-      "*.firebaseapp.com",
-      "*.googleapis.com",
-      "accounts.google.com"
-    ]
-  },
-  "android": {
-    "overrideUserAgent": "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
+  "bundledWebRuntime": false
+    "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "GANTI_DENGAN_WEB_CLIENT_ID_ANDA.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
   }
+
 }
