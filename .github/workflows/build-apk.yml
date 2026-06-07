@@ -24,11 +24,9 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Install Dependencies & Setup Capacitor
+    - name: Install Dependencies & Sync Capacitor
       run: |
         npm install
-        npx cap add android
-        npx @capacitor/assets generate --android
         npx cap sync android
 
     - name: Build APK
