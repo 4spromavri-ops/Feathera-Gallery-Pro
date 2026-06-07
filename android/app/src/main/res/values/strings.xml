@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Feathera Gallery Pro</string>
+    <string name="title_activity_main">Feathera Gallery Pro</string>
+    
+    <string name="server_client_id">GANTI_DENGAN_WEB_CLIENT_ID_ANDA.apps.googleusercontent.com</string>
+</resources>
