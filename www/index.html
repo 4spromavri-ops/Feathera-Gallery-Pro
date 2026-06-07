@@ -1754,37 +1754,21 @@ function loginDenganGoogle() {
     // TAMPILKAN LOADING
     document.getElementById('loginLoading').classList.remove('hidden');
     
-    // Menggunakan Redirect agar kompatibel dengan WebView/APK Android & iOS
-    auth.signInWithRedirect(provider).catch((error) => {
-        document.getElementById('loginLoading').classList.add('hidden');
-        alert("Gagal mengalihkan ke Google: " + error.message);
-    });
-}
-
-// Menangkap hasil setelah Google mengalihkan kembali (redirect) ke aplikasi
-auth.getRedirectResult()
-    .then((result) => {
-        if (result.user) {
-            // Sembunyikan loading jika data pengguna berhasil ditangkap
-            document.getElementById('loginLoading').classList.add('hidden');
-            
+    auth.signInWithPopup(provider)
+        .then((result) => {
             const user = result.user;
             currentUser = user.email; // Gunakan email sebagai ID unik
             googleUserName = user.displayName; // Simpan nama asli
-            
-            // Simpan sesi ke penyimpanan lokal
             localStorage.setItem('feathera_session', currentUser);
             localStorage.setItem('feathera_google_name', googleUserName);
-            
-            // Masuk ke aplikasi
             tampilkanApp();
-        }
-    })
-    .catch((error) => {
-        // SEMBUNYIKAN LOADING JIKA GAGAL
-        document.getElementById('loginLoading').classList.add('hidden');
-        alert("Gagal login dengan Google: " + error.message);
-    });
+        })
+        .catch((error) => {
+            // SEMBUNYIKAN LOADING JIKA GAGAL
+            document.getElementById('loginLoading').classList.add('hidden');
+            alert("Gagal login dengan Google: " + error.message);
+        });
+}
 
 function prosesAuth(){
     // TAMPILKAN LOADING
@@ -1883,7 +1867,26 @@ document.addEventListener("DOMContentLoaded",()=>{
         // Tahan state agar aplikasi tidak langsung tertutup
         window.history.pushState({ noBackExitsApp: true }, '');
         
-        // Panggil modal konfirmasi kustom yang sudah seragam
+        // 1. CEGATAN PERTAMA: Cek apakah ada elemen yang sedang Fullscreen (Mode ⛶)
+        if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            return; // Hentikan fungsi di sini, jangan tampilkan dialog keluar
+        }
+
+        // 2. CEGATAN KEDUA: Cek apakah Modal Image/File Viewer sedang terbuka
+        const imageViewer = document.getElementById('modalImageViewer');
+        if (imageViewer && imageViewer.style.display === 'flex') {
+            ImgViewer.close();
+            return; // Hentikan fungsi di sini
+        }
+        
+        // Panggil modal konfirmasi kustom yang sudah seragam jika tidak ada modal yang terbuka
         const isConfirmed = await customConfirm("Apakah Anda yakin ingin keluar dari Feathera Gallery?");
         if (isConfirmed) {
             // Eksekusi keluar aplikasi (kompatibel untuk Browser & PWA Android/iOS)
