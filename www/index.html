@@ -1862,37 +1862,56 @@ document.addEventListener("DOMContentLoaded",()=>{
     // [AKHIR] DETEKSI OTOMATIS FOTO FIREBASE
 
     // --- HANDLER TOMBOL KEMBALI (BACK BUTTON) HP ---
-    window.history.pushState({ noBackExitsApp: true }, '');
-    window.addEventListener('popstate', async function(event) {
-        // Tahan state agar aplikasi tidak langsung tertutup
-        window.history.pushState({ noBackExitsApp: true }, '');
+    // Trik "Double Push" agar WebView Android mengenali history dan tidak langsung force close
+    window.history.pushState("feathera_trap", null, "");
+    window.history.pushState("feathera_trap", null, "");
+
+    window.addEventListener('popstate', function(event) {
+        // 1. KUNCI UTAMA: Langsung dorong state baru SECARA SINKRON (tanpa await)
+        // Ini memastikan history stack tidak pernah kosong di mata WebView Android
+        window.history.pushState("feathera_trap", null, "");
         
-        // 1. CEGATAN PERTAMA: Cek apakah ada elemen yang sedang Fullscreen (Mode ⛶)
+        // 2. CEGATAN: Keluar dari Mode Fullscreen
         if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-            return; // Hentikan fungsi di sini, jangan tampilkan dialog keluar
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+            return;
         }
 
-        // 2. CEGATAN KEDUA: Cek apakah Modal Image/File Viewer sedang terbuka
+        // 3. CEGATAN: Tutup Image Viewer jika terbuka
         const imageViewer = document.getElementById('modalImageViewer');
         if (imageViewer && imageViewer.style.display === 'flex') {
             ImgViewer.close();
-            return; // Hentikan fungsi di sini
+            return;
         }
-        
-        // Panggil modal konfirmasi kustom yang sudah seragam jika tidak ada modal yang terbuka
-        const isConfirmed = await customConfirm("Apakah Anda yakin ingin keluar dari Feathera Gallery?");
-        if (isConfirmed) {
-            // Eksekusi keluar aplikasi (kompatibel untuk Browser & PWA Android/iOS)
-            window.history.go(-2);
-            setTimeout(() => window.close(), 300);
+
+        // 4. CEGATAN: Tutup modal lain yang mungkin terbuka (File Viewer, Form, dll)
+        const activeModals = document.querySelectorAll('.modal[style*="display: flex"], .modal[style*="display: block"]');
+        if (activeModals.length > 0) {
+            let isOnlyConfirmModal = activeModals.length === 1 && activeModals[0].id === 'modalConfirm';
+            if (!isOnlyConfirmModal) {
+                activeModals.forEach(m => {
+                    // Tutup semua modal KECUALI modal konfirmasi keluar itu sendiri
+                    if (m.id !== 'modalConfirm') toggleModal(m.id, false);
+                });
+                return;
+            }
         }
+
+        // 5. Jika layar bersih, jalankan konfirmasi keluar secara Asynchronous
+        (async function prosesKeluar() {
+            const isConfirmed = await customConfirm("Apakah Anda yakin ingin keluar dari Feathera Gallery?");
+            if (isConfirmed) {
+                // Perintah brutal untuk memaksa WebView/Browser tertutup
+                if (navigator.app && navigator.app.exitApp) {
+                    navigator.app.exitApp(); // Berfungsi jika APK di-build dengan Cordova/Ionic
+                } else {
+                    window.history.go(-10); // Mundur ekstrem melampaui history
+                    setTimeout(() => window.close(), 300);
+                }
+            }
+        })();
     });
     // -----------------------------------------------
 
