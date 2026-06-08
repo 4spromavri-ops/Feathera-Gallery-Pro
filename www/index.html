@@ -442,14 +442,12 @@ body.dark-mode .card[data-itemType="file"] .thumb-container .icon svg {
     filter: drop-shadow(0px 1px 0px rgba(255, 255, 255, 0.1)) drop-shadow(0px -1px 0px rgba(0, 0, 0, 0.8));
 }
 /* Menghilangkan efek tenggelam/shadow pada mode list view */
-.list-view .card[data-itemType="file"] .thumb-container .icon svg {
-    filter: none !important;
-}
+.list-view .card[data-itemType="file"] .thumb-container .icon svg,
 body.dark-mode .list-view .card[data-itemType="file"] .thumb-container .icon svg {
     filter: none !important;
 }
 
-.card[data-itemType="folder"] .file-year { display: block; font-weight:bold; }
+.card[data-itemType="folder"] .file-year { font-weight:bold; }
 
 .card[data-itemType="folder"]:active { margin-top: 4px; margin-bottom: -2px; border-bottom-width: 1px; box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5); transform: scale(0.97); }
 
@@ -1782,41 +1780,39 @@ let googleUserName = null; // Menyimpan nama asli dari Google
 
  // FUNGSI HELPER: Menyatukan logika keberhasilan login tanpa redundansi
 function prosesLoginBerhasil(result) {
-    const user = result.user || result; // Menyesuaikan objek kembalian Native vs Web
+    const user = result.user || result; 
     currentUser = user.email;
     googleUserName = user.displayName;
+    
     localStorage.setItem('feathera_session', currentUser);
     localStorage.setItem('feathera_google_name', googleUserName);
+    
+    // Tangkap foto profil secara instan tanpa perlu observer background
+    if (user.photoURL) {
+        localStorage.setItem('feathera_google_photo', user.photoURL);
+    }
+    
     tampilkanApp();
 }
-   
-function loginDenganGoogle() {
-    document.getElementById('loginLoading').classList.remove('hidden');
 
-    // Deteksi cerdas: Apakah ini di dalam APK (Capacitor) atau Web Browser biasa?
+async function loginDenganGoogle() {
+    const loadingEl = document.getElementById('loginLoading');
+    loadingEl.classList.remove('hidden');
     const isNative = window.Capacitor && window.Capacitor.isNative;
 
-    if (isNative) {
-        // JALUR 1: APK / NATIVE (Menggunakan Plugin Capacitor)
-        window.Capacitor.Plugins.GoogleAuth.signIn()
-            .then((googleUser) => {
-                // Konversi token Google Native menjadi Kredensial Firebase
-                const credential = firebase.auth.GoogleAuthProvider.credential(googleUser.authentication.idToken);
-                return auth.signInWithCredential(credential);
-            })
-            .then(prosesLoginBerhasil)
-            .catch((error) => {
-                document.getElementById('loginLoading').classList.add('hidden');
-                alert("Gagal login aplikasi: " + error.message);
-            });
-    } else {
-        // JALUR 2: WEB BROWSER BISA (Menggunakan Popup Standar Firebase)
-        auth.signInWithPopup(provider)
-            .then(prosesLoginBerhasil)
-            .catch((error) => {
-                document.getElementById('loginLoading').classList.add('hidden');
-                alert("Gagal login browser: " + error.message);
-            });
+    try {
+        let userCredential;
+        if (isNative) {
+            const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
+            const credential = firebase.auth.GoogleAuthProvider.credential(googleUser.authentication.idToken);
+            userCredential = await auth.signInWithCredential(credential);
+        } else {
+            userCredential = await auth.signInWithPopup(provider);
+        }
+        prosesLoginBerhasil(userCredential);
+    } catch (error) {
+        loadingEl.classList.add('hidden');
+        alert(`Gagal login ${isNative ? 'aplikasi' : 'browser'}: ${error.message}`);
     }
 }
 
@@ -1895,21 +1891,6 @@ function dbHapusCover(a){dbOp('covers','delete',a).catch(()=>{})}
 
 document.addEventListener("DOMContentLoaded",()=>{
     initAuth();
-
-    // [AWAL] DETEKSI OTOMATIS FOTO FIREBASE
-    firebase.auth().onAuthStateChanged(user => {
-        if(user && user.email === currentUser && user.photoURL) {
-            localStorage.setItem('feathera_google_photo', user.photoURL);
-            const picEl = document.getElementById('userProfilePic');
-            const fallbackEl = document.getElementById('userProfileIconFallback');
-            if(picEl && fallbackEl) {
-                picEl.src = user.photoURL;
-                picEl.style.display = 'block';
-                fallbackEl.style.display = 'none';
-            }
-        }
-    });
-    // [AKHIR] DETEKSI OTOMATIS FOTO FIREBASE
 
     // --- HANDLER TOMBOL KEMBALI (BACK BUTTON) HP ---
     window.history.pushState({ noBackExitsApp: true }, '');
@@ -2112,17 +2093,27 @@ function tampilkanApp() {
     }).catch(err => console.error("Gagal inisialisasi database:", err));
 }
 
-async function logoutApp(){
-    if(await customConfirm('Keluar dari aplikasi?')){
-        auth.signOut().then(() => {
+async function logoutApp() {
+    if (await customConfirm('Keluar dari aplikasi?')) {
+        const isGoogleUser = localStorage.getItem('feathera_google_name');
+        const isNative = window.Capacitor && window.Capacitor.isNative;
+
+        try {
+            if (isGoogleUser) {
+                // Putuskan sesi Google Native di APK secara tuntas
+                if (isNative) await window.Capacitor.Plugins.GoogleAuth.signOut();
+                // Putuskan sesi Firebase
+                await auth.signOut();
+            }
+        } catch (error) {
+            console.warn("Sesi auth eksternal mungkin sudah kedaluwarsa:", error);
+        } finally {
+            // Eksekusi pembersihan lokal MUTLAK berjalan terlepas dari error jaringan/cloud
             localStorage.removeItem('feathera_session');
             localStorage.removeItem('feathera_google_name');
             localStorage.removeItem('feathera_google_photo');
             window.location.reload();
-
-        }).catch((error) => {
-            alert("Terjadi kesalahan saat logout.");
-        });
+        }
     }
 }
 
@@ -2167,13 +2158,16 @@ async function hapusAkun(){
             setTimeout(() => window.location.reload(), 1500); 
         };
 
-        req.onsuccess = () => {
-            if(isGoogleUser && typeof auth !== 'undefined') {
-                auth.signOut().then(() => {
-                    tuntaskanPenghapusan("Data lokal Akun Google berhasil dihapus dan sesi diputus.");
-                }).catch(() => {
-                    tuntaskanPenghapusan("Akun berhasil dihapus, memuat ulang...");
-                });
+        req.onsuccess = async () => {
+            if (isGoogleUser && typeof auth !== 'undefined') {
+                try {
+                    const isNative = window.Capacitor && window.Capacitor.isNative;
+                    if (isNative) await window.Capacitor.Plugins.GoogleAuth.signOut();
+                    await auth.signOut();
+                } catch (e) {
+                    console.warn("Gagal memutus sesi cloud secara sempurna:", e);
+                }
+                tuntaskanPenghapusan("Data lokal Akun Google berhasil dihapus dan sesi diputus.");
             } else {
                 tuntaskanPenghapusan("Akun Guest beserta seluruh datanya berhasil dimusnahkan.");
             }
@@ -2185,31 +2179,46 @@ async function hapusAkun(){
 }
 
 function requestPin(a,b="Masukkan PIN"){pinActionCallback=a,document.getElementById('pinTitle').innerText=b,document.getElementById('inputPin').value='',toggleModal('modalPin', true),document.getElementById('pinTypeSelect').style.display='none',document.getElementById('forgotPin').style.display='block',document.getElementById('inputPin').focus(),isChangingPin=false}
-async function handleForgotPin(){
+async function handleForgotPin() {
     const isGoogleUser = localStorage.getItem('feathera_google_name');
-    if(!isGoogleUser) {
+    if (!isGoogleUser) {
         return alert("Fitur lupa PIN hanya tersedia untuk pengguna yang login menggunakan Google. Akun Guest tidak didukung.");
     }
 
-    if(await customConfirm("Untuk memulihkan PIN, Anda harus memverifikasi identitas dengan login ulang menggunakan akun Google Anda. Lanjutkan?")) {
-        auth.signInWithPopup(provider)
-            .then((result) => {
-                if(result.user.email === currentUser) {
-                    alert("Verifikasi Google berhasil! Silakan buat PIN baru Anda.");
-                    isChangingPin = true;
-                    pinChangeTarget = 'user';
-                    isForgotPinReset = true;
-                    document.getElementById('inputPin').value = '';
-                    document.getElementById('pinTitle').innerText = "Buat PIN Baru";
-                    document.getElementById('forgotPin').style.display = 'none';
-                    document.getElementById('pinTypeSelect').style.display = 'none';
-                } else {
-                    alert("Gagal. Email Google yang Anda gunakan untuk verifikasi tidak sama dengan akun yang sedang aktif.");
-                }
-            })
-            .catch((error) => {
-                alert("Verifikasi dibatalkan atau gagal: " + error.message);
-            });
+    if (await customConfirm("Untuk memulihkan PIN, Anda harus memverifikasi identitas dengan login ulang menggunakan akun Google Anda. Lanjutkan?")) {
+        const isNative = window.Capacitor && window.Capacitor.isNative;
+        
+        try {
+            let verifiedEmail = null;
+
+            if (isNative) {
+                // Jalur 1: APK / Native Capacitor
+                const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
+                verifiedEmail = googleUser.email;
+            } else {
+                // Jalur 2: Web Browser (Firebase Popup)
+                const result = await auth.signInWithPopup(provider);
+                verifiedEmail = result.user.email;
+            }
+
+            if (verifiedEmail === currentUser) {
+                alert("Verifikasi Google berhasil! Silakan buat PIN baru Anda.");
+                isChangingPin = true;
+                pinChangeTarget = 'user';
+                isForgotPinReset = true;
+                document.getElementById('inputPin').value = '';
+                document.getElementById('pinTitle').innerText = "Buat PIN Baru";
+                document.getElementById('forgotPin').style.display = 'none';
+                document.getElementById('pinTypeSelect').style.display = 'none';
+            } else {
+                // Failsafe: Jika user salah pilih email saat verifikasi, 
+                // putuskan sesi tersebut agar tidak merusak sesi utama aplikasi.
+                if (isNative) await window.Capacitor.Plugins.GoogleAuth.signOut();
+                alert("Gagal. Email Google yang Anda gunakan untuk verifikasi tidak sama dengan akun yang sedang aktif.");
+            }
+        } catch (error) {
+            alert("Verifikasi dibatalkan atau gagal: " + error.message);
+        }
     }
 }
 
@@ -2572,6 +2581,29 @@ function gantiTabUpload(a, isCatatan = false){
 
 function hapusCoverLokal(){document.getElementById('fCustomCover').value='';document.getElementById('fHapusCoverFlag').value='true';document.getElementById('btnHapusCover').style.display='none'}
 
+// FITUR BARU: Kompresi Cover Otomatis
+function kompresiCoverToBlob(file, maxSize = 350) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                if (w > h) { if (w > maxSize) { h *= maxSize / w; w = maxSize; } }
+                else { if (h > maxSize) { w *= maxSize / h; h = maxSize; } }
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                // Konversi ke format WebP untuk kompresi terbaik
+                canvas.toBlob((blob) => resolve(blob), 'image/webp', 0.8);
+            };
+        };
+    });
+}
+
 async function prosesSimpan(){
     const a=document.getElementById('fName').value||('folder'===uploadMode?"Folder Baru":"Memori Baru"),b=document.getElementById('fSourceType').value,c=document.getElementById('fYear').value,d=document.getElementById('fFontStyle').value,e=document.getElementById('fNote').value;
     
@@ -2611,16 +2643,26 @@ async function prosesSimpan(){
             editingCard.setAttribute('data-customCover','false')
         }
         if(coverInput.files&&coverInput.files.length>0){
-            try{await dbSimpanCover(editingCard.getAttribute('data-id'),coverInput.files[0]);editingCard.setAttribute('data-customCover','true')}catch(err){console.error(err)}
+            try{
+                const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
+                await dbSimpanCover(editingCard.getAttribute('data-id'), compressedCover);
+                editingCard.setAttribute('data-customCover','true');
+            }catch(err){console.error(err)}
         }
+
         editingCard.querySelector('.file-year').innerText=c,editingCard.querySelector('.file-info').innerText=a,refreshCardIcon(editingCard);
         return logActivity('Edit',`Mengedit ${g?'Folder':'Item'}: ${a}`),tutupModal(),simpanKeLokal(),updateStats(),editingCard=null,void filterFiles()
     }
     let newItemId=('folder'===uploadMode?'fld_':'file_')+Date.now();
     let hasCustomCover=false;
     if(coverInput.files&&coverInput.files.length>0){
-        try{await dbSimpanCover(newItemId,coverInput.files[0]);hasCustomCover=true}catch(err){alert("Gagal simpan cover: "+err)}
+        try{
+            const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
+            await dbSimpanCover(newItemId, compressedCover);
+            hasCustomCover=true;
+        }catch(err){alert("Gagal simpan cover: "+err)}
     }
+
     if('folder'===uploadMode){
         buatKartu({id:newItemId,itemType:'folder',name:a,img:'none',year:c,customCover:hasCustomCover?'true':'false',...f},!0),logActivity('Upload',`Membuat Folder: ${a}`),tutupModal(),simpanKeLokal(),updateStats(),filterFiles()
 } else {
@@ -4119,9 +4161,38 @@ async function eksporData() {
         alert("Peringatan: Ada data lokal yang korup. Melanjutkan ekspor data yang utuh...");
     }
 
+    // FITUR BARU: Ekstraksi Cover dari IndexedDB
+    let coversData = {};
+    try {
+        if (dbInstance) {
+            const tx = dbInstance.transaction('covers', 'readonly');
+            const store = tx.objectStore('covers');
+            const reqKeys = store.getAllKeys();
+            const reqVals = store.getAll();
+            
+            await new Promise((resolve) => {
+                reqKeys.onsuccess = () => {
+                    reqVals.onsuccess = async () => {
+                        const keys = reqKeys.result;
+                        const vals = reqVals.result;
+                        for (let i = 0; i < keys.length; i++) {
+                            coversData[keys[i]] = await new Promise(res => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => res(reader.result);
+                                reader.readAsDataURL(vals[i]); // Konversi ke Base64
+                            });
+                        }
+                        resolve();
+                    };
+                };
+            });
+        }
+    } catch(e) { console.warn("Gagal mengekstrak cover", e); }
+
     const backupData = JSON.stringify({
         files: filesData,
-        config: config
+        config: config,
+        covers: coversData // Menyisipkan data cover
     }, null, 2);
     
     const blob = new Blob([backupData], { type: 'application/json' });
@@ -4129,19 +4200,18 @@ async function eksporData() {
     const timeStr = new Date().getHours() + "-" + new Date().getMinutes() + "-" + new Date().getSeconds();
     const defaultFileName = `Feathera_Backup_${dateStr}_${timeStr}.json`;
 
-    // Metode klasik <a> download sangat andal untuk HP, menghindari bug 0-byte dari File System API
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = defaultFileName;
     document.body.appendChild(a);
     a.click();
     
-    document.body.removeChild(a); // Langsung hapus elemen <a> agar DOM bersih
+    document.body.removeChild(a); 
     setTimeout(() => {
         URL.revokeObjectURL(a.href);
-    }, 10000); // Tahan data di memori selama 10 detik agar OS punya waktu menulis file tanpa interupsi
+    }, 10000);
 
-    alert("Data diekspor! Periksa folder Download HP Anda.");
+    alert("Data diekspor beserta Thumbnail/Cover! Periksa folder Download HP Anda.");
 }
 
 function imporData(a) {
@@ -4170,11 +4240,10 @@ function imporData(a) {
         a.value = '';
     };
 
-    c.onload = d => {
+    c.onload = async (d) => { // PERBAIKAN: Menambahkan 'async'
         try {
             const e = JSON.parse(d.target.result);
 
-            // 4. Validasi Struktur Ketat (Memastikan data adalah Array)
             if (e && Array.isArray(e.files) && Array.isArray(e.config)) {
                 const isFromLogin = !document.getElementById('authPage').classList.contains('hidden');
 
@@ -4186,25 +4255,34 @@ function imporData(a) {
                 setLocal('files_db', JSON.stringify(e.files));
                 setLocal('config_v1', JSON.stringify(e.config));
 
+                // FITUR BARU: Memulihkan Cover dari JSON ke IndexedDB
+                if (e.covers && dbInstance) {
+                    for (const [key, base64Str] of Object.entries(e.covers)) {
+                        try {
+                            const res = await fetch(base64Str);
+                            const blob = await res.blob();
+                            await dbSimpanCover(key, blob);
+                        } catch(err) { console.warn("Gagal memulihkan cover:", key); }
+                    }
+                }
+
                 if (isFromLogin) {
                     tampilkanApp();
                 } else {
                     loadConfig();
                     muatDariLokal();
                 }
-                alert("Backup Dipulihkan! (File lokal DB tidak termasuk)");
+                alert("Backup & Cover Dipulihkan Secara Penuh! (File lokal DB tidak termasuk)");
             } else {
                 alert("Struktur data backup tidak dikenali oleh Feathera Gallery!");
             }
         } catch (f) {
-            // Berikan detail error yang presisi agar kita tahu persis letak kerusakannya
             alert("Format JSON tidak valid! Detail: " + f.message);
         } finally {
-            // 5. Menghilangkan Redundansi: Reset input terpusat di sini
             a.value = ''; 
         }
     };
-    
+
     c.readAsText(b);
 }
 
