@@ -4296,23 +4296,42 @@ async function eksporData() {
         covers: coversData // Menyisipkan data cover
     }, null, 2);
     
-    const blob = new Blob([backupData], { type: 'application/json' });
     const dateStr = new Date().toISOString().split('T')[0];
     const timeStr = new Date().getHours() + "-" + new Date().getMinutes() + "-" + new Date().getSeconds();
     const defaultFileName = `Feathera_Backup_${dateStr}_${timeStr}.json`;
 
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = defaultFileName;
-    document.body.appendChild(a);
-    a.click();
-    
-    document.body.removeChild(a); 
-    setTimeout(() => {
-        URL.revokeObjectURL(a.href);
-    }, 10000);
+    const isNative = window.Capacitor && window.Capacitor.isNative;
 
-    alert("Data diekspor beserta Thumbnail/Cover! Periksa folder Download HP Anda.");
+    if (isNative) {
+        // JALUR NATIVE: Menggunakan Capacitor Filesystem untuk menyimpan ke HP
+        try {
+            await window.Capacitor.Plugins.Filesystem.writeFile({
+                path: defaultFileName,
+                data: backupData,
+                directory: 'DOCUMENTS',
+                encoding: 'utf8'
+            });
+            alert("Data berhasil diekspor! Periksa folder 'Documents' di memori internal HP Anda.");
+        } catch (err) {
+            console.error("Gagal export native:", err);
+            alert("Gagal menyimpan file ke perangkat: " + err.message);
+        }
+    } else {
+        // JALUR BROWSER: Menggunakan Blob URL klasik
+        const blob = new Blob([backupData], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = defaultFileName;
+        document.body.appendChild(a);
+        a.click();
+        
+        document.body.removeChild(a); 
+        setTimeout(() => {
+            URL.revokeObjectURL(a.href);
+        }, 10000);
+
+        alert("Data diekspor beserta Thumbnail/Cover! Periksa folder Download Anda.");
+    }
 }
 
 function imporData(a) {
