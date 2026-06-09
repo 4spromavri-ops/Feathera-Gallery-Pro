@@ -2758,31 +2758,6 @@ async function prosesSimpan(){
             } else { alert("Gagal mengupload file lokal."); }
         }
     } else {
-
-        let successCount = 0;
-        
-        for (let idx = 0; idx < i.files.length; idx++) {
-            let currentFile = i.files[idx];
-            // Buat ID baru tiap file di dalam loop agar tidak bentrok
-            let loopItemId = 'file_' + Date.now() + '_' + idx;
-            // Jika judul diisi, beri angka (1), (2). Jika kosong, gunakan nama file asli.
-            let loopItemName = a ? (i.files.length > 1 ? a + " (" + (idx + 1) + ")" : a) : currentFile.name;
-            
-            try {
-                await dbSimpanFile(loopItemId, currentFile);
-                buatKartu({id: loopItemId, itemType: 'file', name: loopItemName, year: c, note: e, img: 'LOCAL_FILE', font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, !0);
-                successCount++;
-            } catch (j) {
-                console.error("Gagal menyimpan file lokal: " + j);
-            }
-        }
-        if(successCount > 0) {
-            logActivity('Upload', `Menambah ${successCount} Item`);
-            tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
-        } else {
-            alert("Gagal mengupload file lokal.");
-        }
-    } else {
         let g = 'none';
         if ('catatan' !== curFilter.l0) {
             g = document.getElementById('fImgUrl').value;
