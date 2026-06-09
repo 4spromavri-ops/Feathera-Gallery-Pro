@@ -1339,6 +1339,8 @@ body.dark-mode #btnScrollTop {
                     <option value="local">📂 Via Upload File (Lokal)</option>
                 </select>
                 <input type="file" id="fLocalFile" multiple style="display:none; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px; width:100%; box-sizing:border-box; margin-bottom:8px;">
+                <button type="button" id="btnNativePicker" class="btn-full btn-gray" onclick="pilihFileNative()" style="display:none; margin-bottom:8px; font-weight: bold;">📁 Pilih File dari HP (Native)</button><input type="hidden" id="fNativePath" value="">
+
                 <input type="text" id="fImgUrl" placeholder="Tempel tautan di sini">
                 <select id="fFontStyle" style="display:none;">
                     <option value="'Segoe UI', sans-serif">Default (Sans-serif)</option>
@@ -2104,6 +2106,18 @@ async function logoutApp() {
                 if (isNative) await window.Capacitor.Plugins.GoogleAuth.signOut();
                 // Putuskan sesi Firebase
                 await auth.signOut();
+            } else {
+                // LOGIKA BARU: Hapus semua data lokal jika yang logout adalah Guest
+                ['files_db', 'config_v1', 'playlists', 'activity_log', 'pin_master', 'pin_user'].forEach(key => {
+                    delLocal(key);
+                });
+                
+                // Tutup dan hapus IndexedDB penyimpanan file Guest
+                if (dbInstance) {
+                    dbInstance.close();
+                }
+                const dbName = currentUser ? 'FeatheraDB_' + currentUser : 'FeatheraDB_Guest';
+                indexedDB.deleteDatabase(dbName);
             }
         } catch (error) {
             console.warn("Sesi auth eksternal mungkin sudah kedaluwarsa:", error);
@@ -2532,7 +2546,44 @@ function toggleFavoriteForm() {
     }
 }
 
-function toggleSourceType(){'url'===document.getElementById('fSourceType').value?(document.getElementById('fImgUrl').style.display='block',document.getElementById('fLocalFile').style.display='none'):(document.getElementById('fImgUrl').style.display='none',document.getElementById('fLocalFile').style.display='block')}
+function toggleSourceType(){
+    const isNative = window.Capacitor && window.Capacitor.isNative;
+    const btnNative = document.getElementById('btnNativePicker');
+    
+    if('url'===document.getElementById('fSourceType').value){
+        document.getElementById('fImgUrl').style.display='block';
+        document.getElementById('fLocalFile').style.display='none';
+        if(btnNative) btnNative.style.display='none';
+    } else {
+        document.getElementById('fImgUrl').style.display='none';
+        // Jika berjalan di APK, gunakan tombol Native. Jika di Web, gunakan input lokal standar.
+        if(isNative) {
+            document.getElementById('fLocalFile').style.display='none';
+            if(btnNative) btnNative.style.display='block';
+        } else {
+            document.getElementById('fLocalFile').style.display='block';
+            if(btnNative) btnNative.style.display='none';
+        }
+    }
+}
+
+// FUNGSI BARU: Memanggil Native File Picker
+async function pilihFileNative() {
+    try {
+        const result = await window.Capacitor.Plugins.FilePicker.pickFiles({ multiple: false });
+        const file = result.files[0];
+        
+        // Simpan path native ke input tersembunyi
+        document.getElementById('fNativePath').value = file.path;
+        document.getElementById('fName').value = file.name;
+        
+        // Beri tahu user file berhasil dipilih
+        document.getElementById('btnNativePicker').innerHTML = `✅ ${file.name}`;
+        document.getElementById('btnNativePicker').style.background = '#e8f5e9';
+    } catch (e) {
+        console.log("Pilih file dibatalkan atau error:", e);
+    }
+}
 
 function gantiTabUpload(a, isCatatan = false){
     uploadMode=a;
@@ -2667,8 +2718,47 @@ async function prosesSimpan(){
         buatKartu({id:newItemId,itemType:'folder',name:a,img:'none',year:c,customCover:hasCustomCover?'true':'false',...f},!0),logActivity('Upload',`Membuat Folder: ${a}`),tutupModal(),simpanKeLokal(),updateStats(),filterFiles()
 } else {
     if ('catatan' !== curFilter.l0 && 'local' === b) {
-        const i = document.getElementById('fLocalFile');
-        if (0 === i.files.length) return alert("Pilih file lokal!");
+        const isNative = window.Capacitor && window.Capacitor.isNative;
+        
+        // JALUR 1: NATIVE ANDROID (Simpan Path)
+        if (isNative) {
+            const nativePath = document.getElementById('fNativePath').value;
+            if (!nativePath) return alert("Pilih file dari HP Anda!");
+            
+            // Format khusus "NATIVE:path" agar mudah dikenali oleh aplikasi
+            buatKartu({id: newItemId, itemType: 'file', name: a, year: c, note: e, img: 'NATIVE:' + nativePath, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, !0);
+            
+            document.getElementById('fNativePath').value = '';
+            document.getElementById('btnNativePicker').innerHTML = '📁 Pilih File dari HP (Native)';
+            document.getElementById('btnNativePicker').style.background = 'var(--btn-bg)';
+            
+            logActivity('Upload', `Menambah Item Native: ${a}`);
+            tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+        } 
+        // JALUR 2: BROWSER WEB (Simpan IndexedDB seperti biasa)
+        else {
+            const i = document.getElementById('fLocalFile');
+            if (0 === i.files.length) return alert("Pilih file lokal!");
+            let successCount = 0;
+            
+            for (let idx = 0; idx < i.files.length; idx++) {
+                let currentFile = i.files[idx];
+                let loopItemId = 'file_' + Date.now() + '_' + idx;
+                let loopItemName = a ? (i.files.length > 1 ? a + " (" + (idx + 1) + ")" : a) : currentFile.name;
+                
+                try {
+                    await dbSimpanFile(loopItemId, currentFile);
+                    buatKartu({id: loopItemId, itemType: 'file', name: loopItemName, year: c, note: e, img: 'LOCAL_FILE', font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, !0);
+                    successCount++;
+                } catch (j) { console.error("Gagal menyimpan file lokal: " + j); }
+            }
+            if(successCount > 0) {
+                logActivity('Upload', `Menambah ${successCount} Item`);
+                tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+            } else { alert("Gagal mengupload file lokal."); }
+        }
+    } else {
+
         let successCount = 0;
         
         for (let idx = 0; idx < i.files.length; idx++) {
@@ -2726,7 +2816,20 @@ async function refreshCardIcon(a){
     if(g)return f.innerHTML=`<span class="icon yt-icon">${SVG_ICON_YOUTUBE}</span>`;
 
     const h=getMediaType(b,d);
+    // --- TAMBAHAN PEMBACA NATIVE ---
+    if(b && b.startsWith('NATIVE:')){
+        const nativePath = b.replace('NATIVE:', '');
+        const webSrc = window.Capacitor.convertFileSrc(nativePath); // Konversi jalur Android ke Web
+        if('image'===h){
+            f.innerHTML=`<img src="${webSrc}" class="img-thumb" loading="lazy" decoding="async"><span class="icon img-icon">${SVG_COVER}</span>`;
+        }else {
+            f.innerHTML=`<span class="icon">${getExtIcon(h,d)}</span>`;
+        }
+        return;
+    }
+    // -------------------------------
     if('LOCAL_FILE'===b){
+
         if('image'===h){
             f.innerHTML=`<span class="icon">${SVG_COVER}</span>`;
             try{const i=await dbAmbilFile(c);if(i){const j=URL.createObjectURL(i);f.innerHTML=`<img src="${j}" class="img-thumb" loading="lazy" decoding="async" onload="URL.revokeObjectURL(this.src)"><span class="icon img-icon">${SVG_COVER}</span>`}else f.innerHTML=`<span class="icon">${SVG_CANCEL}</span>`}catch(k){f.innerHTML=`<span class="icon">${SVG_ICON_UNKNOWN}</span>`}
@@ -2830,8 +2933,19 @@ async function cardClickHandler(a){
     const b=a.getAttribute('data-img'),c=a.getAttribute('data-note'),d=a.querySelector('.file-info').innerText,e=a.getAttribute('data-font'),f=a.getAttribute('data-id'),g=getMediaType(b,d),h=getDriveId(b);
     
     let i=b;
-    if('LOCAL_FILE'===b)try{const j=await dbAmbilFile(f);if(j)i=URL.createObjectURL(j);else return alert("File lokal tidak ditemukan.")}catch(k){return alert("Error: "+k)}else i=h?getPreviewUrl(b):getDirectUrl(b);
-    
+    if('LOCAL_FILE'===b){
+        try{const j=await dbAmbilFile(f);if(j)i=URL.createObjectURL(j);else return alert("File lokal tidak ditemukan.")}catch(k){return alert("Error: "+k)}
+    } 
+    // --- TAMBAHAN PEMBACA NATIVE ---
+    else if(b && b.startsWith('NATIVE:')) {
+        const nativePath = b.replace('NATIVE:', '');
+        i = window.Capacitor.convertFileSrc(nativePath);
+    } 
+    // -------------------------------
+    else {
+        i=h?getPreviewUrl(b):getDirectUrl(b);
+    }
+
     const isDescAura = a.getAttribute('data-descaura') === 'true';
     const displayNote = isDescAura ? "" : c;
     
@@ -3849,7 +3963,19 @@ document.querySelector('#mpHeaderTitle .marquee-text').innerHTML = `<svg width="
     readID3:function(source,targetIndex){if(!window.jsmediatags){this.parseLyrics("");return}window.jsmediatags.read(source,{onSuccess:(tag)=>{if(targetIndex!==undefined&&targetIndex!==MediaPlayer.currentIndex)return;const picture=tag.tags.picture;const mpArt=document.getElementById('mpArt');const miniArtBg=document.getElementById('miniArtBg');if(picture){let base64String="";for(let i=0;i<picture.data.length;i++){base64String+=String.fromCharCode(picture.data[i])}const base64="data:"+picture.format+";base64,"+window.btoa(base64String);mpArt.style.backgroundImage=`url('${base64}')`;miniArtBg.style.backgroundImage=`url('${base64}')`;mpArt.innerHTML='';miniArtBg.innerHTML=''}else{mpArt.style.backgroundImage='none';mpArt.innerHTML='<span style="font-size:50px;">🎧</span>';miniArtBg.style.backgroundImage='none';miniArtBg.innerHTML='<span style="font-size:20px;">🎧</span>'}let lyricStr="";if(tag.tags.lyrics&&tag.tags.lyrics.lyrics){lyricStr=tag.tags.lyrics.lyrics}else if(tag.tags.USLT){lyricStr=tag.tags.USLT.lyrics||tag.tags.USLT.text}MediaPlayer.parseLyrics(lyricStr)},onError:(error)=>{if(targetIndex!==undefined&&targetIndex!==MediaPlayer.currentIndex)return;document.getElementById('mpArt').innerHTML='<span style="font-size:50px;">🎧</span>';MediaPlayer.parseLyrics("")}})},
     loadTrack:async function(a=true){
     !this.ui&&this.init();const b=this.queue[this.currentIndex];if(!b)return this.handleEmptyState();spawnRelatedAnimations(b.id);this.aEl.pause();this.vEl.pause();this.aEl.removeAttribute('src');this.vEl.removeAttribute('src');this.aEl.load();this.vEl.load();ytPlayer&&ytPlayer.stopVideo&&ytPlayer.stopVideo();ytInterval&&clearInterval(ytInterval);this.driveFrame.removeAttribute('src');const c=getMediaType(b.img,b.name),d=getYoutubeId(b.img),e=b.isDrive,f=[document.getElementById('mpProgressBar').parentElement,document.getElementById('btnPlayPause'),document.getElementById('btnMiniPlay')];f[0].style.visibility='visible';f[1].style.visibility='visible';f[2].style.visibility='visible';document.body.classList.toggle('is-audio-mode',c==='audio');document.getElementById('html5Video').style.display='none',document.getElementById('ytVideoPlayer').style.display='none',this.driveFrame.style.display='none';const btnLy=document.getElementById('btnToggleLyrics');const sleepArea=document.getElementById('sleepToggleArea');if(c==='audio'){btnLy.style.display='flex'}else{btnLy.style.display='none';sleepArea.style.display='none'}this.isShowingLyrics=false;document.getElementById('mpArt').style.display='flex';document.getElementById('lyricsContainer').style.display='none';btnLy.innerHTML=SVG_LYRICS;
-sleepArea.style.display='none';const g=document.getElementById('mpArt'),h=document.getElementById('miniArtBg');const miniVis=document.getElementById('miniVisualizer');const miniVid=document.getElementById('miniVideoPreview');const miniIframe=document.getElementById('miniDriveFrame');miniVis.style.display='none';miniVid.style.display='none';miniIframe.style.display='none';miniVid.removeAttribute('src');miniIframe.removeAttribute('src');g.style.backgroundImage='none';g.innerHTML='';h.style.backgroundImage='none';h.innerHTML='';let playSrc=getDirectUrl(b.img);if(this.currentLocalBlobUrl){URL.revokeObjectURL(this.currentLocalBlobUrl);this.currentLocalBlobUrl=null;}if(b.isLocal&&b.id){try{const freshBlob=await dbAmbilFile(b.id);if(freshBlob){playSrc=URL.createObjectURL(freshBlob);b.img=playSrc;this.currentLocalBlobUrl=playSrc;}}catch(err){console.error("Gagal load file lokal:",err)}}document.querySelector('.vid-fs-btn').style.display='none';if(d){document.getElementById('ytVideoPlayer').style.display='block';document.getElementById('mpVideoBox').style.display='flex';document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';this.parseLyrics("")}else if(e){const driveId=getDriveId(b.img);this.driveFrame.src=driveId?`https://drive.google.com/file/d/${driveId}/preview`:b.img;this.driveFrame.style.display='block';document.getElementById('mpVideoBox').style.display='flex';document.getElementById('visualizerCanvas').style.display='none';this.isPlaying=a;f[0].style.visibility='hidden';document.querySelector('.mp-time').innerHTML='<span style="width:100%;text-align:center;color:var(--neu-text);opacity:0.6;font-size:10px;">Iframe Drive (Kontrol di video)</span>';this.parseLyrics("")}else if('video'===c){document.querySelector('.vid-fs-btn').style.display='flex';document.getElementById('mpVideoBox').style.display='flex',this.vEl.style.display='block',this.vEl.src=playSrc,a&&this.vEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)});this.isPlaying=a;document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVid.src=playSrc;miniVid.style.display='block';if(a)miniVid.play().catch(()=>{});this.parseLyrics("")}else{document.getElementById('mpVideoBox').style.display='none',this.aEl.src=playSrc,a&&this.audioCtx.resume().then(()=>this.aEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)}));this.isPlaying=a;document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVis.style.display='block';if(!this.sleepMode)document.getElementById('visualizerCanvas').style.display='block'} this.currTimeEl=document.getElementById('mpCurrTime'); this.durTimeEl=document.getElementById('mpDurTime'); const setCoverAndLyrics=async()=>{let coverUrl=null;let isLocalBlob=false;this.parseLyrics("");if(b.customCover&&b.id){try{const blob=await dbAmbilCover(b.id);if(blob)coverUrl=URL.createObjectURL(blob)}catch(err){}}if('audio'===c){if(b.isLocal&&b.id){try{const audioBlob=await dbAmbilFile(b.id);if(audioBlob){MediaPlayer.readID3(audioBlob,this.currentIndex);isLocalBlob=true}}catch(err){}}else if(playSrc&&playSrc!=='LOCAL_FILE'){MediaPlayer.readID3(playSrc,this.currentIndex);isLocalBlob=true}}if(!coverUrl&&!isLocalBlob&&'video'===c&&b.img&&b.img!=='LOCAL_FILE')coverUrl=getThumbUrl(b.img);if(!coverUrl&&!isLocalBlob&&'audio'===c&&b.img&&b.img!=='LOCAL_FILE')coverUrl=getThumbUrl(b.img);if(coverUrl){g.style.backgroundImage=`url('${coverUrl}')`;g.innerHTML='';h.style.backgroundImage=`url('${coverUrl}')`;h.innerHTML=''}else if(!isLocalBlob){g.style.backgroundImage='none';h.style.backgroundImage='none';if('audio'===c||'video'===c){g.innerHTML='';h.innerHTML=''}}};await setCoverAndLyrics();
+sleepArea.style.display='none';const g=document.getElementById('mpArt'),h=document.getElementById('miniArtBg');const miniVis=document.getElementById('miniVisualizer');const miniVid=document.getElementById('miniVideoPreview');const miniIframe=document.getElementById('miniDriveFrame');miniVis.style.display='none';miniVid.style.display='none';miniIframe.style.display='none';miniVid.removeAttribute('src');miniIframe.removeAttribute('src');g.style.backgroundImage='none';g.innerHTML='';h.style.backgroundImage='none';h.innerHTML='';    
+  let playSrc=getDirectUrl(b.img);
+    if(this.currentLocalBlobUrl){URL.revokeObjectURL(this.currentLocalBlobUrl);this.currentLocalBlobUrl=null;}
+    
+    // --- TAMBAHAN PEMBACA NATIVE ---
+    if(b.img && b.img.startsWith('NATIVE:')) {
+        const nativePath = b.img.replace('NATIVE:', '');
+        playSrc = window.Capacitor.convertFileSrc(nativePath);
+        b.isLocal = false; // Bypass logika IndexedDB agar tidak error
+    }
+    // -------------------------------
+    else if(b.isLocal&&b.id){
+try{const freshBlob=await dbAmbilFile(b.id);if(freshBlob){playSrc=URL.createObjectURL(freshBlob);b.img=playSrc;this.currentLocalBlobUrl=playSrc;}}catch(err){console.error("Gagal load file lokal:",err)}}document.querySelector('.vid-fs-btn').style.display='none';if(d){document.getElementById('ytVideoPlayer').style.display='block';document.getElementById('mpVideoBox').style.display='flex';document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';this.parseLyrics("")}else if(e){const driveId=getDriveId(b.img);this.driveFrame.src=driveId?`https://drive.google.com/file/d/${driveId}/preview`:b.img;this.driveFrame.style.display='block';document.getElementById('mpVideoBox').style.display='flex';document.getElementById('visualizerCanvas').style.display='none';this.isPlaying=a;f[0].style.visibility='hidden';document.querySelector('.mp-time').innerHTML='<span style="width:100%;text-align:center;color:var(--neu-text);opacity:0.6;font-size:10px;">Iframe Drive (Kontrol di video)</span>';this.parseLyrics("")}else if('video'===c){document.querySelector('.vid-fs-btn').style.display='flex';document.getElementById('mpVideoBox').style.display='flex',this.vEl.style.display='block',this.vEl.src=playSrc,a&&this.vEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)});this.isPlaying=a;document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVid.src=playSrc;miniVid.style.display='block';if(a)miniVid.play().catch(()=>{});this.parseLyrics("")}else{document.getElementById('mpVideoBox').style.display='none',this.aEl.src=playSrc,a&&this.audioCtx.resume().then(()=>this.aEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)}));this.isPlaying=a;document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVis.style.display='block';if(!this.sleepMode)document.getElementById('visualizerCanvas').style.display='block'} this.currTimeEl=document.getElementById('mpCurrTime'); this.durTimeEl=document.getElementById('mpDurTime'); const setCoverAndLyrics=async()=>{let coverUrl=null;let isLocalBlob=false;this.parseLyrics("");if(b.customCover&&b.id){try{const blob=await dbAmbilCover(b.id);if(blob)coverUrl=URL.createObjectURL(blob)}catch(err){}}if('audio'===c){if(b.isLocal&&b.id){try{const audioBlob=await dbAmbilFile(b.id);if(audioBlob){MediaPlayer.readID3(audioBlob,this.currentIndex);isLocalBlob=true}}catch(err){}}else if(playSrc&&playSrc!=='LOCAL_FILE'){MediaPlayer.readID3(playSrc,this.currentIndex);isLocalBlob=true}}if(!coverUrl&&!isLocalBlob&&'video'===c&&b.img&&b.img!=='LOCAL_FILE')coverUrl=getThumbUrl(b.img);if(!coverUrl&&!isLocalBlob&&'audio'===c&&b.img&&b.img!=='LOCAL_FILE')coverUrl=getThumbUrl(b.img);if(coverUrl){g.style.backgroundImage=`url('${coverUrl}')`;g.innerHTML='';h.style.backgroundImage=`url('${coverUrl}')`;h.innerHTML=''}else if(!isLocalBlob){g.style.backgroundImage='none';h.style.backgroundImage='none';if('audio'===c||'video'===c){g.innerHTML='';h.innerHTML=''}}};await setCoverAndLyrics();
         // Update Running Text
         const headerTitleEl = document.querySelector('#mpHeaderTitle .marquee-text');
         if(headerTitleEl) headerTitleEl.innerText = b.name;
