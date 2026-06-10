@@ -159,8 +159,9 @@ body.action-mode:not(.add-media-mode) #dynamicChipsArea { transform: translateY(
 body.dark-mode .chip { text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
 .chip.active { background: var(--primary-gradient); border-color: var(--primary-dark); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,0.5); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); transform: translateY(1px); }
 
-#folderNavUI { padding: 5px 15px; margin-top: 5px; display: block; position: sticky; top: 125px; z-index: 90; transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-body.has-mini-player #folderNavUI { top: 205px; }
+#folderNavUI { padding: 10px 15px; margin-top: 0; display: block; position: sticky; top: 140px; z-index: 90; transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+body.has-mini-player #folderNavUI { top: 200px; }
+
 .breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; font-size: 13px; color: #444; background: var(--btn-bg); padding: 6px 12px; border-radius: 5px; box-shadow: var(--btn-shadow); border: 1px solid var(--btn-border); text-shadow: 0 1px 0 rgba(255,255,255,0.6); font-weight: bold; }
 body.dark-mode .breadcrumbs { color: #bbb; text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
 .crumb-item { cursor: pointer; color: var(--primary-dark); text-decoration: none; }
@@ -168,7 +169,7 @@ body.dark-mode .crumb-item { color: #ffb74d; }
 .crumb-item:last-child { color: var(--text); pointer-events: none; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; padding: 15px; transition: margin-top 0.3s ease; will-change: transform, opacity; }
-body.has-mini-player #fileGrid { margin-top: 63px; }
+body.has-mini-player #fileGrid { margin-top: 55px; }
 
 /* Physical Polaroid / Folder Cards */
 .card { content-visibility: auto; contain-intrinsic-size: 100px 150px; background: var(--card-bg); border-radius: 4px; padding: 8px 8px 15px 8px; text-align: center; border: 1px solid var(--card-border); border-bottom-width: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; cursor: pointer; transition: transform 0.1s; }
