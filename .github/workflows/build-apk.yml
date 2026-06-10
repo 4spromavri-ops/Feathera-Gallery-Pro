@@ -29,6 +29,9 @@ jobs:
         npm install
         npx cap add android
         
+        # Menyalin file konfigurasi Firebase ke direktori app Android agar ikut terbungkus saat kompilasi APK
+        cp google-services.json android/app/google-services.json
+        
         # --- PROSES OTOMATIS INJECT KODE NATIVE OLEH ROBOT GITHUB ---
         mkdir -p android/app/src/main/java/com/oxid/feathera
         
