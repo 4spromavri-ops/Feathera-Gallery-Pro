@@ -2567,17 +2567,26 @@ function toggleSourceType(){
     }
 }
 
-// FUNGSI BARU: Memanggil Native File Picker
+// FUNGSI BARU: Memanggil Native File Picker dan Mengunci Izin File
 async function pilihFileNative() {
     try {
         const result = await window.Capacitor.Plugins.FilePicker.pickFiles({ multiple: false });
         const file = result.files[0];
         
-        // Simpan path native ke input tersembunyi
+        // Panggil Mini Plugin Java yang baru saja kita buat untuk mengunci URI
+        try {
+            const { PersistPermission } = window.Capacitor.Plugins;
+            await PersistPermission.takePermission({ uri: file.path });
+            console.log("Izin permanen Android berhasil diamankan!");
+        } catch (err) {
+            console.warn("Sistem menolak izin permanen, mungkin karena format picker:", err);
+        }
+
+        // Simpan path native asli (content://) ke input tersembunyi
+        // Tanpa duplikasi ke folder DATA!
         document.getElementById('fNativePath').value = file.path;
         document.getElementById('fName').value = file.name;
         
-        // Beri tahu user file berhasil dipilih
         document.getElementById('btnNativePicker').innerHTML = `✅ ${file.name}`;
         document.getElementById('btnNativePicker').style.background = '#e8f5e9';
     } catch (e) {
