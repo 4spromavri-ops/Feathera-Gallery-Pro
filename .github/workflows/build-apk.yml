@@ -28,7 +28,125 @@ jobs:
       run: |
         npm install
         npx cap add android
+        
+        # === KODE BARU: MENGUNCI KEYSTORE AGAR SHA-1 PERMANEN ===
+        if [ -f "my-debug.keystore" ]; then
+          echo "Keystore permanen ditemukan! Menyalin ke folder android native..."
+          cp my-debug.keystore android/app/debug.keystore
+        else
+          echo "Keystore permanen TIDAK ditemukan. Membuat file baru..."
+          keytool -genkey -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          cp android/app/debug.keystore ./my-debug.keystore
+        fi
+        # ========================================================
+        
+        # Menyalin file konfigurasi Firebase ke direktori app Android agar ikut terbungkus saat kompilasi APK
+        cp google-services.json android/app/google-services.json
+
+        
+        # --- PROSES OTOMATIS INJECT KODE NATIVE OLEH ROBOT GITHUB ---
+        mkdir -p android/app/src/main/java/com/oxid/feathera
+        
+        # 1. Membuat file PersistPermissionPlugin.java secara otomatis
+        cat << 'EOF' > android/app/src/main/java/com/oxid/feathera/PersistPermissionPlugin.java
+        package com.oxid.feathera;
+
+        import android.app.Activity;
+        import android.content.Intent;
+        import android.database.Cursor;
+        import android.net.Uri;
+        import android.provider.OpenableColumns;
+        import androidx.activity.result.ActivityResult;
+        import com.getcapacitor.JSObject;
+        import com.getcapacitor.Plugin;
+        import com.getcapacitor.PluginCall;
+        import com.getcapacitor.PluginMethod;
+        import com.getcapacitor.annotation.ActivityCallback;
+        import com.getcapacitor.annotation.CapacitorPlugin;
+
+        @CapacitorPlugin(name = "PersistPermission")
+        public class PersistPermissionPlugin extends Plugin {
+
+            @PluginMethod
+            public void pickFile(PluginCall call) {
+                // ACTION_OPEN_DOCUMENT adalah kunci utama agar OS mengizinkan Persistable Permission
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("*/*");
+                startActivityForResult(call, intent, "pickFileResult");
+            }
+
+            @ActivityCallback
+            private void pickFileResult(PluginCall call, ActivityResult result) {
+                if (call == null) return;
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Uri uri = result.getData().getData();
+                    if (uri != null) {
+                        try {
+                            // Mengunci file asli tepat di detik file tersebut dipilih
+                            int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+                            getContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
+                        } catch (Exception e) {
+                            call.reject("Gagal mengunci izin permanen: " + e.getMessage());
+                            return;
+                        }
+
+                        // Mengambil nama file asli
+                        String fileName = "unknown_file";
+                        Cursor cursor = getContext().getContentResolver().query(uri, null, null, null, null);
+                        if (cursor != null && cursor.moveToFirst()) {
+                            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                            if (nameIndex != -1) fileName = cursor.getString(nameIndex);
+                            cursor.close();
+                        }
+
+                        JSObject ret = new JSObject();
+                        ret.put("uri", uri.toString());
+                        ret.put("name", fileName);
+                        call.resolve(ret);
+                    } else {
+                        call.reject("URI File tidak ditemukan");
+                    }
+                } else {
+                    call.reject("Pemilihan file dibatalkan");
+                }
+            }
+        }
+        EOF
+
+        # 2. Memperbarui file MainActivity.java secara otomatis
+        cat << 'EOF' > android/app/src/main/java/com/oxid/feathera/MainActivity.java
+        package com.oxid.feathera;
+
+        import android.os.Bundle;
+        import com.getcapacitor.BridgeActivity;
+
+        public class MainActivity extends BridgeActivity {
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+                registerPlugin(PersistPermissionPlugin.class);
+                super.onCreate(savedInstanceState);
+            }
+        }
+        EOF
+        
+        # === KODE BARU: INJEKSI STRINGS.XML UNTUK GOOGLE AUTH NATIVE ===
+        mkdir -p android/app/src/main/res/values
+        cat << 'EOF' > android/app/src/main/res/values/strings.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <string name="app_name">Feathera Gallery</string>
+            <string name="title_activity_main">Feathera Gallery</string>
+            <string name="package_name">com.oxid.feathera</string>
+            <string name="custom_url_scheme">com.oxid.feathera</string>
+            <string name="server_client_id">324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com</string>
+        </resources>
+        EOF
+        # ===============================================================
+        # ------------------------------------------------------------
+
         npx @capacitor/assets generate --android
+
         npx cap sync android
 
     - name: Build APK
@@ -36,9 +154,16 @@ jobs:
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
-
+    # --- KODE BARU DIMULAI DI SINI ---
+    - name: Generate SHA-1 Keystore Report
+      run: |
+        cd android
+        ./gradlew signingReport
+    # --- KODE BARU BERAKHIR DI SINI ---
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Feathera-Gallery-APK
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        path: |
+          android/app/build/outputs/apk/debug/app-debug.apk
+          ./my-debug.keystore
