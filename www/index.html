@@ -159,8 +159,8 @@ body.action-mode:not(.add-media-mode) #dynamicChipsArea { transform: translateY(
 body.dark-mode .chip { text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
 .chip.active { background: var(--primary-gradient); border-color: var(--primary-dark); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,0.5); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); transform: translateY(1px); }
 
-#folderNavUI { padding: 5px 15px; margin-top: 5px; display: block; position: sticky; top: 155px; z-index: 90; transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-body.has-mini-player #folderNavUI { top: 220px; }
+#folderNavUI { padding: 5px 15px; margin-top: 5px; display: block; position: sticky; top: 125px; z-index: 90; transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+body.has-mini-player #folderNavUI { top: 205px; }
 .breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; font-size: 13px; color: #444; background: var(--btn-bg); padding: 6px 12px; border-radius: 5px; box-shadow: var(--btn-shadow); border: 1px solid var(--btn-border); text-shadow: 0 1px 0 rgba(255,255,255,0.6); font-weight: bold; }
 body.dark-mode .breadcrumbs { color: #bbb; text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
 .crumb-item { cursor: pointer; color: var(--primary-dark); text-decoration: none; }
@@ -168,7 +168,7 @@ body.dark-mode .crumb-item { color: #ffb74d; }
 .crumb-item:last-child { color: var(--text); pointer-events: none; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; padding: 15px; transition: margin-top 0.3s ease; will-change: transform, opacity; }
-body.has-mini-player #fileGrid { margin-top: 70px; }
+body.has-mini-player #fileGrid { margin-top: 63px; }
 
 /* Physical Polaroid / Folder Cards */
 .card { content-visibility: auto; contain-intrinsic-size: 100px 150px; background: var(--card-bg); border-radius: 4px; padding: 8px 8px 15px 8px; text-align: center; border: 1px solid var(--card-border); border-bottom-width: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; cursor: pointer; transition: transform 0.1s; }
@@ -1431,9 +1431,10 @@ body.dark-mode #btnScrollTop {
                 <button id="btnLockToggle" class="settings-btn" onclick="toggleLockMode()"><span id="lockIcon">👑</span> <span id="lockText">Master</span></button>
 
                 <button class="settings-btn hide-on-lock" onclick="bukaMasterViaSettings()"><span>📑</span> Atur Kategori</button><button class="settings-btn" onclick="toggleDarkMode()"><span id="darkModeIcon">🌙</span> Mode Tampilan</button>
-                <button class="settings-btn hide-on-lock" onclick="menuGantiPin()"><span>🔑</span> Ganti PIN</button>
+                <button id="btnGantiPinSettings" class="settings-btn hide-on-lock" onclick="menuGantiPin()"><span>🔑</span> Ganti PIN</button>
                 
-                <button class="settings-btn hide-on-lock" onclick="bukaLogAktifitas()"><span>📋</span> Log Aktifitas</button>
+                <button id="btnLogAktifitasSettings" class="settings-btn hide-on-lock" onclick="bukaLogAktifitas()"><span>📋</span> Log Aktifitas</button>
+
                 <button class="settings-btn" onclick="logoutApp()"><span><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span> Logout</button>
 
                 <button class="settings-btn hide-on-lock master-only" style="color:red" onclick="hapusAkun()"><span><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></span> Hapus Akun</button>
@@ -2074,12 +2075,24 @@ function tampilkanApp() {
             profilePicEl.style.display = 'block';
             profileFallbackEl.style.display = 'none';
         }
+        
+        // Pastikan fitur tampil jika login dengan Google
+        const btnPin = document.getElementById('btnGantiPinSettings');
+        const btnLog = document.getElementById('btnLogAktifitasSettings');
+        if(btnPin) btnPin.style.display = 'flex';
+        if(btnLog) btnLog.style.display = 'flex';
     } else {
         let guestName = currentUser === 'RestoredUser' ? 'Guest' : currentUser;
         profileNameEl.innerText = guestName;
         profileEmailEl.style.display = 'none';
         profilePicEl.style.display = 'none';
         profileFallbackEl.style.display = 'flex';
+        
+        // Sembunyikan fitur Ganti PIN & Log Aktifitas untuk Guest
+        const btnPin = document.getElementById('btnGantiPinSettings');
+        const btnLog = document.getElementById('btnLogAktifitasSettings');
+        if(btnPin) btnPin.style.display = 'none';
+        if(btnLog) btnLog.style.display = 'none';
     }
     // [AKHIR] LOGIKA UPDATE UI PROFIL
 
@@ -2295,7 +2308,7 @@ function initDarkMode(){isDarkMode=('true'===localStorage.getItem('feathera_dark
 function toggleDarkMode(){isDarkMode=!isDarkMode,localStorage.setItem('feathera_dark_mode',isDarkMode),applyDarkMode()}
 function applyDarkMode(){const a=document.getElementById('darkModeIcon');isDarkMode?(document.body.classList.add('dark-mode'),a.innerText="☀️"):(document.body.classList.remove('dark-mode'),a.innerText="🌙")}
 function initLockState(){currentRole='none',updateLockUI()}
-function toggleLockMode(){'none'!==currentRole?setAppRole('none'):requestPin(null,"Unlock Akses")}
+function toggleLockMode(){'none'!==currentRole?setAppRole('none'):((currentUser==='Guest'||currentUser==='RestoredUser')?(setAppRole('user'),alert("Sesi Guest: Otomatis masuk sebagai Admin.")):requestPin(null,"Unlock Akses"))}
 function setAppRole(a){currentRole=a,updateLockUI(),filterFiles(),updateStats(); isSelectionMode ? toggleSelectionMode() : updateSelectCount();}
 function updateLockUI() {
     const btn = document.getElementById('btnLockToggle'), 
@@ -2567,29 +2580,24 @@ function toggleSourceType(){
     }
 }
 
-// FUNGSI: Memanggil Native File Picker dan Mengunci Akses Permanen Android
+// FUNGSI BARU: Memanggil Native File Picker Mandiri dan Mengunci Izin File
 async function pilihFileNative() {
     try {
-        const result = await window.Capacitor.Plugins.FilePicker.pickFiles({ multiple: false });
-        const file = result.files[0];
+        const { PersistPermission } = window.Capacitor.Plugins;
         
-        // Memanggil Mini Plugin Java yang di-inject oleh GitHub Actions
-        try {
-            const { PersistPermission } = window.Capacitor.Plugins;
-            await PersistPermission.takePermission({ uri: file.path });
-            console.log("Izin akses file internal berhasil dikunci secara permanen!");
-        } catch (err) {
-            console.warn("Sistem Android menolak izin permanen:", err);
-        }
-
-        // Simpan path native asli (content://) langsung tanpa duplikasi memori
-        document.getElementById('fNativePath').value = file.path;
-        document.getElementById('fName').value = file.name;
+        // Langsung panggil plugin native buatan kita
+        const result = await PersistPermission.pickFile();
         
-        document.getElementById('btnNativePicker').innerHTML = `✅ ${file.name}`;
+        // Simpan path native asli (content://) ke input tersembunyi
+        document.getElementById('fNativePath').value = result.uri;
+        document.getElementById('fName').value = result.name;
+        
+        document.getElementById('btnNativePicker').innerHTML = `✅ ${result.name}`;
         document.getElementById('btnNativePicker').style.background = '#e8f5e9';
+        console.log("Izin permanen Android berhasil diamankan pada URI:", result.uri);
     } catch (e) {
         console.log("Pilih file dibatalkan atau error:", e);
+        alert("Batal / Error: " + (e.message || "Akses ditolak sistem."));
     }
 }
 
