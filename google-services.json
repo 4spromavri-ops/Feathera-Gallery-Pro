@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "324693466741-i4cgjm4vf4n6ss3fjal6jbh0d2aqqvrk.apps.googleusercontent.com",
+          "client_id": "324693466741-ldheln3o97u6m4t8kkmu98hpnlprk7mi.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.oxid.feathera",
-            "certificate_hash": "04df71b2b8811c9ea475aa02fd59f9ff06ba29fa"
+            "certificate_hash": "3e95ae3de9d2d5d82cd2641578e1872a87a999ab"
           }
         },
         {
