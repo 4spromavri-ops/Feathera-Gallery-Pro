@@ -36,31 +36,64 @@ jobs:
         cat << 'EOF' > android/app/src/main/java/com/oxid/feathera/PersistPermissionPlugin.java
         package com.oxid.feathera;
 
+        import android.app.Activity;
         import android.content.Intent;
+        import android.database.Cursor;
         import android.net.Uri;
+        import android.provider.OpenableColumns;
+        import androidx.activity.result.ActivityResult;
+        import com.getcapacitor.JSObject;
         import com.getcapacitor.Plugin;
         import com.getcapacitor.PluginCall;
         import com.getcapacitor.PluginMethod;
+        import com.getcapacitor.annotation.ActivityCallback;
         import com.getcapacitor.annotation.CapacitorPlugin;
 
         @CapacitorPlugin(name = "PersistPermission")
         public class PersistPermissionPlugin extends Plugin {
 
             @PluginMethod
-            public void takePermission(PluginCall call) {
-                String uriString = call.getString("uri");
-                if (uriString == null) {
-                    call.reject("URI kosong");
-                    return;
-                }
+            public void pickFile(PluginCall call) {
+                // ACTION_OPEN_DOCUMENT adalah kunci utama agar OS mengizinkan Persistable Permission
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("*/*");
+                startActivityForResult(call, intent, "pickFileResult");
+            }
 
-                try {
-                    Uri uri = Uri.parse(uriString);
-                    int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
-                    getContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
-                    call.resolve();
-                } catch (Exception e) {
-                    call.reject("Gagal mengunci file: " + e.getMessage());
+            @ActivityCallback
+            private void pickFileResult(PluginCall call, ActivityResult result) {
+                if (call == null) return;
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Uri uri = result.getData().getData();
+                    if (uri != null) {
+                        try {
+                            // Mengunci file asli tepat di detik file tersebut dipilih
+                            int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+                            getContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
+                        } catch (Exception e) {
+                            call.reject("Gagal mengunci izin permanen: " + e.getMessage());
+                            return;
+                        }
+
+                        // Mengambil nama file asli
+                        String fileName = "unknown_file";
+                        Cursor cursor = getContext().getContentResolver().query(uri, null, null, null, null);
+                        if (cursor != null && cursor.moveToFirst()) {
+                            int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                            if (nameIndex != -1) fileName = cursor.getString(nameIndex);
+                            cursor.close();
+                        }
+
+                        JSObject ret = new JSObject();
+                        ret.put("uri", uri.toString());
+                        ret.put("name", fileName);
+                        call.resolve(ret);
+                    } else {
+                        call.reject("URI File tidak ditemukan");
+                    }
+                } else {
+                    call.reject("Pemilihan file dibatalkan");
                 }
             }
         }
