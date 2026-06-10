@@ -117,6 +117,19 @@ jobs:
             }
         }
         EOF
+        
+        # 3. Menginjeksi file strings.xml secara otomatis (Wajib untuk Google Auth)
+        mkdir -p android/app/src/main/res/values
+        cat << 'EOF' > android/app/src/main/res/values/strings.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <string name="app_name">Feathera Gallery</string>
+            <string name="title_activity_main">Feathera Gallery</string>
+            <string name="package_name">com.oxid.feathera</string>
+            <string name="custom_url_scheme">com.oxid.feathera</string>
+            <string name="server_client_id">324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com</string>
+        </resources>
+        EOF
         # ------------------------------------------------------------
 
         npx @capacitor/assets generate --android
