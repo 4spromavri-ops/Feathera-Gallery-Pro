@@ -1805,8 +1805,9 @@ async function loginDenganGoogle() {
     const isNative = window.Capacitor && window.Capacitor.isNative;
 
     try {
+        let userCredential;
         if (isNative) {
-            // Memaksa inisialisasi plugin sebelum memanggil pop-up (Sangat Penting)
+            // Wajib untuk Android
             await window.Capacitor.Plugins.GoogleAuth.initialize();
             
             const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
@@ -1816,12 +1817,17 @@ async function loginDenganGoogle() {
             userCredential = await auth.signInWithPopup(provider);
         }
         prosesLoginBerhasil(userCredential);
-} catch (error) {
-    loadingEl.classList.add('hidden');
-    // Tambahkan log ini, nanti cek di log Android (Logcat) atau console
-    console.error("Detail Error Google Auth:", error);
-    alert(`Gagal login: ${error.message}. Pastikan internet aktif dan SHA-1 terdaftar.`);
-}
+    } catch (error) {
+        loadingEl.classList.add('hidden');
+        
+        // === KODE DEBUGGING KHUSUS UNTUK HP ===
+        // Kode ini akan memaksa HP menampilkan akar masalah (error code) ke layar
+        const errorDetail = JSON.stringify(error);
+        const errorCode = error.code ? error.code : "Tidak ada kode khusus";
+        
+        alert(`INFO DEBUGGING:\n\nPesan: ${error.message}\n\nKode Error: ${errorCode}\n\nData Asli: ${errorDetail}`);
+        // ======================================
+    }
 }
 
 function prosesAuth(){
