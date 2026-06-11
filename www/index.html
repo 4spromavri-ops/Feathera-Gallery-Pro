@@ -1807,12 +1807,10 @@ async function loginDenganGoogle() {
     try {
         let userCredential;
         if (isNative) {
-            // === JALAN PINTAS: PAKSA INISIALISASI ID DARI JAVASCRIPT ===
-            // Ini akan mengabaikan error baca/tulis di file native Android
+            // Hapus grantOfflineAccess, cukup clientId saja
             await window.Capacitor.Plugins.GoogleAuth.initialize({
                 clientId: "324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com",
-                scopes: ["profile", "email"],
-                grantOfflineAccess: true
+                scopes: ["profile", "email"]
             });
             
             const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
@@ -1825,10 +1823,10 @@ async function loginDenganGoogle() {
     } catch (error) {
         loadingEl.classList.add('hidden');
         const errorCode = error.code ? error.code : "Unknown";
-        alert(`Gagal login (Kode ${errorCode}):\nJika masih Error 10, berarti SHA-1 di Firebase BEDA dengan SHA-1 APK yang Anda instal.`);
+        alert(`INFO DEBUGGING:\n\nPesan: ${error.message}\nKode: ${errorCode}`);
     }
 }
-    
+
 function prosesAuth(){
     // TAMPILKAN LOADING
     document.getElementById('loginLoading').classList.remove('hidden');
