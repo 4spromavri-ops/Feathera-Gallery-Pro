@@ -141,10 +141,8 @@ jobs:
             <string name="package_name">com.oxid.feathera</string>
             <string name="custom_url_scheme">com.oxid.feathera</string>
             <string name="server_client_id">324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com</string>
-            <string name="google_server_client_id">324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com</string>
         </resources>
         EOF
-
         # ===============================================================
         # ------------------------------------------------------------
 
@@ -158,11 +156,13 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleDebug
     # --- KODE BARU DIMULAI DI SINI ---
-    - name: Generate SHA-1 Keystore Report
+    - name: Bongkar SHA-1 Mutlak dari APK Final
       run: |
-        cd android
-        ./gradlew signingReport
+        echo "=== SHA-1 MUTLAK DARI APK FINAL ==="
+        keytool -printcert -jarfile android/app/build/outputs/apk/debug/app-debug.apk | grep SHA1:
+        echo "==================================="
     # --- KODE BARU BERAKHIR DI SINI ---
+
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
