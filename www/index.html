@@ -2447,10 +2447,18 @@ function renderNav() {
         const actionDiv = document.createElement('div');
         actionDiv.className = 'nav-batch-actions';
         
-        // Deteksi status Pilih Semua menggunakan Native CSS Engine
-        const visibleCardsLength = document.querySelectorAll('.card:not([style*="display: none"])').length;
-        const selectedCount = document.querySelectorAll('.card.selected:not([style*="display: none"])').length;
+        // Optimasi: Gunakan iterasi langsung untuk menghindari bottleneck CSS Selector di Android WebView
+        const allCards = document.getElementsByClassName('card');
+        let visibleCardsLength = 0;
+        let selectedCount = 0;
+        for (let i = 0; i < allCards.length; i++) {
+            if (allCards[i].style.display !== 'none') {
+                visibleCardsLength++;
+                if (allCards[i].classList.contains('selected')) selectedCount++;
+            }
+        }
         const isAllSelected = visibleCardsLength > 0 && selectedCount === visibleCardsLength;
+
         const svgIcon = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
 
         // Tombol Select All dipindah ke Floating Bar
@@ -3056,11 +3064,17 @@ function updateSelectCount(){
 
     const btnFloatingSelectAll = document.getElementById('btnFloatingSelectAll');
     if (btnFloatingSelectAll) {
-        const visibleCardsLength = document.querySelectorAll('.card:not([style*="display: none"])').length;
+        const allCards = document.getElementsByClassName('card');
+        let visibleCardsLength = 0;
         let selectedVisibleCount = 0;
-        a.forEach(card => { 
-            if (card.style.display !== 'none') selectedVisibleCount++; 
-        });
+        const targetClass = isMovePending ? 'move-pending' : 'selected';
+        
+        for (let i = 0; i < allCards.length; i++) {
+            if (allCards[i].style.display !== 'none') {
+                visibleCardsLength++;
+                if (allCards[i].classList.contains(targetClass)) selectedVisibleCount++;
+            }
+        }
         const isAllSelected = visibleCardsLength > 0 && selectedVisibleCount === visibleCardsLength;
         btnFloatingSelectAll.innerHTML = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
     }
@@ -3112,8 +3126,15 @@ function toggleSelectCard(a){a.classList.toggle('selected'),updateSelectCount()}
 
 // --- FITUR BARU: SELECT ALL / DESELECT ALL ---
 function togglePilihSemua() {
-    // 1. Ambil semua kartu yang saat ini TAMPIL di layar menggunakan Native CSS Engine
-    const visibleCards = document.querySelectorAll('.card:not([style*="display: none"])');
+    // Optimasi: Hindari CSS Selector yang berat, kumpulkan DOM secara manual
+    const allCards = document.getElementsByClassName('card');
+    const visibleCards = [];
+    
+    for (let i = 0; i < allCards.length; i++) {
+        if (allCards[i].style.display !== 'none') {
+            visibleCards.push(allCards[i]);
+        }
+    }
 
     if (visibleCards.length === 0) return alert("Tidak ada item yang dapat dipilih di tampilan saat ini.");
 
@@ -3121,13 +3142,16 @@ function togglePilihSemua() {
     const isMoveMode = typeof isMovePending !== 'undefined' && isMovePending;
     const targetClass = isMoveMode ? 'move-pending' : 'selected';
 
-    // 3. Cek apakah semua item yang tampak sudah terpilih
-    // [PERBAIKAN]: Konversi NodeList ke Array murni agar .filter() dapat dijalankan
-    const selectedCount = Array.from(visibleCards).filter(card => card.classList.contains(targetClass)).length;
+    // 3. Hitung item yang sudah terpilih
+    let selectedCount = 0;
+    for (let i = 0; i < visibleCards.length; i++) {
+        if (visibleCards[i].classList.contains(targetClass)) selectedCount++;
+    }
     const isAllSelected = selectedCount === visibleCards.length;
 
     // 4. Lakukan Toggle (Pilih Semua ATAU Batal Pilih Semua)
-    visibleCards.forEach(card => {
+    for (let i = 0; i < visibleCards.length; i++) {
+        const card = visibleCards[i];
         if (isAllSelected) {
             // Batalkan Seleksi
             card.classList.remove(targetClass);
@@ -3143,7 +3167,7 @@ function togglePilihSemua() {
                 if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
             }
         }
-    });
+    }
 
     // 5. Update UI atau batalkan mode pindah jika semuanya di-deselect
     if (isMoveMode && isAllSelected) {
