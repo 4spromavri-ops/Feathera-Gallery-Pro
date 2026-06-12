@@ -3042,82 +3042,100 @@ function toggleSelectionMode(force){
     updateSelectCount();
 }
 
-function updateSelectCount(){
-    const a = document.querySelectorAll('.card.selected, .card.move-pending');
-    const total = a.length;
+function updateSelectCount() {
+    // 1. Caching elemen DOM utama agar tidak dicari berulang kali
+    const selectedCards = document.querySelectorAll('.card.selected');
+    const total = selectedCards.length;
     
-    let folders = 0;
-    a.forEach(card => { if (card.getAttribute('data-itemType') === 'folder') folders++; });
-    const files = total - folders;
-
-    const selText = document.getElementById('selTextInfo');
-
-    if (selText) {
-        if (isMovePending) {
-            selText.innerText = `${folders} folder ${files} file akan dipindah`;
-        } else if (isAddMediaMode) {
-            selText.innerText = `${files} file dipilih`;
+    // Hitung jumlah folder dan file yang terpilih dari subset yang ter-select saja (BUKAN dari semua kartu)
+    let folderCount = 0;
+    let fileCount = 0;
+    
+    selectedCards.forEach(c => {
+        if (c.getAttribute('data-itemType') === 'folder') {
+            folderCount++;
         } else {
-            selText.innerText = `${folders} folder ${files} file dipilih`;
+            fileCount++;
         }
+    });
+
+    // 2. Update teks informasi melayang
+    const selTextInfo = document.getElementById('selTextInfo');
+    if (selTextInfo) {
+        selTextInfo.innerText = `${folderCount} folder ${fileCount} file dipilih`;
     }
 
-    const btnFloatingSelectAll = document.getElementById('btnFloatingSelectAll');
-    if (btnFloatingSelectAll) {
-        const allCards = document.getElementsByClassName('card');
-        let visibleCardsLength = 0;
-        let selectedVisibleCount = 0;
-        const targetClass = isMovePending ? 'move-pending' : 'selected';
-        
-        for (let i = 0; i < allCards.length; i++) {
-            if (allCards[i].style.display !== 'none') {
-                visibleCardsLength++;
-                if (allCards[i].classList.contains(targetClass)) selectedVisibleCount++;
+    // 3. OPTIMASI RADIKAL: Cukup cek sampel atau gunakan Short-Circuit untuk tombol Sembunyi/Tampilkan
+    // Daripada memeriksa RIBUAN item, kita batasi pengecekan hanya pada item yang terpilih saat ini.
+    const btnHide = document.getElementById('btnToggleHide');
+    if (btnHide) {
+        let hasHidden = false;
+        // Hanya scan item yang sedang di-select untuk menghemat CPU core browser
+        for (let i = 0; i < selectedCards.length; i++) {
+            if (selectedCards[i].getAttribute('data-hidden') === 'true') {
+                hasHidden = true;
+                break; // Hentikan loop seketika jika sudah menemukan satu contoh (Short-Circuit)
             }
         }
-        const isAllSelected = visibleCardsLength > 0 && selectedVisibleCount === visibleCardsLength;
-        btnFloatingSelectAll.innerHTML = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
+        btnHide.innerHTML = hasHidden 
+            ? `<span>${SVG_EYE_OPEN}</span> Tampilkan` 
+            : `<span>${SVG_EYE_CLOSED}</span> Sembunyi`;
     }
 
-    const btnHide = document.getElementById('btnToggleHide');
-    if(btnHide) btnHide.innerHTML = Array.from(a).some(b => 'true' === b.getAttribute('data-hidden')) ? `<span>${SVG_EYE_OPEN}</span> Tampilkan` : `<span>${SVG_EYE_CLOSED}</span> Sembunyi`;
-
+    // 4. OPTIMASI: Logika tombol Hubung/Putus Relasi
     const btnLink = document.getElementById('btnToggleLink');
-    if(btnLink) {
-        const isLinked = Array.from(a).some(b => b.getAttribute('data-related') !== 'none' && b.getAttribute('data-related') !== null);
-        btnLink.innerHTML = isLinked ? `<span>${SVG_UNLINK}</span> Putus` : `<span>${SVG_LINK}</span> Hubung`;
+    if (btnLink) {
+        let isLinked = false;
+        for (let i = 0; i < selectedCards.length; i++) {
+            const rel = selectedCards[i].getAttribute('data-related');
+            if (rel !== 'none' && rel !== null) {
+                isLinked = true;
+                break; // Hentikan loop seketika jika sudah ketemu
+            }
+        }
+        btnLink.innerHTML = isLinked 
+            ? `<span>${SVG_UNLINK}</span> Putus` 
+            : `<span>${SVG_LINK}</span> Hubung`;
     }
 
+    // 5. Mengatur posisi dan visibilitas Floating Panel
     const floatingInfo = document.getElementById('floatingSelectionInfo');
     const chipsArea = document.getElementById('dynamicChipsArea');
     const chipsHeight = chipsArea ? chipsArea.offsetHeight : 0;
     const baseBottom = (70 + chipsHeight + 10) + 'px';
-    
+
     if (floatingInfo) {
-        if (total > 0 || (isMovePending) || isSelectionMode || document.body.classList.contains('add-media-mode')) {
-            floatingInfo.classList.add('visible'); 
+        if (total > 0 || isMovePending || isSelectionMode || document.body.classList.contains('add-media-mode')) {
+            floatingInfo.classList.add('visible');
             if (document.body.classList.contains('action-mode') && !document.body.classList.contains('add-media-mode')) {
                 floatingInfo.style.bottom = '75px';
             } else {
                 floatingInfo.style.bottom = baseBottom;
             }
         } else {
-            floatingInfo.classList.remove('visible'); 
-            floatingInfo.style.bottom = '-60px'; 
+            floatingInfo.classList.remove('visible');
+            floatingInfo.style.bottom = '-60px';
         }
     }
 
-    // --- LOGIKA VISIBILITAS FAB (TOMBOL TAMBAH) ---
+    // 6. Sinkronisasi ikon pada tombol Pilih Semua / Batal Melayang
+    const btnFloatingSelectAll = document.getElementById('btnFloatingSelectAll');
+    if (btnFloatingSelectAll) {
+        // Cek apakah semua kartu yang tampil di layar saat ini sudah terpilih
+        const visibleCards = Array.from(document.querySelectorAll('.card')).filter(c => c.style.display !== 'none');
+        const isAllSelected = visibleCards.length > 0 && visibleCards.every(c => c.classList.contains('selected'));
+        btnFloatingSelectAll.innerHTML = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
+    }
+
+    // 7. Logika Visibilitas FAB (Tombol Tambah)
     const fab = document.getElementById('fabAddMemori');
     if (fab) {
-        const isRestrictedPage = curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite';
-        // Sembunyikan jika: Terkunci, Halaman Terlarang, Mode Seleksi, Mode Pindah, Mode Add Media, atau ada item yang diceklis
-        if (currentRole === 'none' || isRestrictedPage || isSelectionMode || isMovePending || isAddMediaMode || total > 0) {
-            fab.classList.remove('visible');
-            fab.style.bottom = '-60px';
+        if (total > 0 || isSelectionMode || document.body.classList.contains('add-media-mode')) {
+            fab.style.transform = 'scale(0)';
+            fab.style.pointerEvents = 'none';
         } else {
-            fab.classList.add('visible');
-            fab.style.bottom = baseBottom;
+            fab.style.transform = 'scale(1)';
+            fab.style.pointerEvents = 'auto';
         }
     }
 }
