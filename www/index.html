@@ -2346,7 +2346,7 @@ function updateLockUI() {
 function bukaMasterViaSettings(){'none'===currentRole?requestPin(a=>{setAppRole(a),toggleModal('modalSettings', false),bukaMaster()}):(toggleModal('modalSettings', false),bukaMaster())}
 function loadConfig(){config=JSON.parse(getLocal('config_v1')||JSON.stringify(defaultConfig)),flattenConfig(),renderNav(),renderChips(),initMasterTree()}
 function flattenConfig(){flatConfig={};const a=(b,c=null)=>{b&&b.forEach(d=>{flatConfig[d.id]={...d,parentId:c},d.children&&a(d.children,d.id)})};a(config)}
-function getAllDescendantIds(a){let b=[];const c=document.querySelectorAll('.card');const map={};c.forEach(f=>{const p=f.getAttribute('data-folderId');if(p&&p!=='none'){if(!map[p])map[p]=[];map[p].push({id:f.getAttribute('data-id'),type:f.getAttribute('data-itemType')})}});const d=e=>{if(map[e]){map[e].forEach(child=>{b.push(child.id);if(child.type==='folder')d(child.id)})}};return d(a),b}
+function getAllDescendantIds(a){let b=[];const c=document.querySelectorAll('.card');const map={};c.forEach(f=>{const p=f.getAttribute('data-folderId');if(p&&p!=='none'){if(!map[p])map[p]=[];map[p].push({id:f.getAttribute('data-id'),type:f.getAttribute('data-itemType')})}});const visited=new Set();const d=e=>{if(visited.has(e))return;visited.add(e);if(map[e]){map[e].forEach(child=>{b.push(child.id);if(child.type==='folder')d(child.id)})}};return d(a),b}
 function linkify(a){return a?a.replace(/(https?:\/\/[^\s]+)/g,b=>{try{const c=new URL(b).hostname;return `<a href="${b}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; vertical-align:middle;"><img src="https://www.google.com/s2/favicons?domain=${c}&sz=32" style="width:1em; height:1em; border-radius:2px;" onerror="this.style.display='none'"><span style="text-decoration:underline;">${b}</span></a>`}catch(d){return `<a href="${b}" target="_blank">${b}</a>`}}):""}
 function getYoutubeId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);return b&&11===b[2].length?b[2]:null}
 function getDriveId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/(?:file\/d\/|id=|open\?id=)([^/&?]+)/);return b?b[1]:null}
@@ -2447,18 +2447,10 @@ function renderNav() {
         const actionDiv = document.createElement('div');
         actionDiv.className = 'nav-batch-actions';
         
-        // Optimasi: Gunakan iterasi langsung untuk menghindari bottleneck CSS Selector di Android WebView
-        const allCards = document.getElementsByClassName('card');
-        let visibleCardsLength = 0;
-        let selectedCount = 0;
-        for (let i = 0; i < allCards.length; i++) {
-            if (allCards[i].style.display !== 'none') {
-                visibleCardsLength++;
-                if (allCards[i].classList.contains('selected')) selectedCount++;
-            }
-        }
+        // Deteksi status Pilih Semua menggunakan Native CSS Engine
+        const visibleCardsLength = document.querySelectorAll('.card:not([style*="display: none"])').length;
+        const selectedCount = document.querySelectorAll('.card.selected:not([style*="display: none"])').length;
         const isAllSelected = visibleCardsLength > 0 && selectedCount === visibleCardsLength;
-
         const svgIcon = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
 
         // Tombol Select All dipindah ke Floating Bar
@@ -3042,100 +3034,76 @@ function toggleSelectionMode(force){
     updateSelectCount();
 }
 
-function updateSelectCount() {
-    // 1. Caching elemen DOM utama agar tidak dicari berulang kali
-    const selectedCards = document.querySelectorAll('.card.selected');
-    const total = selectedCards.length;
+function updateSelectCount(){
+    const a = document.querySelectorAll('.card.selected, .card.move-pending');
+    const total = a.length;
     
-    // Hitung jumlah folder dan file yang terpilih dari subset yang ter-select saja (BUKAN dari semua kartu)
-    let folderCount = 0;
-    let fileCount = 0;
-    
-    selectedCards.forEach(c => {
-        if (c.getAttribute('data-itemType') === 'folder') {
-            folderCount++;
+    let folders = 0;
+    a.forEach(card => { if (card.getAttribute('data-itemType') === 'folder') folders++; });
+    const files = total - folders;
+
+    const selText = document.getElementById('selTextInfo');
+
+    if (selText) {
+        if (isMovePending) {
+            selText.innerText = `${folders} folder ${files} file akan dipindah`;
+        } else if (isAddMediaMode) {
+            selText.innerText = `${files} file dipilih`;
         } else {
-            fileCount++;
+            selText.innerText = `${folders} folder ${files} file dipilih`;
         }
-    });
-
-    // 2. Update teks informasi melayang
-    const selTextInfo = document.getElementById('selTextInfo');
-    if (selTextInfo) {
-        selTextInfo.innerText = `${folderCount} folder ${fileCount} file dipilih`;
     }
 
-    // 3. OPTIMASI RADIKAL: Cukup cek sampel atau gunakan Short-Circuit untuk tombol Sembunyi/Tampilkan
-    // Daripada memeriksa RIBUAN item, kita batasi pengecekan hanya pada item yang terpilih saat ini.
+    const btnFloatingSelectAll = document.getElementById('btnFloatingSelectAll');
+    if (btnFloatingSelectAll) {
+        const visibleCardsLength = document.querySelectorAll('.card:not([style*="display: none"])').length;
+        let selectedVisibleCount = 0;
+        a.forEach(card => { 
+            if (card.style.display !== 'none') selectedVisibleCount++; 
+        });
+        const isAllSelected = visibleCardsLength > 0 && selectedVisibleCount === visibleCardsLength;
+        btnFloatingSelectAll.innerHTML = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
+    }
+
     const btnHide = document.getElementById('btnToggleHide');
-    if (btnHide) {
-        let hasHidden = false;
-        // Hanya scan item yang sedang di-select untuk menghemat CPU core browser
-        for (let i = 0; i < selectedCards.length; i++) {
-            if (selectedCards[i].getAttribute('data-hidden') === 'true') {
-                hasHidden = true;
-                break; // Hentikan loop seketika jika sudah menemukan satu contoh (Short-Circuit)
-            }
-        }
-        btnHide.innerHTML = hasHidden 
-            ? `<span>${SVG_EYE_OPEN}</span> Tampilkan` 
-            : `<span>${SVG_EYE_CLOSED}</span> Sembunyi`;
-    }
+    if(btnHide) btnHide.innerHTML = Array.from(a).some(b => 'true' === b.getAttribute('data-hidden')) ? `<span>${SVG_EYE_OPEN}</span> Tampilkan` : `<span>${SVG_EYE_CLOSED}</span> Sembunyi`;
 
-    // 4. OPTIMASI: Logika tombol Hubung/Putus Relasi
     const btnLink = document.getElementById('btnToggleLink');
-    if (btnLink) {
-        let isLinked = false;
-        for (let i = 0; i < selectedCards.length; i++) {
-            const rel = selectedCards[i].getAttribute('data-related');
-            if (rel !== 'none' && rel !== null) {
-                isLinked = true;
-                break; // Hentikan loop seketika jika sudah ketemu
-            }
-        }
-        btnLink.innerHTML = isLinked 
-            ? `<span>${SVG_UNLINK}</span> Putus` 
-            : `<span>${SVG_LINK}</span> Hubung`;
+    if(btnLink) {
+        const isLinked = Array.from(a).some(b => b.getAttribute('data-related') !== 'none' && b.getAttribute('data-related') !== null);
+        btnLink.innerHTML = isLinked ? `<span>${SVG_UNLINK}</span> Putus` : `<span>${SVG_LINK}</span> Hubung`;
     }
 
-    // 5. Mengatur posisi dan visibilitas Floating Panel
     const floatingInfo = document.getElementById('floatingSelectionInfo');
     const chipsArea = document.getElementById('dynamicChipsArea');
     const chipsHeight = chipsArea ? chipsArea.offsetHeight : 0;
     const baseBottom = (70 + chipsHeight + 10) + 'px';
-
+    
     if (floatingInfo) {
-        if (total > 0 || isMovePending || isSelectionMode || document.body.classList.contains('add-media-mode')) {
-            floatingInfo.classList.add('visible');
+        if (total > 0 || (isMovePending) || isSelectionMode || document.body.classList.contains('add-media-mode')) {
+            floatingInfo.classList.add('visible'); 
             if (document.body.classList.contains('action-mode') && !document.body.classList.contains('add-media-mode')) {
                 floatingInfo.style.bottom = '75px';
             } else {
                 floatingInfo.style.bottom = baseBottom;
             }
         } else {
-            floatingInfo.classList.remove('visible');
-            floatingInfo.style.bottom = '-60px';
+            floatingInfo.classList.remove('visible'); 
+            floatingInfo.style.bottom = '-60px'; 
         }
     }
 
-    // 6. Sinkronisasi ikon pada tombol Pilih Semua / Batal Melayang
-    const btnFloatingSelectAll = document.getElementById('btnFloatingSelectAll');
-    if (btnFloatingSelectAll) {
-        // Cek apakah semua kartu yang tampil di layar saat ini sudah terpilih
-        const visibleCards = Array.from(document.querySelectorAll('.card')).filter(c => c.style.display !== 'none');
-        const isAllSelected = visibleCards.length > 0 && visibleCards.every(c => c.classList.contains('selected'));
-        btnFloatingSelectAll.innerHTML = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
-    }
-
-    // 7. Logika Visibilitas FAB (Tombol Tambah)
+    // --- LOGIKA VISIBILITAS FAB (TOMBOL TAMBAH) ---
     const fab = document.getElementById('fabAddMemori');
     if (fab) {
-        if (total > 0 || isSelectionMode || document.body.classList.contains('add-media-mode')) {
-            fab.style.transform = 'scale(0)';
-            fab.style.pointerEvents = 'none';
+        const isRestrictedPage = curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite';
+        // Sembunyikan jika: Terkunci, Halaman Terlarang, Mode Seleksi, Mode Pindah, Mode Add Media, atau ada item yang diceklis
+        if (currentRole === 'none' || isRestrictedPage || isSelectionMode || isMovePending || isAddMediaMode || total > 0) {
+            fab.classList.remove('visible');
+            fab.style.bottom = '-60px';
         } else {
-            fab.style.transform = 'scale(1)';
-            fab.style.pointerEvents = 'auto';
+            fab.classList.add('visible');
+            fab.style.bottom = baseBottom;
         }
     }
 }
@@ -3144,15 +3112,8 @@ function toggleSelectCard(a){a.classList.toggle('selected'),updateSelectCount()}
 
 // --- FITUR BARU: SELECT ALL / DESELECT ALL ---
 function togglePilihSemua() {
-    // Optimasi: Hindari CSS Selector yang berat, kumpulkan DOM secara manual
-    const allCards = document.getElementsByClassName('card');
-    const visibleCards = [];
-    
-    for (let i = 0; i < allCards.length; i++) {
-        if (allCards[i].style.display !== 'none') {
-            visibleCards.push(allCards[i]);
-        }
-    }
+    // 1. Ambil semua kartu yang saat ini TAMPIL di layar menggunakan Native CSS Engine
+    const visibleCards = document.querySelectorAll('.card:not([style*="display: none"])');
 
     if (visibleCards.length === 0) return alert("Tidak ada item yang dapat dipilih di tampilan saat ini.");
 
@@ -3160,16 +3121,13 @@ function togglePilihSemua() {
     const isMoveMode = typeof isMovePending !== 'undefined' && isMovePending;
     const targetClass = isMoveMode ? 'move-pending' : 'selected';
 
-    // 3. Hitung item yang sudah terpilih
-    let selectedCount = 0;
-    for (let i = 0; i < visibleCards.length; i++) {
-        if (visibleCards[i].classList.contains(targetClass)) selectedCount++;
-    }
+    // 3. Cek apakah semua item yang tampak sudah terpilih
+    // [PERBAIKAN]: Konversi NodeList ke Array murni agar .filter() dapat dijalankan
+    const selectedCount = Array.from(visibleCards).filter(card => card.classList.contains(targetClass)).length;
     const isAllSelected = selectedCount === visibleCards.length;
 
     // 4. Lakukan Toggle (Pilih Semua ATAU Batal Pilih Semua)
-    for (let i = 0; i < visibleCards.length; i++) {
-        const card = visibleCards[i];
+    visibleCards.forEach(card => {
         if (isAllSelected) {
             // Batalkan Seleksi
             card.classList.remove(targetClass);
@@ -3185,7 +3143,7 @@ function togglePilihSemua() {
                 if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
             }
         }
-    }
+    });
 
     // 5. Update UI atau batalkan mode pindah jika semuanya di-deselect
     if (isMoveMode && isAllSelected) {
@@ -3428,7 +3386,10 @@ function isDescendant(a,b){
     if(a===b) return true;
     const pMap = getParentMap(); // Ambil peta relasi dari memori RAM
     let currId=a;
+    const visited=new Set();
     while(currId && currId !== 'none'){
+        if(visited.has(currId)) break;
+        visited.add(currId);
         const parentId = pMap[currId];
         if(!parentId) break;
         if(parentId === b) return true;
