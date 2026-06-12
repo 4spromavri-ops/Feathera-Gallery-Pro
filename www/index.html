@@ -3017,13 +3017,16 @@ function cardHoldHandler(a){
     
     if(isFolder){
         const isSelected = a.classList.contains('selected');
-        getAllDescendantIds(a.getAttribute('data-id')).forEach(id => {
-            const child = document.querySelector(`.card[data-id="${id}"]`);
-            if (child) child.classList.toggle('selected', isSelected);
+        const descendantIds = new Set(getAllDescendantIds(a.getAttribute('data-id')));
+        
+        // [PERBAIKAN]: Loop satu kali ke seluruh DOM, bukan melakukan querySelector ribuan kali
+        document.querySelectorAll('.card').forEach(child => {
+            if(descendantIds.has(child.getAttribute('data-id'))) {
+                child.classList.toggle('selected', isSelected);
+            }
         });
         updateSelectCount();
     }
-}
 
 function toggleSelectionMode(force){
     isSelectionMode = typeof force === 'boolean' ? force : !isSelectionMode;
@@ -3056,11 +3059,20 @@ function updateSelectCount(){
 
     const btnFloatingSelectAll = document.getElementById('btnFloatingSelectAll');
     if (btnFloatingSelectAll) {
-        const visibleCardsLength = document.querySelectorAll('.card:not([style*="display: none"])').length;
+        // [PERBAIKAN]: Iterasi sekali jalan (O(N)), jauh lebih ringan daripada query Selector Atribut
+        let visibleCardsLength = 0;
         let selectedVisibleCount = 0;
-        a.forEach(card => { 
-            if (card.style.display !== 'none') selectedVisibleCount++; 
-        });
+        
+        const allCards = document.querySelectorAll('.card');
+        for (let i = 0; i < allCards.length; i++) {
+            if (allCards[i].style.display !== 'none') {
+                visibleCardsLength++;
+                if (allCards[i].classList.contains('selected') || allCards[i].classList.contains('move-pending')) {
+                    selectedVisibleCount++;
+                }
+            }
+        }
+        
         const isAllSelected = visibleCardsLength > 0 && selectedVisibleCount === visibleCardsLength;
         btnFloatingSelectAll.innerHTML = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
     }
@@ -3093,11 +3105,9 @@ function updateSelectCount(){
         }
     }
 
-    // --- LOGIKA VISIBILITAS FAB (TOMBOL TAMBAH) ---
     const fab = document.getElementById('fabAddMemori');
     if (fab) {
         const isRestrictedPage = curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite';
-        // Sembunyikan jika: Terkunci, Halaman Terlarang, Mode Seleksi, Mode Pindah, Mode Add Media, atau ada item yang diceklis
         if (currentRole === 'none' || isRestrictedPage || isSelectionMode || isMovePending || isAddMediaMode || total > 0) {
             fab.classList.remove('visible');
             fab.style.bottom = '-60px';
@@ -3112,31 +3122,31 @@ function toggleSelectCard(a){a.classList.toggle('selected'),updateSelectCount()}
 
 // --- FITUR BARU: SELECT ALL / DESELECT ALL ---
 function togglePilihSemua() {
-    // 1. Ambil semua kartu yang saat ini TAMPIL di layar menggunakan Native CSS Engine
-    const visibleCards = document.querySelectorAll('.card:not([style*="display: none"])');
+    // [PERBAIKAN]: Menyaring secara manual (O(N)), menghindari beban dari DOM CSS Parser
+    const allCards = document.querySelectorAll('.card');
+    const visibleCards = [];
+    for (let i = 0; i < allCards.length; i++) {
+        if (allCards[i].style.display !== 'none') {
+            visibleCards.push(allCards[i]);
+        }
+    }
 
     if (visibleCards.length === 0) return alert("Tidak ada item yang dapat dipilih di tampilan saat ini.");
 
-    // 2. Deteksi apakah sedang dalam mode Pindah (Move-Pending) atau Seleksi Normal
     const isMoveMode = typeof isMovePending !== 'undefined' && isMovePending;
     const targetClass = isMoveMode ? 'move-pending' : 'selected';
 
-    // 3. Cek apakah semua item yang tampak sudah terpilih
-    // [PERBAIKAN]: Konversi NodeList ke Array murni agar .filter() dapat dijalankan
-    const selectedCount = Array.from(visibleCards).filter(card => card.classList.contains(targetClass)).length;
+    const selectedCount = visibleCards.filter(card => card.classList.contains(targetClass)).length;
     const isAllSelected = selectedCount === visibleCards.length;
 
-    // 4. Lakukan Toggle (Pilih Semua ATAU Batal Pilih Semua)
     visibleCards.forEach(card => {
         if (isAllSelected) {
-            // Batalkan Seleksi
             card.classList.remove(targetClass);
             if (isMoveMode) {
                 const idToRemove = card.getAttribute('data-id');
                 movePendingIds = movePendingIds.filter(id => id !== idToRemove);
             }
         } else {
-            // Pilih Semua
             card.classList.add(targetClass);
             if (isMoveMode) {
                 const idToAdd = card.getAttribute('data-id');
@@ -3145,7 +3155,6 @@ function togglePilihSemua() {
         }
     });
 
-    // 5. Update UI atau batalkan mode pindah jika semuanya di-deselect
     if (isMoveMode && isAllSelected) {
         batalTempel();
     } else {
@@ -3424,13 +3433,16 @@ function cardDragStart(e, card) {
     // dan sudah ada file/folder lain yang terseleksi sebelumnya, langsung gabungkan.
     if (!card.classList.contains('selected') && hasExistingSelection && card.getAttribute('data-itemType') === 'folder') {
         card.classList.add('selected');
-        getAllDescendantIds(card.getAttribute('data-id')).forEach(id => {
-            const child = document.querySelector(`.card[data-id="${id}"]`);
-            if (child) child.classList.add('selected');
+        const descendantIds = new Set(getAllDescendantIds(card.getAttribute('data-id')));
+        
+        document.querySelectorAll('.card').forEach(child => {
+            if(descendantIds.has(child.getAttribute('data-id'))) {
+                child.classList.add('selected');
+            }
         });
         updateSelectCount();
     }
-    
+
     // Jika item yang di-drag sudah di-checklist, bawa seluruh grup checklist.
     if (card.classList.contains('selected')) {
         draggedCardIds = Array.from(document.querySelectorAll('.card.selected')).map(c => c.getAttribute('data-id'));
@@ -3596,7 +3608,7 @@ function cardDragEnd(e, card) {
     draggedCardIds = [];
 }
 
-function updateCategoryRecursive(a,b,c,d,e,allCards){a.setAttribute('data-cat',b),a.setAttribute('data-sub',c),a.setAttribute('data-type',d),a.setAttribute('data-detail',e),refreshCardIcon(a);if('folder'===a.getAttribute('data-itemType')){if(!allCards)allCards=document.querySelectorAll('.card');const targetId=a.getAttribute('data-id');allCards.forEach(f=>{if(f.getAttribute('data-folderId')===targetId)updateCategoryRecursive(f,b,c,d,e,allCards)});}}
+function updateCategoryRecursive(a,b,c,d,e,allCards,visited=new Set()){const targetId=a.getAttribute('data-id');if(visited.has(targetId))return;visited.add(targetId);a.setAttribute('data-cat',b),a.setAttribute('data-sub',c),a.setAttribute('data-type',d),a.setAttribute('data-detail',e),refreshCardIcon(a);if('folder'===a.getAttribute('data-itemType')){if(!allCards)allCards=document.querySelectorAll('.card');allCards.forEach(f=>{if(f.getAttribute('data-folderId')===targetId)updateCategoryRecursive(f,b,c,d,e,allCards,visited)});}}
 
 async function tambahKePlaylistBatch(){
     const a=document.querySelectorAll('.card.selected');
