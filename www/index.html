@@ -2878,17 +2878,17 @@ async function cardClickHandler(a){
             movePendingIds = movePendingIds.filter(id => id !== idToRemove);
             
             // Hapus juga status cut pada sub-foldernya (jika yang di-uncheck adalah folder)
-            if (a.getAttribute('data-itemType') === 'folder') {
-                const descendants = getAllDescendantIds(idToRemove);
-                descendants.forEach(descId => {
-                    const child = document.querySelector(`.card[data-id="${descId}"]`);
-                    if (child) {
-                        child.classList.remove('move-pending');
-                        movePendingIds = movePendingIds.filter(id => id !== descId);
-                    }
-                });
-            }
-            
+      if (a.getAttribute('data-itemType') === 'folder') {
+        const descendantIds = new Set(getAllDescendantIds(idToRemove));
+        document.querySelectorAll('.card').forEach(child => {
+        const descId = child.getAttribute('data-id');
+        if (descendantIds.has(descId)) {
+        child.classList.remove('move-pending');
+        movePendingIds = movePendingIds.filter(id => id !== descId);
+         }
+      });
+    }
+
             updateSelectCount(); 
             if(movePendingIds.length === 0){
                 batalTempel();
@@ -2911,21 +2911,24 @@ async function cardClickHandler(a){
     const isSelected = a.classList.contains('selected');
     const hasAnySelection = document.querySelectorAll('.card.selected').length > 0;
 
-    if (isSelectionMode || hasAnySelection) {
-        if (isFolder) {
-            if (!isSelected && !isSelectionMode) return bukaFolder(a.getAttribute('data-id'));
-            
-            const willSelect = !isSelected;
-            a.classList.toggle('selected', willSelect);
-            getAllDescendantIds(a.getAttribute('data-id')).forEach(id => {
-                const child = document.querySelector(`.card[data-id="${id}"]`);
-                if (child) child.classList.toggle('selected', willSelect);
-            });
-            updateSelectCount();
-            return;
-        }
-        return toggleSelectCard(a);
-    }
+            if (isSelectionMode || hasAnySelection) {
+                if (isFolder) {
+                    if (!isSelected && !isSelectionMode) return bukaFolder(a.getAttribute('data-id'));
+                    
+                    const willSelect = !isSelected;
+                    a.classList.toggle('selected', willSelect);
+                    const descendantIds = new Set(getAllDescendantIds(a.getAttribute('data-id')));
+                    
+                    document.querySelectorAll('.card').forEach(child => {
+                        if (descendantIds.has(child.getAttribute('data-id'))) {
+                            child.classList.toggle('selected', willSelect);
+                        }
+                    });
+                    updateSelectCount();
+                    return;
+                }
+                return toggleSelectCard(a);
+            }
 
     if(isFolder) return bukaFolder(a.getAttribute('data-id'));
 
@@ -2979,16 +2982,17 @@ function cardHoldHandler(a){
             const idToAdd = a.getAttribute('data-id');
             if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
             
-            if (a.getAttribute('data-itemType') === 'folder') {
-                const descendants = getAllDescendantIds(idToAdd);
-                descendants.forEach(descId => {
-                    const child = document.querySelector(`.card[data-id="${descId}"]`);
-                    if (child && !child.classList.contains('move-pending')) {
-                        child.classList.add('move-pending');
-                        if (!movePendingIds.includes(descId)) movePendingIds.push(descId);
+                    if (a.getAttribute('data-itemType') === 'folder') {
+                        const descendantIds = new Set(getAllDescendantIds(idToAdd));
+                        document.querySelectorAll('.card').forEach(child => {
+                            const descId = child.getAttribute('data-id');
+                            if (descendantIds.has(descId) && !child.classList.contains('move-pending')) {
+                                child.classList.add('move-pending');
+                                if (!movePendingIds.includes(descId)) movePendingIds.push(descId);
+                            }
+                        });
                     }
-                });
-            }
+
             updateSelectCount();
         } else {
             a.click(); 
