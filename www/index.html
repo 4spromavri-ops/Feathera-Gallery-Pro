@@ -2845,7 +2845,11 @@ async function refreshCardIcon(a){
     }
 }
 
-async function cardClickHandler(a){
+async function cardClickHandler(a) {
+    // TAMBAHKAN INI: Cegah klik beruntun saat proses sedang berlangsung
+    if (a.dataset.isProcessing === "true") return;
+    a.dataset.isProcessing = "true";
+    setTimeout(() => a.dataset.isProcessing = "false", 300); // Reset setelah 300ms
     const clickedCard = arguments[0]; 
     if (isAddMediaMode && clickedCard.getAttribute('data-itemType') === 'folder') {
         if (clickedCard.classList.contains('selected')) {
