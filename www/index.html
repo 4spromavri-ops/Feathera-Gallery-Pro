@@ -3015,18 +3015,19 @@ function cardHoldHandler(a){
 
     toggleSelectCard(a);
     
-    if(isFolder){
-        const isSelected = a.classList.contains('selected');
-        const descendantIds = new Set(getAllDescendantIds(a.getAttribute('data-id')));
-        
-        // [PERBAIKAN]: Loop satu kali ke seluruh DOM, bukan melakukan querySelector ribuan kali
-        document.querySelectorAll('.card').forEach(child => {
-            if(descendantIds.has(child.getAttribute('data-id'))) {
-                child.classList.toggle('selected', isSelected);
-            }
-        });
-        updateSelectCount();
-    }
+        if(isFolder){
+            const isSelected = a.classList.contains('selected');
+            const descendantIds = new Set(getAllDescendantIds(a.getAttribute('data-id')));
+            
+            // [PERBAIKAN]: Loop satu kali ke seluruh DOM, bukan melakukan querySelector ribuan kali
+            document.querySelectorAll('.card').forEach(child => {
+                if(descendantIds.has(child.getAttribute('data-id'))) {
+                    child.classList.toggle('selected', isSelected);
+                }
+            });
+            updateSelectCount();
+        }
+      }
 
 function toggleSelectionMode(force){
     isSelectionMode = typeof force === 'boolean' ? force : !isSelectionMode;
