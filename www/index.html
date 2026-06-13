@@ -172,7 +172,8 @@ body.dark-mode .crumb-item { color: #ffb74d; }
 body.has-mini-player #fileGrid { margin-top: 55px; }
 
 /* Physical Polaroid / Folder Cards */
-.card { content-visibility: auto; contain-intrinsic-size: 100px 150px; background: var(--card-bg); border-radius: 4px; padding: 8px 8px 15px 8px; text-align: center; border: 1px solid var(--card-border); border-bottom-width: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; cursor: pointer; transition: transform 0.1s; }
+.card { background: var(--card-bg); border-radius: 4px; padding: 8px 8px 15px 8px; text-align: center; border: 1px solid var(--card-border); border-bottom-width: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; cursor: pointer; transition: transform 0.1s; }
+
 .card:active { transform: scale(0.97) translateY(2px); box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5); border-bottom-width: 1px; margin-bottom: 2px; }
 .thumb-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-start; justify-content: center; padding-top: 19px; box-sizing: border-box; background: transparent; border-radius: inherit; margin-bottom: 0; overflow: hidden; box-shadow: none; border: none; z-index: 0; -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%); mask-image: linear-gradient(to bottom, black 40%, transparent 100%); }
 .thumb-container img { width: 100%; height: 100%; object-fit: cover; opacity: 0.95; position: absolute; top: 0; left: 0; z-index: -1; }
@@ -952,7 +953,8 @@ body.dark-mode .card.move-pending .thumb-container::after {
 .card.drag-over-folder, .drag-over-nav { border-color: #2196F3 !important; box-shadow: 0 0 15px rgba(33, 150, 243, 0.8), inset 0 0 0 2px #2196F3 !important; }
 .card.drag-over-folder { background: rgba(33, 150, 243, 0.1) !important; transform: scale(1.05); }
 .drag-over-nav { background: rgba(33, 150, 243, 0.2) !important; color: #2196F3 !important; transform: scale(1.1); transition: all 0.2s; }
-.card.is-dragging { opacity: 0.4 !important; transform: scale(0.95); }
+.card.is-dragging { opacity: 0.4 !important; transform: scale(0.95); box-shadow: none !important; filter: none !important; will-change: auto !important; }
+
 
 body.dark-mode .card.drag-over-folder, body.dark-mode .drag-over-nav { border-color: #64B5F6 !important; }
 body.dark-mode .card.drag-over-folder { background: rgba(100, 181, 246, 0.1) !important; box-shadow: 0 0 15px rgba(100, 181, 246, 0.6), inset 0 0 0 2px #64B5F6 !important; }
