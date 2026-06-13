@@ -2879,17 +2879,14 @@ async function cardClickHandler(a){
             
             // Hapus juga status cut pada sub-foldernya (jika yang di-uncheck adalah folder)
             if (a.getAttribute('data-itemType') === 'folder') {
-                // OPTIMASI DOM:
-                const descSet = new Set(getAllDescendantIds(idToRemove));
-                if (descSet.size > 0) {
-                    document.querySelectorAll('.card').forEach(child => {
-                        const childId = child.getAttribute('data-id');
-                        if (descSet.has(childId)) {
-                            child.classList.remove('move-pending');
-                            movePendingIds = movePendingIds.filter(id => id !== childId);
-                        }
-                    });
-                }
+                const descendants = getAllDescendantIds(idToRemove);
+                descendants.forEach(descId => {
+                    const child = document.querySelector(`.card[data-id="${descId}"]`);
+                    if (child) {
+                        child.classList.remove('move-pending');
+                        movePendingIds = movePendingIds.filter(id => id !== descId);
+                    }
+                });
             }
             
             updateSelectCount(); 
@@ -2920,13 +2917,10 @@ async function cardClickHandler(a){
             
             const willSelect = !isSelected;
             a.classList.toggle('selected', willSelect);
-            // OPTIMASI DOM:
-            const descSet = new Set(getAllDescendantIds(a.getAttribute('data-id')));
-            if (descSet.size > 0) {
-                document.querySelectorAll('.card').forEach(child => {
-                    if (descSet.has(child.getAttribute('data-id'))) child.classList.toggle('selected', willSelect);
-                });
-            }
+            getAllDescendantIds(a.getAttribute('data-id')).forEach(id => {
+                const child = document.querySelector(`.card[data-id="${id}"]`);
+                if (child) child.classList.toggle('selected', willSelect);
+            });
             updateSelectCount();
             return;
         }
@@ -2968,7 +2962,6 @@ async function cardClickHandler(a){
         document.body.classList.add('no-scroll');
     }else showFileViewer(d,displayNote,i,'unknown')
 }
-
 function cardHoldHandler(a){
     if(currentRole === 'none') return; 
     navigator.vibrate && navigator.vibrate(50);
@@ -2987,17 +2980,14 @@ function cardHoldHandler(a){
             if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
             
             if (a.getAttribute('data-itemType') === 'folder') {
-                // OPTIMASI DOM:
-                const descSet = new Set(getAllDescendantIds(idToAdd));
-                if (descSet.size > 0) {
-                    document.querySelectorAll('.card').forEach(child => {
-                        const childId = child.getAttribute('data-id');
-                        if (descSet.has(childId) && !child.classList.contains('move-pending')) {
-                            child.classList.add('move-pending');
-                            if (!movePendingIds.includes(childId)) movePendingIds.push(childId);
-                        }
-                    });
-                }
+                const descendants = getAllDescendantIds(idToAdd);
+                descendants.forEach(descId => {
+                    const child = document.querySelector(`.card[data-id="${descId}"]`);
+                    if (child && !child.classList.contains('move-pending')) {
+                        child.classList.add('move-pending');
+                        if (!movePendingIds.includes(descId)) movePendingIds.push(descId);
+                    }
+                });
             }
             updateSelectCount();
         } else {
@@ -3027,15 +3017,10 @@ function cardHoldHandler(a){
     
     if(isFolder){
         const isSelected = a.classList.contains('selected');
-        // OPTIMASI DOM:
-        const descSet = new Set(getAllDescendantIds(a.getAttribute('data-id')));
-        if (descSet.size > 0) {
-            document.querySelectorAll('.card').forEach(child => {
-                if (descSet.has(child.getAttribute('data-id'))) {
-                    child.classList.toggle('selected', isSelected);
-                }
-            });
-        }
+        getAllDescendantIds(a.getAttribute('data-id')).forEach(id => {
+            const child = document.querySelector(`.card[data-id="${id}"]`);
+            if (child) child.classList.toggle('selected', isSelected);
+        });
         updateSelectCount();
     }
 }
@@ -3436,13 +3421,10 @@ function cardDragStart(e, card) {
     // dan sudah ada file/folder lain yang terseleksi sebelumnya, langsung gabungkan.
     if (!card.classList.contains('selected') && hasExistingSelection && card.getAttribute('data-itemType') === 'folder') {
         card.classList.add('selected');
-        // OPTIMASI: Menggunakan Set untuk mencegah freeze DOM
-        const descSet = new Set(getAllDescendantIds(card.getAttribute('data-id')));
-        if (descSet.size > 0) {
-            document.querySelectorAll('.card').forEach(child => {
-                if (descSet.has(child.getAttribute('data-id'))) child.classList.add('selected');
-            });
-        }
+        getAllDescendantIds(card.getAttribute('data-id')).forEach(id => {
+            const child = document.querySelector(`.card[data-id="${id}"]`);
+            if (child) child.classList.add('selected');
+        });
         updateSelectCount();
     }
     
@@ -3456,9 +3438,13 @@ function cardDragStart(e, card) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', 'move'); 
 
+    // ... (biarkan sisa kode di bawahnya tetap sama)
+
     // 1. Buat Wrapper pembungkus agar Badge tidak terpotong
     const dragWrapper = document.createElement('div');
+    dragWrapper.id = 'temp-drag-wrapper'; // Tambahan: Penanda ID
     dragWrapper.style.position = 'absolute';
+
     dragWrapper.style.top = '-2000px'; // Buang jauh dari layar
     dragWrapper.style.left = '-2000px';
     dragWrapper.style.zIndex = '10000';
@@ -3501,19 +3487,15 @@ function cardDragStart(e, card) {
 
     document.body.appendChild(dragWrapper);
 
-    // 4. Tangkap visual pembungkusnya
-    e.dataTransfer.setDragImage(dragWrapper, card.offsetWidth / 2, card.offsetHeight / 2);
+    // 4. Tangkap visual pembungkusnya dengan pengaman eksekusi
+    try {
+        e.dataTransfer.setDragImage(dragWrapper, card.offsetWidth / 2, card.offsetHeight / 2);
+    } catch (err) {
+        console.warn("DragImage API fallback", err);
+    }
     
-    // 5. OPTIMASI CAPACITOR: Gunakan setTimeout 150ms alih-alih requestAnimationFrame
-    // Android OS WebView butuh waktu memuat bitmap sebelum ditarik dari DOM, jika langsung dihapus akan Freeze
-    setTimeout(() => {
-        if (document.body.contains(dragWrapper)) {
-            document.body.removeChild(dragWrapper);
-        }
-    }, 150);
-
+    // 5. Eksekusi dragging (Penghapusan elemen ditunda ke cardDragEnd agar WebView Capacitor tidak crash)
     setTimeout(() => card.classList.add('is-dragging'), 0);
-}
 
 let folderAutoOpenTimer = null;
 let currentFolderHover = null;
@@ -3608,6 +3590,10 @@ function cardDragEnd(e, card) {
         c.classList.remove('is-dragging');
     });
     draggedCardIds = [];
+    
+    // Pembersihan Wrapper yang tersisa dari memori DOM
+    const dragShadow = document.getElementById('temp-drag-wrapper');
+    if (dragShadow) dragShadow.remove();
 }
 
 function updateCategoryRecursive(a,b,c,d,e,allCards){a.setAttribute('data-cat',b),a.setAttribute('data-sub',c),a.setAttribute('data-type',d),a.setAttribute('data-detail',e),refreshCardIcon(a);if('folder'===a.getAttribute('data-itemType')){if(!allCards)allCards=document.querySelectorAll('.card');const targetId=a.getAttribute('data-id');allCards.forEach(f=>{if(f.getAttribute('data-folderId')===targetId)updateCategoryRecursive(f,b,c,d,e,allCards)});}}
@@ -4496,7 +4482,14 @@ function imporData(a) {
 
 },{passive:true}));
 
-['touchend','touchmove','mouseup'].forEach(a=>window.addEventListener(a,()=>clearTimeout(pressTimer)));
+['touchend','touchmove','mouseup'].forEach(a=>window.addEventListener(a,()=>{
+    clearTimeout(pressTimer);
+    // Fallback safety khusus Capacitor Webview jika event dragend gagal merespons
+    if (a === 'touchend' || a === 'mouseup') {
+        const dragShadow = document.getElementById('temp-drag-wrapper');
+        if (dragShadow && (!draggedCardIds || draggedCardIds.length === 0)) dragShadow.remove();
+    }
+}));
 
 // --- LOGIKA GLOBAL DRAG & DROP UNTUK SEMUA HALAMAN / NAVIGASI ---
 let navAutoOpenTimer = null;
