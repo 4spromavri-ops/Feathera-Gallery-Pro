@@ -3406,7 +3406,6 @@ function bersihkanSeleksiAnak(folderId) {
 let draggedCardIds = [];
 
 function cardDragStart(e, card) {
-
     // --- KUNCI KEAMANAN: Hanya untuk Admin & Master ---
     if (currentRole !== 'user' && currentRole !== 'master') {
         e.preventDefault();
@@ -3438,17 +3437,15 @@ function cardDragStart(e, card) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', 'move'); 
 
-    // ... (biarkan sisa kode di bawahnya tetap sama)
-
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', 'move'); 
-
-    // PENGHAPUSAN setDragImage KUSTOM:
-    // Mencegah Capacitor WebView Android mengalami deadlock/hang.
-    // Kita membiarkan OS Android merender bayangan drag secara native.
+    // SOLUSI ANTI-HANG CAPACITOR: Gunakan gambar kosong 1x1 piksel sebagai drag shadow
+    // Ini mencegah OS Android WebView mengalami deadlock saat mencoba merender elemen dengan CSS berat
+    const emptyImg = new Image();
+    emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    if (e.dataTransfer.setDragImage) {
+        e.dataTransfer.setDragImage(emptyImg, 0, 0);
+    }
 
     setTimeout(() => card.classList.add('is-dragging'), 0);
-
 }
 
 let folderAutoOpenTimer = null;
@@ -4395,6 +4392,14 @@ function imporData(a) {
 
 ['touchstart','mousedown'].forEach(a=>window.addEventListener(a,b=>{
     const target = b.target;
+
+    // FAILSAFE CAPACITOR: Bersihkan status drag yang nyangkut (tenggelam) dari sesi sebelumnya
+    // Jika OS menelan event dragend, sentuhan layar berikutnya akan memaksa UI kembali normal.
+    const stuckCards = document.querySelectorAll('.card.is-dragging, .drag-over-folder');
+    if (stuckCards.length > 0) {
+        stuckCards.forEach(c => c.classList.remove('is-dragging', 'drag-over-folder'));
+        draggedCardIds = [];
+    }
 
     // Optimasi: Memanfaatkan indikator 'no-scroll' di body alih-alih mengecek elemen modal/player satu per satu
     if(document.body.classList.contains('no-scroll') || ['INPUT','TEXTAREA','BUTTON','SELECT'].includes(target.tagName)) return;
