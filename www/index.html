@@ -2346,7 +2346,7 @@ function updateLockUI() {
 function bukaMasterViaSettings(){'none'===currentRole?requestPin(a=>{setAppRole(a),toggleModal('modalSettings', false),bukaMaster()}):(toggleModal('modalSettings', false),bukaMaster())}
 function loadConfig(){config=JSON.parse(getLocal('config_v1')||JSON.stringify(defaultConfig)),flattenConfig(),renderNav(),renderChips(),initMasterTree()}
 function flattenConfig(){flatConfig={};const a=(b,c=null)=>{b&&b.forEach(d=>{flatConfig[d.id]={...d,parentId:c},d.children&&a(d.children,d.id)})};a(config)}
-function getAllDescendantIds(a){let b=[];const c=document.querySelectorAll('.card');const map={};c.forEach(f=>{const p=f.getAttribute('data-folderId');if(p&&p!=='none'){if(!map[p])map[p]=[];map[p].push({id:f.getAttribute('data-id'),type:f.getAttribute('data-itemType')})}});const visited=new Set();const d=e=>{if(visited.has(e))return;visited.add(e);if(map[e]){map[e].forEach(child=>{b.push(child.id);if(child.type==='folder')d(child.id)})}};return d(a),b}
+function getAllDescendantIds(a){let b=[];const c=document.querySelectorAll('.card');const map={};c.forEach(f=>{const p=f.getAttribute('data-folderId');if(p&&p!=='none'){if(!map[p])map[p]=[];map[p].push({id:f.getAttribute('data-id'),type:f.getAttribute('data-itemType')})}});const d=e=>{if(map[e]){map[e].forEach(child=>{b.push(child.id);if(child.type==='folder')d(child.id)})}};return d(a),b}
 function linkify(a){return a?a.replace(/(https?:\/\/[^\s]+)/g,b=>{try{const c=new URL(b).hostname;return `<a href="${b}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; vertical-align:middle;"><img src="https://www.google.com/s2/favicons?domain=${c}&sz=32" style="width:1em; height:1em; border-radius:2px;" onerror="this.style.display='none'"><span style="text-decoration:underline;">${b}</span></a>`}catch(d){return `<a href="${b}" target="_blank">${b}</a>`}}):""}
 function getYoutubeId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);return b&&11===b[2].length?b[2]:null}
 function getDriveId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/(?:file\/d\/|id=|open\?id=)([^/&?]+)/);return b?b[1]:null}
@@ -2845,11 +2845,7 @@ async function refreshCardIcon(a){
     }
 }
 
-async function cardClickHandler(a) {
-    // TAMBAHKAN INI: Cegah klik beruntun saat proses sedang berlangsung
-    if (a.dataset.isProcessing === "true") return;
-    a.dataset.isProcessing = "true";
-    setTimeout(() => a.dataset.isProcessing = "false", 300); // Reset setelah 300ms
+async function cardClickHandler(a){
     const clickedCard = arguments[0]; 
     if (isAddMediaMode && clickedCard.getAttribute('data-itemType') === 'folder') {
         if (clickedCard.classList.contains('selected')) {
@@ -2882,17 +2878,20 @@ async function cardClickHandler(a) {
             movePendingIds = movePendingIds.filter(id => id !== idToRemove);
             
             // Hapus juga status cut pada sub-foldernya (jika yang di-uncheck adalah folder)
-      if (a.getAttribute('data-itemType') === 'folder') {
-        const descendantIds = new Set(getAllDescendantIds(idToRemove));
-        document.querySelectorAll('.card').forEach(child => {
-        const descId = child.getAttribute('data-id');
-        if (descendantIds.has(descId)) {
-        child.classList.remove('move-pending');
-        movePendingIds = movePendingIds.filter(id => id !== descId);
-         }
-      });
-    }
-
+            if (a.getAttribute('data-itemType') === 'folder') {
+                // OPTIMASI DOM:
+                const descSet = new Set(getAllDescendantIds(idToRemove));
+                if (descSet.size > 0) {
+                    document.querySelectorAll('.card').forEach(child => {
+                        const childId = child.getAttribute('data-id');
+                        if (descSet.has(childId)) {
+                            child.classList.remove('move-pending');
+                            movePendingIds = movePendingIds.filter(id => id !== childId);
+                        }
+                    });
+                }
+            }
+            
             updateSelectCount(); 
             if(movePendingIds.length === 0){
                 batalTempel();
@@ -2915,24 +2914,24 @@ async function cardClickHandler(a) {
     const isSelected = a.classList.contains('selected');
     const hasAnySelection = document.querySelectorAll('.card.selected').length > 0;
 
-            if (isSelectionMode || hasAnySelection) {
-                if (isFolder) {
-                    if (!isSelected && !isSelectionMode) return bukaFolder(a.getAttribute('data-id'));
-                    
-                    const willSelect = !isSelected;
-                    a.classList.toggle('selected', willSelect);
-                    const descendantIds = new Set(getAllDescendantIds(a.getAttribute('data-id')));
-                    
-                    document.querySelectorAll('.card').forEach(child => {
-                        if (descendantIds.has(child.getAttribute('data-id'))) {
-                            child.classList.toggle('selected', willSelect);
-                        }
-                    });
-                    updateSelectCount();
-                    return;
-                }
-                return toggleSelectCard(a);
+    if (isSelectionMode || hasAnySelection) {
+        if (isFolder) {
+            if (!isSelected && !isSelectionMode) return bukaFolder(a.getAttribute('data-id'));
+            
+            const willSelect = !isSelected;
+            a.classList.toggle('selected', willSelect);
+            // OPTIMASI DOM:
+            const descSet = new Set(getAllDescendantIds(a.getAttribute('data-id')));
+            if (descSet.size > 0) {
+                document.querySelectorAll('.card').forEach(child => {
+                    if (descSet.has(child.getAttribute('data-id'))) child.classList.toggle('selected', willSelect);
+                });
             }
+            updateSelectCount();
+            return;
+        }
+        return toggleSelectCard(a);
+    }
 
     if(isFolder) return bukaFolder(a.getAttribute('data-id'));
 
@@ -2969,6 +2968,7 @@ async function cardClickHandler(a) {
         document.body.classList.add('no-scroll');
     }else showFileViewer(d,displayNote,i,'unknown')
 }
+
 function cardHoldHandler(a){
     if(currentRole === 'none') return; 
     navigator.vibrate && navigator.vibrate(50);
@@ -2986,17 +2986,19 @@ function cardHoldHandler(a){
             const idToAdd = a.getAttribute('data-id');
             if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
             
-                    if (a.getAttribute('data-itemType') === 'folder') {
-                        const descendantIds = new Set(getAllDescendantIds(idToAdd));
-                        document.querySelectorAll('.card').forEach(child => {
-                            const descId = child.getAttribute('data-id');
-                            if (descendantIds.has(descId) && !child.classList.contains('move-pending')) {
-                                child.classList.add('move-pending');
-                                if (!movePendingIds.includes(descId)) movePendingIds.push(descId);
-                            }
-                        });
-                    }
-
+            if (a.getAttribute('data-itemType') === 'folder') {
+                // OPTIMASI DOM:
+                const descSet = new Set(getAllDescendantIds(idToAdd));
+                if (descSet.size > 0) {
+                    document.querySelectorAll('.card').forEach(child => {
+                        const childId = child.getAttribute('data-id');
+                        if (descSet.has(childId) && !child.classList.contains('move-pending')) {
+                            child.classList.add('move-pending');
+                            if (!movePendingIds.includes(childId)) movePendingIds.push(childId);
+                        }
+                    });
+                }
+            }
             updateSelectCount();
         } else {
             a.click(); 
@@ -3023,19 +3025,20 @@ function cardHoldHandler(a){
 
     toggleSelectCard(a);
     
-        if(isFolder){
-            const isSelected = a.classList.contains('selected');
-            const descendantIds = new Set(getAllDescendantIds(a.getAttribute('data-id')));
-            
-            // [PERBAIKAN]: Loop satu kali ke seluruh DOM, bukan melakukan querySelector ribuan kali
+    if(isFolder){
+        const isSelected = a.classList.contains('selected');
+        // OPTIMASI DOM:
+        const descSet = new Set(getAllDescendantIds(a.getAttribute('data-id')));
+        if (descSet.size > 0) {
             document.querySelectorAll('.card').forEach(child => {
-                if(descendantIds.has(child.getAttribute('data-id'))) {
+                if (descSet.has(child.getAttribute('data-id'))) {
                     child.classList.toggle('selected', isSelected);
                 }
             });
-            updateSelectCount();
         }
-      }
+        updateSelectCount();
+    }
+}
 
 function toggleSelectionMode(force){
     isSelectionMode = typeof force === 'boolean' ? force : !isSelectionMode;
@@ -3068,20 +3071,11 @@ function updateSelectCount(){
 
     const btnFloatingSelectAll = document.getElementById('btnFloatingSelectAll');
     if (btnFloatingSelectAll) {
-        // [PERBAIKAN]: Iterasi sekali jalan (O(N)), jauh lebih ringan daripada query Selector Atribut
-        let visibleCardsLength = 0;
+        const visibleCardsLength = document.querySelectorAll('.card:not([style*="display: none"])').length;
         let selectedVisibleCount = 0;
-        
-        const allCards = document.querySelectorAll('.card');
-        for (let i = 0; i < allCards.length; i++) {
-            if (allCards[i].style.display !== 'none') {
-                visibleCardsLength++;
-                if (allCards[i].classList.contains('selected') || allCards[i].classList.contains('move-pending')) {
-                    selectedVisibleCount++;
-                }
-            }
-        }
-        
+        a.forEach(card => { 
+            if (card.style.display !== 'none') selectedVisibleCount++; 
+        });
         const isAllSelected = visibleCardsLength > 0 && selectedVisibleCount === visibleCardsLength;
         btnFloatingSelectAll.innerHTML = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
     }
@@ -3114,9 +3108,11 @@ function updateSelectCount(){
         }
     }
 
+    // --- LOGIKA VISIBILITAS FAB (TOMBOL TAMBAH) ---
     const fab = document.getElementById('fabAddMemori');
     if (fab) {
         const isRestrictedPage = curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite';
+        // Sembunyikan jika: Terkunci, Halaman Terlarang, Mode Seleksi, Mode Pindah, Mode Add Media, atau ada item yang diceklis
         if (currentRole === 'none' || isRestrictedPage || isSelectionMode || isMovePending || isAddMediaMode || total > 0) {
             fab.classList.remove('visible');
             fab.style.bottom = '-60px';
@@ -3131,31 +3127,31 @@ function toggleSelectCard(a){a.classList.toggle('selected'),updateSelectCount()}
 
 // --- FITUR BARU: SELECT ALL / DESELECT ALL ---
 function togglePilihSemua() {
-    // [PERBAIKAN]: Menyaring secara manual (O(N)), menghindari beban dari DOM CSS Parser
-    const allCards = document.querySelectorAll('.card');
-    const visibleCards = [];
-    for (let i = 0; i < allCards.length; i++) {
-        if (allCards[i].style.display !== 'none') {
-            visibleCards.push(allCards[i]);
-        }
-    }
+    // 1. Ambil semua kartu yang saat ini TAMPIL di layar menggunakan Native CSS Engine
+    const visibleCards = document.querySelectorAll('.card:not([style*="display: none"])');
 
     if (visibleCards.length === 0) return alert("Tidak ada item yang dapat dipilih di tampilan saat ini.");
 
+    // 2. Deteksi apakah sedang dalam mode Pindah (Move-Pending) atau Seleksi Normal
     const isMoveMode = typeof isMovePending !== 'undefined' && isMovePending;
     const targetClass = isMoveMode ? 'move-pending' : 'selected';
 
-    const selectedCount = visibleCards.filter(card => card.classList.contains(targetClass)).length;
+    // 3. Cek apakah semua item yang tampak sudah terpilih
+    // [PERBAIKAN]: Konversi NodeList ke Array murni agar .filter() dapat dijalankan
+    const selectedCount = Array.from(visibleCards).filter(card => card.classList.contains(targetClass)).length;
     const isAllSelected = selectedCount === visibleCards.length;
 
+    // 4. Lakukan Toggle (Pilih Semua ATAU Batal Pilih Semua)
     visibleCards.forEach(card => {
         if (isAllSelected) {
+            // Batalkan Seleksi
             card.classList.remove(targetClass);
             if (isMoveMode) {
                 const idToRemove = card.getAttribute('data-id');
                 movePendingIds = movePendingIds.filter(id => id !== idToRemove);
             }
         } else {
+            // Pilih Semua
             card.classList.add(targetClass);
             if (isMoveMode) {
                 const idToAdd = card.getAttribute('data-id');
@@ -3164,6 +3160,7 @@ function togglePilihSemua() {
         }
     });
 
+    // 5. Update UI atau batalkan mode pindah jika semuanya di-deselect
     if (isMoveMode && isAllSelected) {
         batalTempel();
     } else {
@@ -3404,10 +3401,7 @@ function isDescendant(a,b){
     if(a===b) return true;
     const pMap = getParentMap(); // Ambil peta relasi dari memori RAM
     let currId=a;
-    const visited=new Set();
     while(currId && currId !== 'none'){
-        if(visited.has(currId)) break;
-        visited.add(currId);
         const parentId = pMap[currId];
         if(!parentId) break;
         if(parentId === b) return true;
@@ -3442,16 +3436,16 @@ function cardDragStart(e, card) {
     // dan sudah ada file/folder lain yang terseleksi sebelumnya, langsung gabungkan.
     if (!card.classList.contains('selected') && hasExistingSelection && card.getAttribute('data-itemType') === 'folder') {
         card.classList.add('selected');
-        const descendantIds = new Set(getAllDescendantIds(card.getAttribute('data-id')));
-        
-        document.querySelectorAll('.card').forEach(child => {
-            if(descendantIds.has(child.getAttribute('data-id'))) {
-                child.classList.add('selected');
-            }
-        });
+        // OPTIMASI: Menggunakan Set untuk mencegah freeze DOM
+        const descSet = new Set(getAllDescendantIds(card.getAttribute('data-id')));
+        if (descSet.size > 0) {
+            document.querySelectorAll('.card').forEach(child => {
+                if (descSet.has(child.getAttribute('data-id'))) child.classList.add('selected');
+            });
+        }
         updateSelectCount();
     }
-
+    
     // Jika item yang di-drag sudah di-checklist, bawa seluruh grup checklist.
     if (card.classList.contains('selected')) {
         draggedCardIds = Array.from(document.querySelectorAll('.card.selected')).map(c => c.getAttribute('data-id'));
@@ -3461,8 +3455,6 @@ function cardDragStart(e, card) {
 
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', 'move'); 
-
-    // ... (biarkan sisa kode di bawahnya tetap sama)
 
     // 1. Buat Wrapper pembungkus agar Badge tidak terpotong
     const dragWrapper = document.createElement('div');
@@ -3512,12 +3504,13 @@ function cardDragStart(e, card) {
     // 4. Tangkap visual pembungkusnya
     e.dataTransfer.setDragImage(dragWrapper, card.offsetWidth / 2, card.offsetHeight / 2);
     
-    // 5. Hapus dengan aman menggunakan requestAnimationFrame
-    requestAnimationFrame(() => {
+    // 5. OPTIMASI CAPACITOR: Gunakan setTimeout 150ms alih-alih requestAnimationFrame
+    // Android OS WebView butuh waktu memuat bitmap sebelum ditarik dari DOM, jika langsung dihapus akan Freeze
+    setTimeout(() => {
         if (document.body.contains(dragWrapper)) {
             document.body.removeChild(dragWrapper);
         }
-    });
+    }, 150);
 
     setTimeout(() => card.classList.add('is-dragging'), 0);
 }
@@ -3617,7 +3610,7 @@ function cardDragEnd(e, card) {
     draggedCardIds = [];
 }
 
-function updateCategoryRecursive(a,b,c,d,e,allCards,visited=new Set()){const targetId=a.getAttribute('data-id');if(visited.has(targetId))return;visited.add(targetId);a.setAttribute('data-cat',b),a.setAttribute('data-sub',c),a.setAttribute('data-type',d),a.setAttribute('data-detail',e),refreshCardIcon(a);if('folder'===a.getAttribute('data-itemType')){if(!allCards)allCards=document.querySelectorAll('.card');allCards.forEach(f=>{if(f.getAttribute('data-folderId')===targetId)updateCategoryRecursive(f,b,c,d,e,allCards,visited)});}}
+function updateCategoryRecursive(a,b,c,d,e,allCards){a.setAttribute('data-cat',b),a.setAttribute('data-sub',c),a.setAttribute('data-type',d),a.setAttribute('data-detail',e),refreshCardIcon(a);if('folder'===a.getAttribute('data-itemType')){if(!allCards)allCards=document.querySelectorAll('.card');const targetId=a.getAttribute('data-id');allCards.forEach(f=>{if(f.getAttribute('data-folderId')===targetId)updateCategoryRecursive(f,b,c,d,e,allCards)});}}
 
 async function tambahKePlaylistBatch(){
     const a=document.querySelectorAll('.card.selected');
