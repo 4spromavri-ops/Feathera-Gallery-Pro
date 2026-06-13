@@ -3440,62 +3440,15 @@ function cardDragStart(e, card) {
 
     // ... (biarkan sisa kode di bawahnya tetap sama)
 
-    // 1. Buat Wrapper pembungkus agar Badge tidak terpotong
-    const dragWrapper = document.createElement('div');
-    dragWrapper.id = 'temp-drag-wrapper'; // Tambahan: Penanda ID
-    dragWrapper.style.position = 'absolute';
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', 'move'); 
 
-    dragWrapper.style.top = '-2000px'; // Buang jauh dari layar
-    dragWrapper.style.left = '-2000px';
-    dragWrapper.style.zIndex = '10000';
-    dragWrapper.style.pointerEvents = 'none';
+    // PENGHAPUSAN setDragImage KUSTOM:
+    // Mencegah Capacitor WebView Android mengalami deadlock/hang.
+    // Kita membiarkan OS Android merender bayangan drag secara native.
 
-    // 2. Gandakan kartu dan matikan optimasi render browser
-    const dragIcon = card.cloneNode(true);
-    dragIcon.style.contentVisibility = 'visible'; // PAKSA browser me-render elemen ini
-    dragIcon.style.contain = 'none'; // Matikan batasan ukuran
-    dragIcon.style.boxSizing = 'border-box';
-    dragIcon.style.width = card.offsetWidth + 'px';
-    dragIcon.style.height = card.offsetHeight + 'px';
-    dragIcon.style.margin = '0'; 
-    dragIcon.style.opacity = '0.9';
-
-    dragWrapper.appendChild(dragIcon);
-
-    // 3. Buat Badge Angka jika drag > 1 item
-    if (draggedCardIds.length > 1) {
-        const badge = document.createElement('div');
-        badge.innerText = draggedCardIds.length;
-        badge.style.position = 'absolute';
-        badge.style.top = '-12px';
-        badge.style.right = '-12px';
-        badge.style.background = '#F44336';
-        badge.style.color = '#fff';
-        badge.style.borderRadius = '50%';
-        badge.style.width = '28px';
-        badge.style.height = '28px';
-        badge.style.display = 'flex';
-        badge.style.alignItems = 'center';
-        badge.style.justifyContent = 'center';
-        badge.style.fontSize = '14px';
-        badge.style.fontWeight = 'bold';
-        badge.style.border = '2px solid #fff';
-        badge.style.boxShadow = '0 2px 5px rgba(0,0,0,0.5)';
-        badge.style.zIndex = '10001';
-        dragWrapper.appendChild(badge);
-    }
-
-    document.body.appendChild(dragWrapper);
-
-    // 4. Tangkap visual pembungkusnya dengan pengaman eksekusi
-    try {
-        e.dataTransfer.setDragImage(dragWrapper, card.offsetWidth / 2, card.offsetHeight / 2);
-    } catch (err) {
-        console.warn("DragImage API fallback", err);
-    }
-    
-    // 5. Eksekusi dragging (Penghapusan elemen ditunda ke cardDragEnd agar WebView Capacitor tidak crash)
     setTimeout(() => card.classList.add('is-dragging'), 0);
+
 }
 
 let folderAutoOpenTimer = null;
@@ -4483,15 +4436,22 @@ function imporData(a) {
 
 },{passive:true}));
 
-['touchend','touchmove','mouseup'].forEach(a=>window.addEventListener(a,()=>{
-    clearTimeout(pressTimer);
-    // Fallback safety khusus Capacitor Webview jika event dragend gagal merespons
-    if (a === 'touchend' || a === 'mouseup') {
-        const dragShadow = document.getElementById('temp-drag-wrapper');
-        if (dragShadow && (!draggedCardIds || draggedCardIds.length === 0)) dragShadow.remove();
+['touchend','touchmove','mouseup','touchcancel','dragend'].forEach(a=>window.addEventListener(a,(e)=>{
+    if (a !== 'dragend') clearTimeout(pressTimer);
+    
+    // SAFETY NET ABSOLUT KHUSUS CAPACITOR APK:
+    // Jika native WebView menelan event dragend atau mengunci layar,
+    // kita paksa bersihkan status tenggelam lewat event sentuhan global.
+    if (a === 'touchend' || a === 'touchcancel' || a === 'mouseup' || a === 'dragend') {
+        setTimeout(() => {
+            const draggingCards = document.querySelectorAll('.card.is-dragging, .drag-over-folder');
+            if (draggingCards.length > 0) {
+                draggingCards.forEach(c => c.classList.remove('is-dragging', 'drag-over-folder'));
+                draggedCardIds = [];
+            }
+        }, 500); // Buffer 500ms agar event drop asli bekerja lebih dulu jika OS mendukungnya
     }
 }));
-
 
 // --- LOGIKA GLOBAL DRAG & DROP UNTUK SEMUA HALAMAN / NAVIGASI ---
 let navAutoOpenTimer = null;
