@@ -172,8 +172,7 @@ body.dark-mode .crumb-item { color: #ffb74d; }
 body.has-mini-player #fileGrid { margin-top: 55px; }
 
 /* Physical Polaroid / Folder Cards */
-.card { background: var(--card-bg); border-radius: 4px; padding: 8px 8px 15px 8px; text-align: center; border: 1px solid var(--card-border); border-bottom-width: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; cursor: pointer; transition: transform 0.1s; }
-
+.card { content-visibility: auto; contain-intrinsic-size: 100px 150px; background: var(--card-bg); border-radius: 4px; padding: 8px 8px 15px 8px; text-align: center; border: 1px solid var(--card-border); border-bottom-width: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; cursor: pointer; transition: transform 0.1s; }
 .card:active { transform: scale(0.97) translateY(2px); box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5); border-bottom-width: 1px; margin-bottom: 2px; }
 .thumb-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-start; justify-content: center; padding-top: 19px; box-sizing: border-box; background: transparent; border-radius: inherit; margin-bottom: 0; overflow: hidden; box-shadow: none; border: none; z-index: 0; -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%); mask-image: linear-gradient(to bottom, black 40%, transparent 100%); }
 .thumb-container img { width: 100%; height: 100%; object-fit: cover; opacity: 0.95; position: absolute; top: 0; left: 0; z-index: -1; }
@@ -953,8 +952,7 @@ body.dark-mode .card.move-pending .thumb-container::after {
 .card.drag-over-folder, .drag-over-nav { border-color: #2196F3 !important; box-shadow: 0 0 15px rgba(33, 150, 243, 0.8), inset 0 0 0 2px #2196F3 !important; }
 .card.drag-over-folder { background: rgba(33, 150, 243, 0.1) !important; transform: scale(1.05); }
 .drag-over-nav { background: rgba(33, 150, 243, 0.2) !important; color: #2196F3 !important; transform: scale(1.1); transition: all 0.2s; }
-.card.is-dragging { opacity: 0.4 !important; transform: scale(0.95); box-shadow: none !important; filter: none !important; will-change: auto !important; }
-
+.card.is-dragging { opacity: 0.4 !important; transform: scale(0.95); }
 
 body.dark-mode .card.drag-over-folder, body.dark-mode .drag-over-nav { border-color: #64B5F6 !important; }
 body.dark-mode .card.drag-over-folder { background: rgba(100, 181, 246, 0.1) !important; box-shadow: 0 0 15px rgba(100, 181, 246, 0.6), inset 0 0 0 2px #64B5F6 !important; }
@@ -3408,6 +3406,7 @@ function bersihkanSeleksiAnak(folderId) {
 let draggedCardIds = [];
 
 function cardDragStart(e, card) {
+
     // --- KUNCI KEAMANAN: Hanya untuk Admin & Master ---
     if (currentRole !== 'user' && currentRole !== 'master') {
         e.preventDefault();
@@ -3439,15 +3438,65 @@ function cardDragStart(e, card) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', 'move'); 
 
-    // SOLUSI ANTI-HANG CAPACITOR: Gunakan gambar kosong 1x1 piksel sebagai drag shadow
-    // Ini mencegah OS Android WebView mengalami deadlock saat mencoba merender elemen dengan CSS berat
-    const emptyImg = new Image();
-    emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    if (e.dataTransfer.setDragImage) {
-        e.dataTransfer.setDragImage(emptyImg, 0, 0);
+    // ... (biarkan sisa kode di bawahnya tetap sama)
+
+    // 1. Buat Wrapper pembungkus agar Badge tidak terpotong
+    const dragWrapper = document.createElement('div');
+    dragWrapper.style.position = 'absolute';
+    dragWrapper.style.top = '-2000px'; // Buang jauh dari layar
+    dragWrapper.style.left = '-2000px';
+    dragWrapper.style.zIndex = '10000';
+    dragWrapper.style.pointerEvents = 'none';
+
+    // 2. Gandakan kartu dan matikan optimasi render browser
+    const dragIcon = card.cloneNode(true);
+    dragIcon.style.contentVisibility = 'visible'; // PAKSA browser me-render elemen ini
+    dragIcon.style.contain = 'none'; // Matikan batasan ukuran
+    dragIcon.style.boxSizing = 'border-box';
+    dragIcon.style.width = card.offsetWidth + 'px';
+    dragIcon.style.height = card.offsetHeight + 'px';
+    dragIcon.style.margin = '0'; 
+    dragIcon.style.opacity = '0.9';
+
+    dragWrapper.appendChild(dragIcon);
+
+    // 3. Buat Badge Angka jika drag > 1 item
+    if (draggedCardIds.length > 1) {
+        const badge = document.createElement('div');
+        badge.innerText = draggedCardIds.length;
+        badge.style.position = 'absolute';
+        badge.style.top = '-12px';
+        badge.style.right = '-12px';
+        badge.style.background = '#F44336';
+        badge.style.color = '#fff';
+        badge.style.borderRadius = '50%';
+        badge.style.width = '28px';
+        badge.style.height = '28px';
+        badge.style.display = 'flex';
+        badge.style.alignItems = 'center';
+        badge.style.justifyContent = 'center';
+        badge.style.fontSize = '14px';
+        badge.style.fontWeight = 'bold';
+        badge.style.border = '2px solid #fff';
+        badge.style.boxShadow = '0 2px 5px rgba(0,0,0,0.5)';
+        badge.style.zIndex = '10001';
+        dragWrapper.appendChild(badge);
     }
 
+    document.body.appendChild(dragWrapper);
+
+    // 4. Tangkap visual pembungkusnya
+    e.dataTransfer.setDragImage(dragWrapper, card.offsetWidth / 2, card.offsetHeight / 2);
+    
+    // 5. Hapus wrapper lama jika ada, lalu simpan yang baru.
+    // Menghapus wrapper terlalu cepat memicu bug 'ghost drag' penyebab freeze.
+    if (window.currentDragWrapper && document.body.contains(window.currentDragWrapper)) {
+        document.body.removeChild(window.currentDragWrapper);
+    }
+    window.currentDragWrapper = dragWrapper;
+
     setTimeout(() => card.classList.add('is-dragging'), 0);
+
 }
 
 let folderAutoOpenTimer = null;
@@ -3544,9 +3593,11 @@ function cardDragEnd(e, card) {
     });
     draggedCardIds = [];
     
-    // Pembersihan Wrapper yang tersisa dari memori DOM
-    const dragShadow = document.getElementById('temp-drag-wrapper');
-    if (dragShadow) dragShadow.remove();
+    // Hapus drag wrapper dengan aman HANYA setelah event drag benar-benar selesai
+    if (window.currentDragWrapper && document.body.contains(window.currentDragWrapper)) {
+        document.body.removeChild(window.currentDragWrapper);
+        window.currentDragWrapper = null;
+    }
 }
 
 function updateCategoryRecursive(a,b,c,d,e,allCards){a.setAttribute('data-cat',b),a.setAttribute('data-sub',c),a.setAttribute('data-type',d),a.setAttribute('data-detail',e),refreshCardIcon(a);if('folder'===a.getAttribute('data-itemType')){if(!allCards)allCards=document.querySelectorAll('.card');const targetId=a.getAttribute('data-id');allCards.forEach(f=>{if(f.getAttribute('data-folderId')===targetId)updateCategoryRecursive(f,b,c,d,e,allCards)});}}
@@ -4395,14 +4446,6 @@ function imporData(a) {
 ['touchstart','mousedown'].forEach(a=>window.addEventListener(a,b=>{
     const target = b.target;
 
-    // FAILSAFE CAPACITOR: Bersihkan status drag yang nyangkut (tenggelam) dari sesi sebelumnya
-    // Jika OS menelan event dragend, sentuhan layar berikutnya akan memaksa UI kembali normal.
-    const stuckCards = document.querySelectorAll('.card.is-dragging, .drag-over-folder');
-    if (stuckCards.length > 0) {
-        stuckCards.forEach(c => c.classList.remove('is-dragging', 'drag-over-folder'));
-        draggedCardIds = [];
-    }
-
     // Optimasi: Memanfaatkan indikator 'no-scroll' di body alih-alih mengecek elemen modal/player satu per satu
     if(document.body.classList.contains('no-scroll') || ['INPUT','TEXTAREA','BUTTON','SELECT'].includes(target.tagName)) return;
     
@@ -4443,56 +4486,29 @@ function imporData(a) {
 
 },{passive:true}));
 
-['touchend','touchmove','mouseup','touchcancel','dragend'].forEach(a=>window.addEventListener(a,(e)=>{
-    if (a !== 'dragend') clearTimeout(pressTimer);
-    
-    // SAFETY NET ABSOLUT KHUSUS CAPACITOR APK:
-    // Jika native WebView menelan event dragend atau mengunci layar,
-    // kita paksa bersihkan status tenggelam lewat event sentuhan global.
-    if (a === 'touchend' || a === 'touchcancel' || a === 'mouseup' || a === 'dragend') {
-        setTimeout(() => {
-            const draggingCards = document.querySelectorAll('.card.is-dragging, .drag-over-folder');
-            if (draggingCards.length > 0) {
-                draggingCards.forEach(c => c.classList.remove('is-dragging', 'drag-over-folder'));
-                draggedCardIds = [];
-            }
-        }, 500); // Buffer 500ms agar event drop asli bekerja lebih dulu jika OS mendukungnya
-    }
-}));
+['touchend','touchmove','mouseup'].forEach(a=>window.addEventListener(a,()=>clearTimeout(pressTimer)));
 
 // --- LOGIKA GLOBAL DRAG & DROP UNTUK SEMUA HALAMAN / NAVIGASI ---
 let navAutoOpenTimer = null;
 let currentNavHoverTarget = null;
 
-// FUNGSI PEMBERSIH FINAL (Menghindari redundansi)
-function cleanUpDrag() {
-    document.querySelectorAll('.card, .crumb-item, .nav-btn, .chip').forEach(c => {
-        c.classList.remove('is-dragging', 'drag-over-folder', 'drag-over-nav');
-    });
-    draggedCardIds = [];
-}
-
 document.addEventListener('dragover', function(e) {
     if (currentRole !== 'user' && currentRole !== 'master') return;
 
-    // PENGAMAN ABSOLUT: Selalu cegat rambatan ke OS jika sedang nge-drag!
-    // Ini adalah kunci agar Capacitor WebView tidak hang/freeze.
-    if (typeof draggedCardIds !== 'undefined' && draggedCardIds.length > 0) {
-        e.preventDefault(); 
-    }
-
     const target = e.target.closest('.crumb-item, .nav-btn, .chip');
     if (target && typeof draggedCardIds !== 'undefined' && draggedCardIds.length > 0) {
+        e.preventDefault(); 
         target.classList.add('drag-over-nav');
 
+        // --- FITUR AUTO-KLIK NAVIGASI ---
         if (currentNavHoverTarget !== target) {
             clearTimeout(navAutoOpenTimer);
             currentNavHoverTarget = target;
             
             navAutoOpenTimer = setTimeout(() => {
-                target.click(); 
+                target.click(); // Eksekusi pindah halaman otomatis
                 currentNavHoverTarget = null;
-            }, 800); 
+            }, 800); // Tahan 0.8 detik
         }
     }
 });
@@ -4516,13 +4532,9 @@ document.addEventListener('drop', function(e) {
     clearTimeout(navAutoOpenTimer);
     currentNavHoverTarget = null;
 
-    // PENGAMAN ABSOLUT: Gagalkan event native OS saat item dilepas di area manapun
-    if (typeof draggedCardIds !== 'undefined' && draggedCardIds.length > 0) {
-        e.preventDefault();
-    }
-
     const target = e.target.closest('.crumb-item, .nav-btn, .chip');
     if (target && typeof draggedCardIds !== 'undefined' && draggedCardIds.length > 0) {
+        e.preventDefault();
         target.classList.remove('drag-over-nav');
         
         let tCat = curFilter.l0, tSub = curFilter.l1, tTyp = curFilter.l2, tDet = curFilter.l3;
@@ -4535,7 +4547,7 @@ document.addEventListener('drop', function(e) {
             } else {
                 const match = onclickStr.match(/bukaFolder\('([^']+)'\)/);
                 if (match) tFolderId = match[1];
-                else return cleanUpDrag(); 
+                else return; 
             }
         }
         else if (target.classList.contains('nav-btn') || target.classList.contains('chip')) {
@@ -4549,19 +4561,25 @@ document.addEventListener('drop', function(e) {
                 else if (level === 3) { tDet = id; }
                 tFolderId = 'none'; 
             } else {
-                return cleanUpDrag(); 
+                return;
             }
         } else {
-            return cleanUpDrag(); 
+            return;
         }
 
-        if (tCat === 'all' || tCat === 'audiovideo' || tCat === 'favorite') {
-            alert("❌ Peringatan: Tidak dapat memindahkan item ke halaman 'Semua', 'All Media', atau 'Favorite'. Silakan pilih kategori spesifik.");
-            return cleanUpDrag();
+        // Pengecekan agar tidak bisa drag & drop ke tab "Semua", "All Media", atau "Favorite"
+            if (tCat === 'all' || tCat === 'audiovideo' || tCat === 'favorite') {
+                alert("❌ Peringatan: Tidak dapat memindahkan item ke halaman 'Semua', 'All Media', atau 'Favorite'. Silakan pilih kategori spesifik.");
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('is-dragging'));
+
+            draggedCardIds = [];
+            return;
         }
 
         let movedCount = 0;
         
+        // --- FIX 1: Filter folder anak ---
+
         const validDraggedIds = draggedCardIds.filter(id => {
             return !draggedCardIds.some(parentId => parentId !== id && isDescendant(id, parentId));
         });
@@ -4573,6 +4591,7 @@ document.addEventListener('drop', function(e) {
             }
             const c = document.querySelector(`.card[data-id="${id}"]`);
             if (c) {
+                // --- FIX 2: Bersihkan status checklist anak ---
                 if (c.getAttribute('data-itemType') === 'folder') bersihkanSeleksiAnak(id);
 
                 updateCategoryRecursive(c, tCat, tSub, tTyp, tDet);
@@ -4596,17 +4615,12 @@ document.addEventListener('drop', function(e) {
             }
             alert(`✅ ${movedCount} item berhasil dipindahkan!`);
         }
+        
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('is-dragging'));
+        draggedCardIds = [];
     }
-    
-    // Pastikan antarmuka UI selalu dibersihkan tanpa sisa bug visual
-    cleanUpDrag();
 });
-
-// PENGAMAN TAMBAHAN: Jaga-jaga jika OS Android berhasil mereset event drag
-document.addEventListener('dragend', function() {
-    cleanUpDrag();
-});
-
+// --- FITUR MENGHUBUNGKAN FILE (ANIMASI AURA) ---
 function eksekusiBatchHubungkan(){
     if('master' !== currentRole && 'user' !== currentRole) return alert("Hanya Master & Admin yang bisa mengatur relasi.");
     const items = document.querySelectorAll('.card.selected');
