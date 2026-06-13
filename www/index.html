@@ -4457,23 +4457,35 @@ function imporData(a) {
 let navAutoOpenTimer = null;
 let currentNavHoverTarget = null;
 
+// FUNGSI PEMBERSIH FINAL (Menghindari redundansi)
+function cleanUpDrag() {
+    document.querySelectorAll('.card, .crumb-item, .nav-btn, .chip').forEach(c => {
+        c.classList.remove('is-dragging', 'drag-over-folder', 'drag-over-nav');
+    });
+    draggedCardIds = [];
+}
+
 document.addEventListener('dragover', function(e) {
     if (currentRole !== 'user' && currentRole !== 'master') return;
 
+    // PENGAMAN ABSOLUT: Selalu cegat rambatan ke OS jika sedang nge-drag!
+    // Ini adalah kunci agar Capacitor WebView tidak hang/freeze.
+    if (typeof draggedCardIds !== 'undefined' && draggedCardIds.length > 0) {
+        e.preventDefault(); 
+    }
+
     const target = e.target.closest('.crumb-item, .nav-btn, .chip');
     if (target && typeof draggedCardIds !== 'undefined' && draggedCardIds.length > 0) {
-        e.preventDefault(); 
         target.classList.add('drag-over-nav');
 
-        // --- FITUR AUTO-KLIK NAVIGASI ---
         if (currentNavHoverTarget !== target) {
             clearTimeout(navAutoOpenTimer);
             currentNavHoverTarget = target;
             
             navAutoOpenTimer = setTimeout(() => {
-                target.click(); // Eksekusi pindah halaman otomatis
+                target.click(); 
                 currentNavHoverTarget = null;
-            }, 800); // Tahan 0.8 detik
+            }, 800); 
         }
     }
 });
@@ -4497,9 +4509,13 @@ document.addEventListener('drop', function(e) {
     clearTimeout(navAutoOpenTimer);
     currentNavHoverTarget = null;
 
+    // PENGAMAN ABSOLUT: Gagalkan event native OS saat item dilepas di area manapun
+    if (typeof draggedCardIds !== 'undefined' && draggedCardIds.length > 0) {
+        e.preventDefault();
+    }
+
     const target = e.target.closest('.crumb-item, .nav-btn, .chip');
     if (target && typeof draggedCardIds !== 'undefined' && draggedCardIds.length > 0) {
-        e.preventDefault();
         target.classList.remove('drag-over-nav');
         
         let tCat = curFilter.l0, tSub = curFilter.l1, tTyp = curFilter.l2, tDet = curFilter.l3;
@@ -4512,7 +4528,7 @@ document.addEventListener('drop', function(e) {
             } else {
                 const match = onclickStr.match(/bukaFolder\('([^']+)'\)/);
                 if (match) tFolderId = match[1];
-                else return; 
+                else return cleanUpDrag(); 
             }
         }
         else if (target.classList.contains('nav-btn') || target.classList.contains('chip')) {
@@ -4526,25 +4542,19 @@ document.addEventListener('drop', function(e) {
                 else if (level === 3) { tDet = id; }
                 tFolderId = 'none'; 
             } else {
-                return;
+                return cleanUpDrag(); 
             }
         } else {
-            return;
+            return cleanUpDrag(); 
         }
 
-        // Pengecekan agar tidak bisa drag & drop ke tab "Semua", "All Media", atau "Favorite"
-            if (tCat === 'all' || tCat === 'audiovideo' || tCat === 'favorite') {
-                alert("❌ Peringatan: Tidak dapat memindahkan item ke halaman 'Semua', 'All Media', atau 'Favorite'. Silakan pilih kategori spesifik.");
-                document.querySelectorAll('.card').forEach(c => c.classList.remove('is-dragging'));
-
-            draggedCardIds = [];
-            return;
+        if (tCat === 'all' || tCat === 'audiovideo' || tCat === 'favorite') {
+            alert("❌ Peringatan: Tidak dapat memindahkan item ke halaman 'Semua', 'All Media', atau 'Favorite'. Silakan pilih kategori spesifik.");
+            return cleanUpDrag();
         }
 
         let movedCount = 0;
         
-        // --- FIX 1: Filter folder anak ---
-
         const validDraggedIds = draggedCardIds.filter(id => {
             return !draggedCardIds.some(parentId => parentId !== id && isDescendant(id, parentId));
         });
@@ -4556,7 +4566,6 @@ document.addEventListener('drop', function(e) {
             }
             const c = document.querySelector(`.card[data-id="${id}"]`);
             if (c) {
-                // --- FIX 2: Bersihkan status checklist anak ---
                 if (c.getAttribute('data-itemType') === 'folder') bersihkanSeleksiAnak(id);
 
                 updateCategoryRecursive(c, tCat, tSub, tTyp, tDet);
@@ -4580,12 +4589,17 @@ document.addEventListener('drop', function(e) {
             }
             alert(`✅ ${movedCount} item berhasil dipindahkan!`);
         }
-        
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('is-dragging'));
-        draggedCardIds = [];
     }
+    
+    // Pastikan antarmuka UI selalu dibersihkan tanpa sisa bug visual
+    cleanUpDrag();
 });
-// --- FITUR MENGHUBUNGKAN FILE (ANIMASI AURA) ---
+
+// PENGAMAN TAMBAHAN: Jaga-jaga jika OS Android berhasil mereset event drag
+document.addEventListener('dragend', function() {
+    cleanUpDrag();
+});
+
 function eksekusiBatchHubungkan(){
     if('master' !== currentRole && 'user' !== currentRole) return alert("Hanya Master & Admin yang bisa mengatur relasi.");
     const items = document.querySelectorAll('.card.selected');
