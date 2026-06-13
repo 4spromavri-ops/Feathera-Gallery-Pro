@@ -3496,6 +3496,7 @@ function cardDragStart(e, card) {
     
     // 5. Eksekusi dragging (Penghapusan elemen ditunda ke cardDragEnd agar WebView Capacitor tidak crash)
     setTimeout(() => card.classList.add('is-dragging'), 0);
+}
 
 let folderAutoOpenTimer = null;
 let currentFolderHover = null;
@@ -4490,6 +4491,7 @@ function imporData(a) {
         if (dragShadow && (!draggedCardIds || draggedCardIds.length === 0)) dragShadow.remove();
     }
 }));
+
 
 // --- LOGIKA GLOBAL DRAG & DROP UNTUK SEMUA HALAMAN / NAVIGASI ---
 let navAutoOpenTimer = null;
