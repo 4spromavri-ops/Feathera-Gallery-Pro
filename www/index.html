@@ -2549,18 +2549,22 @@ function toggleSourceType(){
 // FUNGSI BARU: Memanggil Native File Picker Mandiri dan Mengunci Izin File
 async function pilihFileNative() {
     try {
+        // Minta izin penyimpanan agar akses Absolute Path permanen lintas instalasi
+        if (window.Capacitor && window.Capacitor.isNative && window.Capacitor.Plugins.Filesystem) {
+            await window.Capacitor.Plugins.Filesystem.requestPermissions().catch(()=>{});
+        }
+
         const { PersistPermission } = window.Capacitor.Plugins;
         
         // Langsung panggil plugin native buatan kita
         const result = await PersistPermission.pickFile();
         
-        // Simpan path native asli (content://) ke input tersembunyi
+        // Simpan path native asli (Absolute Path) ke input tersembunyi
         document.getElementById('fNativePath').value = result.uri;
         document.getElementById('fName').value = result.name;
         
         document.getElementById('btnNativePicker').innerHTML = `✅ ${result.name}`;
         document.getElementById('btnNativePicker').style.background = '#e8f5e9';
-        console.log("Izin permanen Android berhasil diamankan pada URI:", result.uri);
     } catch (e) {
         console.log("Pilih file dibatalkan atau error:", e);
         alert("Batal / Error: " + (e.message || "Akses ditolak sistem."));
@@ -4129,6 +4133,11 @@ async function eksporData() {
 }
 
 function imporData(a) {
+    // Meminta izin storage saat impor agar Absolute Path file native langsung terbaca OS
+    if (window.Capacitor && window.Capacitor.isNative && window.Capacitor.Plugins.Filesystem) {
+        window.Capacitor.Plugins.Filesystem.requestPermissions().catch(()=>{});
+    }
+
     const b = a.files[0];
     if (!b) return;
 
