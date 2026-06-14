@@ -2810,32 +2810,25 @@ async function cardClickHandler(a){
         return;
     }
 
-    // --- UPDATE: Logika saat Mode Pindah (Cut) aktif ---
     if (isMovePending) {
         if (a.classList.contains('move-pending')) {
-            // Uncheck / Batalkan cut dengan 1x klik
             a.classList.remove('move-pending');
-            const idToRemove = a.getAttribute('data-id');
-            movePendingIds = movePendingIds.filter(id => id !== idToRemove);
+            movePendingIds = movePendingIds.filter(id => id !== a.getAttribute('data-id'));
             
-
             updateSelectCount(); 
             if(movePendingIds.length === 0){
                 batalTempel();
             }
-            return; // Hentikan fungsi di sini
+            return;
         } else {
-            // Tambahkan file ke daftar cut cukup dengan 1x klik
             if (a.getAttribute('data-itemType') !== 'folder') {
                 a.classList.add('move-pending');
                 movePendingIds.push(a.getAttribute('data-id'));
                 updateSelectCount();
-                return; // Hentikan fungsi di sini
+                return;
             }
-            // Jika yang diklik folder, abaikan & biarkan kode berlanjut agar folder terbuka
         }
     }
-    // ========================================
 
     const isFolder = a.getAttribute('data-itemType') === 'folder';
     const isSelected = a.classList.contains('selected');
@@ -2844,7 +2837,6 @@ async function cardClickHandler(a){
     if (isSelectionMode || hasAnySelection) {
         if (isFolder) {
             if (!isSelected && !isSelectionMode) return bukaFolder(a.getAttribute('data-id'));
-            
             a.classList.toggle('selected', !isSelected);
             updateSelectCount();
             return;
@@ -2891,42 +2883,30 @@ function cardHoldHandler(a){
     if(currentRole === 'none') return; 
     navigator.vibrate && navigator.vibrate(50);
     
-    // 1. Jika file/folder sudah diceklis, abaikan long press agar event drag HTML5 mengambil alih
-    if (a.classList.contains('selected') && !isMovePending) {
-        return; 
-    }
+    if (a.classList.contains('selected') && !isMovePending) return; 
 
-    // 2. Logika Mode Pindah (Cut / Gunting)
     if (isMovePending) {
-
-            if (!a.classList.contains('move-pending')) {
-                a.classList.add('move-pending');
-                const idToAdd = a.getAttribute('data-id');
-                if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
-                
-                updateSelectCount();
-            } else {
-
+        if (!a.classList.contains('move-pending')) {
+            a.classList.add('move-pending');
+            const idToAdd = a.getAttribute('data-id');
+            if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
+            updateSelectCount();
+        } else {
             a.click(); 
         }
         return; 
     }
 
-    // 3. Logika Seleksi Normal / Multi-select (FILE vs FOLDER)
     const isFolder = a.getAttribute('data-itemType') === 'folder';
     const hasExistingSelection = document.querySelectorAll('.card.selected').length > 0;
 
     if (isSelectionMode || isAddMediaMode || hasExistingSelection) {
         if (!isFolder) {
-            // JIKA FILE: Buang semua seleksi sebelumnya, seleksi HANYA file ini
             document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
             a.classList.add('selected');
             updateSelectCount();
             return;
         }
-        // JIKA FOLDER: Biarkan kode berlanjut ke bawah. Ini akan menambah folder 
-        // (beserta isinya) ke daftar seleksi tanpa menghapus seleksi sebelumnya.
-        // Karena tidak ada bloker, folder bisa LANGSUNG diseret setelah ini.
     }
 
     toggleSelectCard(a);
