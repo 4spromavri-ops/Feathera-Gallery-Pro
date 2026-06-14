@@ -4242,7 +4242,13 @@ function imporData(a) {
 },{passive:true}));
 
 // 'touchcancel' vital di Android untuk menghentikan timer jika OS mendeteksi jari bergeser sedikit
-['touchend','touchmove','mouseup','touchcancel'].forEach(a=>window.addEventListener(a,()=>clearTimeout(pressTimer), {passive: true}));
+['touchend','touchmove','mouseup','touchcancel'].forEach(a=>window.addEventListener(a,(e)=>{
+    clearTimeout(pressTimer);
+    // Failsafe: Reset status long-press setelah jari diangkat agar klik tunggal selanjutnya tidak terblokir
+    if ((a === 'touchend' || a === 'mouseup') && isLongPressTriggered) {
+        setTimeout(() => { isLongPressTriggered = false; }, 300);
+    }
+}, {passive: true}));
 
 // --- FITUR MENGHUBUNGKAN FILE (ANIMASI AURA) ---
 function eksekusiBatchHubungkan(){
