@@ -173,7 +173,17 @@ body.dark-mode .crumb-item { color: #ffb74d; }
 body.has-mini-player #fileGrid { margin-top: 55px; }
 
 /* Physical Polaroid / Folder Cards */
-.card { content-visibility: auto; contain-intrinsic-size: 100px 150px; background: var(--card-bg); border-radius: 4px; padding: 8px 8px 15px 8px; text-align: center; border: 1px solid var(--card-border); border-bottom-width: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; cursor: pointer; transition: transform 0.1s; }
+.card { 
+    -webkit-touch-callout: none !important; 
+    -webkit-user-select: none !important; 
+    user-select: none !important; 
+    -webkit-user-drag: none !important; 
+    content-visibility: auto; contain-intrinsic-size: 100px 150px; background: var(--card-bg); border-radius: 4px; padding: 8px 8px 15px 8px; text-align: center; border: 1px solid var(--card-border); border-bottom-width: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; cursor: pointer; transition: transform 0.1s; 
+}
+
+/* Mematikan aksi "tahan gambar" bawaan Android */
+.thumb-container img { pointer-events: none !important; -webkit-user-drag: none !important; }
+
 .card:active { transform: scale(0.97) translateY(2px); box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5); border-bottom-width: 1px; margin-bottom: 2px; }
 .thumb-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-start; justify-content: center; padding-top: 19px; box-sizing: border-box; background: transparent; border-radius: inherit; margin-bottom: 0; overflow: hidden; box-shadow: none; border: none; z-index: 0; -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%); mask-image: linear-gradient(to bottom, black 40%, transparent 100%); }
 .thumb-container img { width: 100%; height: 100%; object-fit: cover; opacity: 0.95; position: absolute; top: 0; left: 0; z-index: -1; }
@@ -1844,7 +1854,8 @@ function prosesAuth(){
 
 // --- END KONFIGURASI FIREBASE ---
 
-let currentUser=null,config=[],flatConfig={},curFilter={l0:'all',l1:'all',l2:'all',l3:'all'},currentFolderId=null,editingCard=null,nodeToEdit=null,uploadMode='file',isSelectionMode=false,isAddMediaMode=false,isDarkMode=false,currentRole='none',pinActionCallback=null,isChangingPin=false,pinChangeTarget='master',isForgotPinReset=false,dbInstance=null,pressTimer,ytPlayer=null,ytInterval=null,currentTextContent="",currentSortOpt=localStorage.getItem('feathera_sort_opt')||'year_desc',currentViewMode=localStorage.getItem('feathera_view_mode')||'grid';
+let isLongPressTriggered=false,currentUser=null,config=[],flatConfig={},curFilter={l0:'all',l1:'all',l2:'all',l3:'all'},currentFolderId=null,editingCard=null,nodeToEdit=null,uploadMode='file',isSelectionMode=false,isAddMediaMode=false,isDarkMode=false,currentRole='none',pinActionCallback=null,isChangingPin=false,pinChangeTarget='master',isForgotPinReset=false,dbInstance=null,pressTimer,ytPlayer=null,ytInterval=null,currentTextContent="",currentSortOpt=localStorage.getItem('feathera_sort_opt')||'year_desc',currentViewMode=localStorage.getItem('feathera_view_mode')||'grid';
+
 
 // --- HELPER LOCAL STORAGE ---
 function getLocal(key) { return localStorage.getItem('feathera_' + key + '_' + currentUser); }
@@ -1940,7 +1951,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     const fileGrid = document.getElementById('fileGrid');
     
     fileGrid.addEventListener('click', (e) => {
-        // Blokir klik phantom yang dieksekusi WebView sesaat setelah long-press selesai
+        // Cegah klik palsu setelah long-press selesai
         if (isLongPressTriggered) {
             isLongPressTriggered = false;
             e.preventDefault();
@@ -1948,14 +1959,17 @@ document.addEventListener("DOMContentLoaded",()=>{
             return;
         }
         const card = e.target.closest('.card');
-        // Pastikan tidak memicu klik kartu jika yang diklik adalah tombol edit (menu-dots)
         if(card && !e.target.closest('.menu-dots')) cardClickHandler(card);
     });
-
-    fileGrid.addEventListener('contextmenu', (e) => {
-        if(e.target.closest('.card')) e.preventDefault();
+    
+    // Matikan pop-up sistem saat ditahan
+    window.addEventListener('contextmenu', (e) => {
+        if(e.target.closest('.card')) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
     });
-   
+
     document.getElementById('fLocalFile').addEventListener('change',function(e){
         if(this.files&&this.files.length>0){
             let name=this.files[0].name;
@@ -4212,7 +4226,7 @@ function imporData(a) {
     if(cardTarget){
         pressTimer=setTimeout(()=>{
             if(currentRole !== 'none') {
-                isLongPressTriggered = true; // Tandai bahwa ini murni long-press, bukan tap biasa
+                isLongPressTriggered = true; // Variabel ini sekarang aman dan tidak akan memicu crash
                 cardHoldHandler(cardTarget);
             }
         }, 600);
@@ -4244,7 +4258,7 @@ function imporData(a) {
 
 },{passive:true}));
 
-// Penambahan 'touchcancel' penting untuk WebView Capacitor agar timer dibersihkan jika OS mengambil alih layar
+// 'touchcancel' vital di Android untuk menghentikan timer jika OS mendeteksi jari bergeser sedikit
 ['touchend','touchmove','mouseup','touchcancel'].forEach(a=>window.addEventListener(a,()=>clearTimeout(pressTimer), {passive: true}));
 
 // --- FITUR MENGHUBUNGKAN FILE (ANIMASI AURA) ---
