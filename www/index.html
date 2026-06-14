@@ -2818,20 +2818,6 @@ async function cardClickHandler(a){
             const idToRemove = a.getAttribute('data-id');
             movePendingIds = movePendingIds.filter(id => id !== idToRemove);
             
-            // Hapus juga status cut pada sub-foldernya (jika yang di-uncheck adalah folder)
-            if (a.getAttribute('data-itemType') === 'folder') {
-                const descendants = getAllDescendantIds(idToRemove);
-                if (descendants.length > 0) {
-                    const descSet = new Set(descendants);
-                    document.querySelectorAll('.card').forEach(child => {
-                        const childId = child.getAttribute('data-id');
-                        if (descSet.has(childId)) {
-                            child.classList.remove('move-pending');
-                            movePendingIds = movePendingIds.filter(id => id !== childId);
-                        }
-                    });
-                }
-            }
 
             updateSelectCount(); 
             if(movePendingIds.length === 0){
@@ -2859,12 +2845,7 @@ async function cardClickHandler(a){
         if (isFolder) {
             if (!isSelected && !isSelectionMode) return bukaFolder(a.getAttribute('data-id'));
             
-            const willSelect = !isSelected;
-            a.classList.toggle('selected', willSelect);
-            getAllDescendantIds(a.getAttribute('data-id')).forEach(id => {
-                const child = document.querySelector(`.card[data-id="${id}"]`);
-                if (child) child.classList.toggle('selected', willSelect);
-            });
+            a.classList.toggle('selected', !isSelected);
             updateSelectCount();
             return;
         }
@@ -2918,26 +2899,14 @@ function cardHoldHandler(a){
     // 2. Logika Mode Pindah (Cut / Gunting)
     if (isMovePending) {
 
-        if (!a.classList.contains('move-pending')) {
-            a.classList.add('move-pending');
-            const idToAdd = a.getAttribute('data-id');
-            if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
-            
-            if (a.getAttribute('data-itemType') === 'folder') {
-                const descendants = getAllDescendantIds(idToAdd);
-                if (descendants.length > 0) {
-                    const descSet = new Set(descendants);
-                    document.querySelectorAll('.card').forEach(child => {
-                        const childId = child.getAttribute('data-id');
-                        if (descSet.has(childId) && !child.classList.contains('move-pending')) {
-                            child.classList.add('move-pending');
-                            if (!movePendingIds.includes(childId)) movePendingIds.push(childId);
-                        }
-                    });
-                }
-            }
-            updateSelectCount();
-        } else {
+            if (!a.classList.contains('move-pending')) {
+                a.classList.add('move-pending');
+                const idToAdd = a.getAttribute('data-id');
+                if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
+                
+                updateSelectCount();
+            } else {
+
             a.click(); 
         }
         return; 
@@ -2961,20 +2930,6 @@ function cardHoldHandler(a){
     }
 
     toggleSelectCard(a);
-    
-    if(isFolder){
-        const isSelected = a.classList.contains('selected');
-        const descIds = getAllDescendantIds(a.getAttribute('data-id'));
-        if (descIds.length > 0) {
-            const descSet = new Set(descIds);
-            document.querySelectorAll('.card').forEach(child => {
-                if (descSet.has(child.getAttribute('data-id'))) {
-                    child.classList.toggle('selected', isSelected);
-                }
-            });
-        }
-        updateSelectCount();
-    }
 }
 
 function toggleSelectionMode(force){
