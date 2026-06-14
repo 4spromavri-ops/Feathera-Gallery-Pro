@@ -2821,15 +2821,18 @@ async function cardClickHandler(a){
             // Hapus juga status cut pada sub-foldernya (jika yang di-uncheck adalah folder)
             if (a.getAttribute('data-itemType') === 'folder') {
                 const descendants = getAllDescendantIds(idToRemove);
-                descendants.forEach(descId => {
-                    const child = document.querySelector(`.card[data-id="${descId}"]`);
-                    if (child) {
-                        child.classList.remove('move-pending');
-                        movePendingIds = movePendingIds.filter(id => id !== descId);
-                    }
-                });
+                if (descendants.length > 0) {
+                    const descSet = new Set(descendants);
+                    document.querySelectorAll('.card').forEach(child => {
+                        const childId = child.getAttribute('data-id');
+                        if (descSet.has(childId)) {
+                            child.classList.remove('move-pending');
+                            movePendingIds = movePendingIds.filter(id => id !== childId);
+                        }
+                    });
+                }
             }
-            
+
             updateSelectCount(); 
             if(movePendingIds.length === 0){
                 batalTempel();
@@ -2922,13 +2925,16 @@ function cardHoldHandler(a){
             
             if (a.getAttribute('data-itemType') === 'folder') {
                 const descendants = getAllDescendantIds(idToAdd);
-                descendants.forEach(descId => {
-                    const child = document.querySelector(`.card[data-id="${descId}"]`);
-                    if (child && !child.classList.contains('move-pending')) {
-                        child.classList.add('move-pending');
-                        if (!movePendingIds.includes(descId)) movePendingIds.push(descId);
-                    }
-                });
+                if (descendants.length > 0) {
+                    const descSet = new Set(descendants);
+                    document.querySelectorAll('.card').forEach(child => {
+                        const childId = child.getAttribute('data-id');
+                        if (descSet.has(childId) && !child.classList.contains('move-pending')) {
+                            child.classList.add('move-pending');
+                            if (!movePendingIds.includes(childId)) movePendingIds.push(childId);
+                        }
+                    });
+                }
             }
             updateSelectCount();
         } else {
@@ -2958,10 +2964,15 @@ function cardHoldHandler(a){
     
     if(isFolder){
         const isSelected = a.classList.contains('selected');
-        getAllDescendantIds(a.getAttribute('data-id')).forEach(id => {
-            const child = document.querySelector(`.card[data-id="${id}"]`);
-            if (child) child.classList.toggle('selected', isSelected);
-        });
+        const descIds = getAllDescendantIds(a.getAttribute('data-id'));
+        if (descIds.length > 0) {
+            const descSet = new Set(descIds);
+            document.querySelectorAll('.card').forEach(child => {
+                if (descSet.has(child.getAttribute('data-id'))) {
+                    child.classList.toggle('selected', isSelected);
+                }
+            });
+        }
         updateSelectCount();
     }
 }
