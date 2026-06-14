@@ -83,7 +83,8 @@ body.dark-mode {
     --neu-shadow-inset: inset 0 4px 6px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.05);
 }
 
-body { font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 150px; -webkit-tap-highlight-color: transparent; background: var(--bg); min-height: 100vh; user-select: none; color: var(--text); transition: color 0.3s; overflow-x: hidden; touch-action: manipulation; }
+body { font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 150px; -webkit-tap-highlight-color: transparent; background: var(--bg); min-height: 100vh; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; color: var(--text); transition: color 0.3s; overflow-x: hidden; touch-action: manipulation; }
+
 body.dark-mode::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: -2; pointer-events: none; }
 body.no-scroll { overflow: hidden !important; height: 100vh; }
 
@@ -1933,15 +1934,24 @@ document.addEventListener("DOMContentLoaded",()=>{
         }
     }); // PERBAIKAN: Penutup event listener pasteMenu ditambahkan di sini
 
+    let isLongPressTriggered = false;
+
     // Event Delegation untuk fileGrid
     const fileGrid = document.getElementById('fileGrid');
     
     fileGrid.addEventListener('click', (e) => {
+        // Blokir klik phantom yang dieksekusi WebView sesaat setelah long-press selesai
+        if (isLongPressTriggered) {
+            isLongPressTriggered = false;
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         const card = e.target.closest('.card');
         // Pastikan tidak memicu klik kartu jika yang diklik adalah tombol edit (menu-dots)
         if(card && !e.target.closest('.menu-dots')) cardClickHandler(card);
     });
-    
+
     fileGrid.addEventListener('contextmenu', (e) => {
         if(e.target.closest('.card')) e.preventDefault();
     });
@@ -2810,25 +2820,43 @@ async function cardClickHandler(a){
         return;
     }
 
+    // --- UPDATE: Logika saat Mode Pindah (Cut) aktif ---
     if (isMovePending) {
         if (a.classList.contains('move-pending')) {
+            // Uncheck / Batalkan cut dengan 1x klik
             a.classList.remove('move-pending');
-            movePendingIds = movePendingIds.filter(id => id !== a.getAttribute('data-id'));
+            const idToRemove = a.getAttribute('data-id');
+            movePendingIds = movePendingIds.filter(id => id !== idToRemove);
+            
+            // Hapus juga status cut pada sub-foldernya (jika yang di-uncheck adalah folder)
+            if (a.getAttribute('data-itemType') === 'folder') {
+                const descendants = getAllDescendantIds(idToRemove);
+                descendants.forEach(descId => {
+                    const child = document.querySelector(`.card[data-id="${descId}"]`);
+                    if (child) {
+                        child.classList.remove('move-pending');
+                        movePendingIds = movePendingIds.filter(id => id !== descId);
+                    }
+                });
+            }
             
             updateSelectCount(); 
             if(movePendingIds.length === 0){
                 batalTempel();
             }
-            return;
+            return; // Hentikan fungsi di sini
         } else {
+            // Tambahkan file ke daftar cut cukup dengan 1x klik
             if (a.getAttribute('data-itemType') !== 'folder') {
                 a.classList.add('move-pending');
                 movePendingIds.push(a.getAttribute('data-id'));
                 updateSelectCount();
-                return;
+                return; // Hentikan fungsi di sini
             }
+            // Jika yang diklik folder, abaikan & biarkan kode berlanjut agar folder terbuka
         }
     }
+    // ========================================
 
     const isFolder = a.getAttribute('data-itemType') === 'folder';
     const isSelected = a.classList.contains('selected');
@@ -2837,7 +2865,13 @@ async function cardClickHandler(a){
     if (isSelectionMode || hasAnySelection) {
         if (isFolder) {
             if (!isSelected && !isSelectionMode) return bukaFolder(a.getAttribute('data-id'));
-            a.classList.toggle('selected', !isSelected);
+            
+            const willSelect = !isSelected;
+            a.classList.toggle('selected', willSelect);
+            getAllDescendantIds(a.getAttribute('data-id')).forEach(id => {
+                const child = document.querySelector(`.card[data-id="${id}"]`);
+                if (child) child.classList.toggle('selected', willSelect);
+            });
             updateSelectCount();
             return;
         }
@@ -2879,17 +2913,40 @@ async function cardClickHandler(a){
         document.body.classList.add('no-scroll');
     }else showFileViewer(d,displayNote,i,'unknown')
 }
+
 function cardHoldHandler(a){
     if(currentRole === 'none') return; 
-    navigator.vibrate && navigator.vibrate(50);
     
-    if (a.classList.contains('selected') && !isMovePending) return; 
+    // Failsafe: WebView kadang menolak API vibrate jika izin hardware belum sempurna
+    try { navigator.vibrate && navigator.vibrate(50); } catch(e){}
+    
+    // 1. Jika file/folder sudah diceklis, abaikan long press
+    if (a.classList.contains('selected') && !isMovePending) {
+        return; 
+    }
 
+    // 2. Logika Mode Pindah (Cut / Gunting)
     if (isMovePending) {
         if (!a.classList.contains('move-pending')) {
             a.classList.add('move-pending');
             const idToAdd = a.getAttribute('data-id');
             if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
+            
+            if (a.getAttribute('data-itemType') === 'folder') {
+                // TUNDA KOMPUTASI DOM: Lepaskan thread agar kartu tidak "tenggelam/stuck"
+                setTimeout(() => {
+                    const descendants = getAllDescendantIds(idToAdd);
+                    descendants.forEach(descId => {
+                        const child = document.querySelector(`.card[data-id="${descId}"]`);
+                        if (child && !child.classList.contains('move-pending')) {
+                            child.classList.add('move-pending');
+                            if (!movePendingIds.includes(descId)) movePendingIds.push(descId);
+                        }
+                    });
+                    updateSelectCount();
+                }, 10);
+                return;
+            }
             updateSelectCount();
         } else {
             a.click(); 
@@ -2897,6 +2954,7 @@ function cardHoldHandler(a){
         return; 
     }
 
+    // 3. Logika Seleksi Normal / Multi-select
     const isFolder = a.getAttribute('data-itemType') === 'folder';
     const hasExistingSelection = document.querySelectorAll('.card.selected').length > 0;
 
@@ -2910,6 +2968,18 @@ function cardHoldHandler(a){
     }
 
     toggleSelectCard(a);
+    
+    if(isFolder){
+        const isSelected = a.classList.contains('selected');
+        // TUNDA KOMPUTASI DOM: Lepaskan thread agar kartu tidak "tenggelam/stuck"
+        setTimeout(() => {
+            getAllDescendantIds(a.getAttribute('data-id')).forEach(id => {
+                const child = document.querySelector(`.card[data-id="${id}"]`);
+                if (child) child.classList.toggle('selected', isSelected);
+            });
+            updateSelectCount();
+        }, 10);
+    }
 }
 
 function toggleSelectionMode(force){
@@ -4135,27 +4205,25 @@ function imporData(a) {
 
 ['touchstart','mousedown'].forEach(a=>window.addEventListener(a,b=>{
     const target = b.target;
-
-    // Optimasi: Memanfaatkan indikator 'no-scroll' di body alih-alih mengecek elemen modal/player satu per satu
     if(document.body.classList.contains('no-scroll') || ['INPUT','TEXTAREA','BUTTON','SELECT'].includes(target.tagName)) return;
     
     const cardTarget = target.closest('.card');
 
     if(cardTarget){
         pressTimer=setTimeout(()=>{
-            if(currentRole !== 'none') cardHoldHandler(cardTarget);
+            if(currentRole !== 'none') {
+                isLongPressTriggered = true; // Tandai bahwa ini murni long-press, bukan tap biasa
+                cardHoldHandler(cardTarget);
+            }
         }, 600);
         return;
     }
 
-    // Long press pada area kosong HANYA untuk Tempel (Paste)
     pressTimer=setTimeout(async ()=>{
-        navigator.vibrate&&navigator.vibrate(50);
+        try { navigator.vibrate&&navigator.vibrate(50); } catch(e){}
 
-        // Abaikan long press jika tidak sedang dalam mode pindah (isMovePending)
         if (!isMovePending) return;
 
-        // Blokir aksi jika berada di halaman "Semua", "All Media", atau "Favorite"
         if(curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite') {
             alert("Buka folder atau kategori spesifik terlebih dahulu untuk menempelkan (paste) item.");
             return;
@@ -4176,7 +4244,8 @@ function imporData(a) {
 
 },{passive:true}));
 
-['touchend','touchmove','mouseup'].forEach(a=>window.addEventListener(a,()=>clearTimeout(pressTimer)));
+// Penambahan 'touchcancel' penting untuk WebView Capacitor agar timer dibersihkan jika OS mengambil alih layar
+['touchend','touchmove','mouseup','touchcancel'].forEach(a=>window.addEventListener(a,()=>clearTimeout(pressTimer), {passive: true}));
 
 // --- FITUR MENGHUBUNGKAN FILE (ANIMASI AURA) ---
 function eksekusiBatchHubungkan(){
