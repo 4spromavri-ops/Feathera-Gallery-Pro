@@ -2554,10 +2554,10 @@ async function pilihFileNative() {
             await window.Capacitor.Plugins.Filesystem.requestPermissions().catch(()=>{});
         }
 
-        // KEMBALIKAN KE KODE INI: Karena Native Plugin kini sudah terdaftar oleh MainActivity.java
+        // Panggil plugin Native dari objek window bawaan Capacitor
         const { PersistPermission } = window.Capacitor.Plugins;
         
-        // Panggil plugin native
+        // Eksekusi pemilihan file
         const result = await PersistPermission.pickFile();
         
         // Simpan path native asli (Absolute Path) ke input tersembunyi
