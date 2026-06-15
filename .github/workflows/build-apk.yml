@@ -187,9 +187,9 @@ jobs:
         public class MainActivity extends BridgeActivity {
             @Override
             public void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                // Mendaftarkan plugin secara manual agar dikenali oleh JavaScript
+                // SANGAT KRUSIAL: Plugin HARUS didaftarkan SEBELUM super.onCreate dipanggil
                 registerPlugin(PersistPermissionPlugin.class);
+                super.onCreate(savedInstanceState);
             }
         }
         EOF
