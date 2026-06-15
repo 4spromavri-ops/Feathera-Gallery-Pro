@@ -2554,11 +2554,12 @@ async function pilihFileNative() {
             await window.Capacitor.Plugins.Filesystem.requestPermissions().catch(()=>{});
         }
 
-        const { PersistPermission } = window.Capacitor.Plugins;
+        // PERBAIKAN: Gunakan registerPlugin untuk mendaftarkan plugin lokal secara manual di JS
+        const PersistPermission = window.Capacitor.registerPlugin('PersistPermission');
         
         // Langsung panggil plugin native buatan kita
         const result = await PersistPermission.pickFile();
-        
+
         // Simpan path native asli (Absolute Path) ke input tersembunyi
         document.getElementById('fNativePath').value = result.uri;
         document.getElementById('fName').value = result.name;
