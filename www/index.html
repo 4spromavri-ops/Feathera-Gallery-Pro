@@ -964,6 +964,32 @@ body.dark-mode .card.drag-over-folder, body.dark-mode .drag-over-nav { border-co
 body.dark-mode .card.drag-over-folder { background: rgba(100, 181, 246, 0.1) !important; box-shadow: 0 0 15px rgba(100, 181, 246, 0.6), inset 0 0 0 2px #64B5F6 !important; }
 body.dark-mode .drag-over-nav { background: rgba(100, 181, 246, 0.2) !important; box-shadow: 0 0 15px rgba(100, 181, 246, 0.8), inset 0 0 0 2px #64B5F6 !important; color: #64B5F6 !important; }
 
+/* --- ICON LOCAL STORAGE (Gaya Menyatu / Flat) --- */
+.local-storage-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: var(--primary-dark);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    opacity: 0.6; /* Membuatnya terlihat menyatu dengan background */
+    pointer-events: none; /* Menghilangkan fungsi klik agar tidak terasa seperti tombol */
+}
+
+body.dark-mode .local-storage-icon {
+    color: #ffa000;
+    opacity: 0.5;
+}
+
+.list-view .local-storage-icon {
+    top: 2px;
+    left: 2px;
+    transform: scale(0.7);
+}
+
 /* --- EFEK TRANSISI SWIPE HALAMAN --- */
 .slide-out-left { animation: slideOutLeft 0.2s forwards ease-in; }
 .slide-out-right { animation: slideOutRight 0.2s forwards ease-in; }
@@ -2757,11 +2783,24 @@ async function prosesSimpan(){
   }
 }
 
-function buatKartu(a,b=!1){const c=document.createElement('div');c.className='card';['cat','sub','type','detail','year','img','note','id','itemType','folderId','font','customCover','related','descaura','favorite'].forEach(d=>c.setAttribute(`data-${d}`,a[d]||'none'));c.setAttribute('data-name',a.name.toLowerCase()),'true'===a.hidden&&(c.setAttribute('data-hidden','true'),c.classList.add('is-hidden-file'));
+function buatKartu(a, b = !1) {
+    const c = document.createElement('div');
+    c.className = 'card';
+    ['cat', 'sub', 'type', 'detail', 'year', 'img', 'note', 'id', 'itemType', 'folderId', 'font', 'customCover', 'related', 'descaura', 'favorite'].forEach(d => c.setAttribute(`data-${d}`, a[d] || 'none'));
+    
+    c.setAttribute('data-name', a.name.toLowerCase());
+    'true' === a.hidden && (c.setAttribute('data-hidden', 'true'), c.classList.add('is-hidden-file'));
 
-c.innerHTML=`<button class="menu-dots" onclick="wrapBukaEdit(event, this)">${SVG_EDIT}</button><div class="thumb-container"></div><span class="file-info">${a.name}</span><span class="file-year">${a.year||''}</span>`;
+    // INJEKSI ICON LOKAL: Deteksi file hasil upload memory internal (Web IndexedDB / Native Capacitor)
+    const isLocal = a.img === 'LOCAL_FILE' || (typeof a.img === 'string' && a.img.startsWith('NATIVE:'));
+    const localIconHtml = isLocal ? `<div class="local-storage-icon" title="Tersimpan di Memori Lokal"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path><path d="M8 2v4"></path><path d="M12 2v4"></path><path d="M16 4v2"></path></svg></div>` : '';
 
-refreshCardIcon(c);const d=document.getElementById('fileGrid');b?d.prepend(c):d.appendChild(c)}
+    c.innerHTML = `${localIconHtml}<button class="menu-dots" onclick="wrapBukaEdit(event, this)">${SVG_EDIT}</button><div class="thumb-container"></div><span class="file-info">${a.name}</span><span class="file-year">${a.year || ''}</span>`;
+
+    refreshCardIcon(c);
+    const d = document.getElementById('fileGrid');
+    b ? d.prepend(c) : d.appendChild(c);
+}
 
 async function refreshCardIcon(a){
     // PERBAIKAN: Menggunakan data-name agar pemrosesan ikon bisa dieksekusi dengan aman pada unattached node
@@ -4024,11 +4063,11 @@ function bukaEdit(a){
     document.getElementById('fHapusCoverFlag').value='false';
     document.getElementById('fDescAura').checked = a.getAttribute('data-descaura') === 'true';
     const isFav = a.getAttribute('data-favorite') === 'true';
-document.getElementById('fFavorite').value = isFav ? 'true' : 'false';
-const favBtn = document.getElementById('btnFavoriteToggle');
-favBtn.innerHTML = isFav ? '★' : '☆';
-favBtn.style.color = isFav ? '#FFD700' : '#ccc';
-favBtn.style.textShadow = isFav ? '0 1px 2px rgba(0,0,0,0.5)' : 'none';
+    document.getElementById('fFavorite').value = isFav ? 'true' : 'false';
+    const favBtn = document.getElementById('btnFavoriteToggle');
+    favBtn.innerHTML = isFav ? '★' : '☆';
+    favBtn.style.color = isFav ? '#FFD700' : '#ccc';
+    favBtn.style.textShadow = isFav ? '0 1px 2px rgba(0,0,0,0.5)' : 'none';
 
     
     if('LOCAL_FILE'===cImg){
@@ -4453,7 +4492,7 @@ function geserHalaman(arah) {
         const animOut = arah === 'next' ? 'slide-out-left' : 'slide-out-right';
         const animIn = arah === 'next' ? 'slide-in-right' : 'slide-in-left';
         
-                // 1. Eksekusi perpindahan data seketika (tanpa jeda 200ms)
+        // 1. Eksekusi perpindahan data seketika (tanpa jeda 200ms)
         setFilter(0, urutanTab[indexBaru]);
 
         // 2. Terapkan animasi masuk langsung untuk ilusi pergeseran tersinkronisasi
