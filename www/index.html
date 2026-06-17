@@ -2334,7 +2334,8 @@ function getAllDescendantIds(a){let b=[];const c=document.querySelectorAll('.car
 function linkify(a){return a?a.replace(/(https?:\/\/[^\s]+)/g,b=>{try{const c=new URL(b).hostname;return `<a href="${b}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; vertical-align:middle;"><img src="https://www.google.com/s2/favicons?domain=${c}&sz=32" style="width:1em; height:1em; border-radius:2px;" onerror="this.style.display='none'"><span style="text-decoration:underline;">${b}</span></a>`}catch(d){return `<a href="${b}" target="_blank">${b}</a>`}}):""}
 function getYoutubeId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);return b&&11===b[2].length?b[2]:null}
 function getDriveId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/(?:file\/d\/|id=|open\?id=)([^/&?]+)/);return b?b[1]:null}
-function getDirectUrl(a){if(!a||'LOCAL_FILE'===a)return a;let b=a.trim();if(b.includes('dropbox.com'))return b.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");const c=getDriveId(b);if(c&&(b.includes('drive.google.com')||b.includes('googleusercontent.com'))){return `https://drive.google.com/uc?export=download&id=${c}`;}return b;}
+function getDirectUrl(a){if(!a||'LOCAL_FILE'===a)return a;let b=a.trim();if(b.includes('dropbox.com'))return b.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");const c=getDriveId(b);if(c&&(b.includes('drive.google.com')||b.includes('googleusercontent.com'))){return `https://www.googleapis.com/drive/v3/files/${c}?alt=media&key=AIzaSyDO_AmQ3EHZX-1td2SBcXl9xZKXQ7WgwXM`;}return b;}
+
 function getDownloadUrl(a){if(!a||'LOCAL_FILE'===a)return"#";const b=getDriveId(a);return b?`https://drive.google.com/uc?export=download&id=${b}`:a.includes('dropbox.com')?a.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,""):a}
 function getThumbUrl(a){if('LOCAL_FILE'===a)return'LOCAL_FILE';const b=getDriveId(a);if(b&&a.includes('drive.google.com'))return `https://drive.google.com/thumbnail?id=${b}&sz=w400`;if(a.includes('dropbox.com'))return a.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");return a;}
 
@@ -3801,10 +3802,12 @@ try{const freshBlob=await dbAmbilFile(b.id);if(freshBlob){playSrc=URL.createObje
     onPlayerStateChange:function(a){MediaPlayer.isPlaying=a.data==YT.PlayerState.PLAYING,a.data==YT.PlayerState.ENDED&&MediaPlayer.onTrackEnd(),MediaPlayer.updatePlayBtn()},
     renderProgressUI: function(cur, dur) {         if(this.progBar) this.progBar.style.width = (cur / dur * 100) + '%';         if(this.currTimeEl) this.currTimeEl.innerText = formatTimeMedia(cur);         if(this.durTimeEl) this.durTimeEl.innerText = formatTimeMedia(dur);     },     syncYoutubeTime:function(){if(ytPlayer&&ytPlayer.getCurrentTime){const a=ytPlayer.getCurrentTime(),b=ytPlayer.getDuration();if(b){this.renderProgressUI(a, b);}}},
     togglePlay:function(){const a=this.queue[this.currentIndex];if(!a)return;if(getYoutubeId(a.img)&&ytPlayer){ytPlayer.getPlayerState()===YT.PlayerState.PLAYING?ytPlayer.pauseVideo():ytPlayer.playVideo()}else if(this.aEl.src&&this.aEl.src!==window.location.href){this.aEl.paused?this.aEl.play().then(()=>this.syncPlayState(true)):this.aEl.pause()}else if(this.vEl.src&&this.vEl.src!==window.location.href){if(this.vEl.paused){this.vEl.play().then(()=>this.syncPlayState(true));document.getElementById('miniVideoPreview').play().catch(()=>{})}else{this.vEl.pause();document.getElementById('miniVideoPreview').pause()}}this.updatePlayBtn()},
+
     next:function(){0!==this.queue.length&&(this.currentIndex=1===this.mode?Math.floor(Math.random()*this.queue.length):(this.currentIndex+1)%this.queue.length,this.loadTrack())},
     prev:function(){0!==this.queue.length&&(this.currentIndex=(this.currentIndex-1+this.queue.length)%this.queue.length,this.loadTrack())},
     onTrackEnd:function(){2===this.mode?this.loadTrack(true):(this.queue.length<=1?(this.isPlaying=false,this.updatePlayBtn()):this.next())},
-    seek:function(a){if(0===this.queue.length||(this.queue[this.currentIndex].isDrive&&!getDirectUrl(this.queue[this.currentIndex].img).includes('export=download')))return;const b=a.offsetX/a.currentTarget.offsetWidth;if(getYoutubeId(this.queue[this.currentIndex].img)&&ytPlayer){ytPlayer.seekTo(ytPlayer.getDuration()*b,true)}else{if(this.aEl.duration)this.aEl.currentTime=this.aEl.duration*b;if(this.vEl.duration){this.vEl.currentTime=this.vEl.duration*b;document.getElementById('miniVideoPreview').currentTime=this.vEl.duration*b;}}},
+    seek:function(a){if(0===this.queue.length)return;const b=a.offsetX/a.currentTarget.offsetWidth;if(getYoutubeId(this.queue[this.currentIndex].img)&&ytPlayer){ytPlayer.seekTo(ytPlayer.getDuration()*b,true)}else{if(this.aEl.duration)this.aEl.currentTime=this.aEl.duration*b;if(this.vEl.duration){this.vEl.currentTime=this.vEl.duration*b;document.getElementById('miniVideoPreview').currentTime=this.vEl.duration*b;}}},
+
     updateTime:function(a){if(!a.duration)return;const b=a.currentTime,c=a.duration;this.renderProgressUI(b, c);
     if(a===this.vEl){const miniVid=document.getElementById('miniVideoPreview');if(Math.abs(miniVid.currentTime-b)>0.5)miniVid.currentTime=b}if(a===this.aEl){this.updateLyricsSync(b)}},
 
@@ -3821,12 +3824,12 @@ try{const freshBlob=await dbAmbilFile(b.id);if(freshBlob){playSrc=URL.createObje
     },
     close:function(){this.aEl.pause(),this.vEl.pause(),ytPlayer&&ytPlayer.pauseVideo&&ytPlayer.pauseVideo(),ytInterval&&clearInterval(ytInterval),this.driveFrame.removeAttribute('src'),this.ui.classList.add('hidden'),this.ui.classList.remove('minimized'),this.minimized=false,this.ui.style.top='0',document.body.classList.remove('has-mini-player'),cekScrollLayar(),stopRelatedAnimations(),this.isPlaying=false,this.updatePlayBtn()},
 
-minimize:function(){
+    minimize:function(){
         this.minimized=true,this.ui.classList.add('minimized'),cekScrollLayar();this.ui.style.top=document.getElementById('mainHeader').offsetHeight+'px';document.body.classList.add('has-mini-player');
         const a=this.queue[this.currentIndex];if(a){const b=getYoutubeId(a.img);b&&(document.getElementById('miniYtPlayer').style.display='block');}
     },
 
-maximize:function(){
+    maximize:function(){
         // Blokir aksi memperbesar player jika sedang mode seleksi / checklist ATAU ada item yang diceklis (kecuali mode Add Media)
         if(!isAddMediaMode && (isSelectionMode || document.querySelectorAll('.card.selected').length > 0)) {
             alert("Selesaikan atau batalkan seleksi terlebih dahulu!");
