@@ -3800,16 +3800,26 @@ sleepArea.style.display='none';const g=document.getElementById('mpArt'),h=docume
     // -------------------------------
     else if(b.isLocal&&b.id){
 try{const freshBlob=await dbAmbilFile(b.id);if(freshBlob){playSrc=URL.createObjectURL(freshBlob);b.img=playSrc;this.currentLocalBlobUrl=playSrc;}}catch(err){console.error("Gagal load file lokal:",err)}}
-    // === KODE BARU: DIRECT STREAM GOOGLE DRIVE ===
-    if (e && (c === 'audio' || c === 'video')) {
-        const driveId = getDriveId(b.img);
-        const token = localStorage.getItem('feathera_google_token');
-        if (driveId && token) {
-            playSrc = `https://www.googleapis.com/drive/v3/files/${driveId}?alt=media&access_token=${token}`;
-            e = false; // Mematikan flag Iframe agar masuk ke proses pemutar HTML5 bawaan aplikasi
+    // === KODE BARU: DIRECT STREAM GOOGLE DRIVE (PROTEKSI PENH & ANTI-CRASH APK) ===
+    try {
+        if (b && b.img && typeof b.img === 'string' && (b.img.includes('drive.google.com') || b.img.includes('googleapis.com'))) {
+            let driveId = null;
+            const match = b.img.match(/\/d\/([a-zA-Z0-9-_]+)/) || b.img.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+            if (match) driveId = match[1];
+
+            const token = localStorage.getItem('feathera_google_token');
+            if (driveId && token && token !== 'undefined' && token !== 'null') {
+                playSrc = `https://www.googleapis.com/drive/v3/files/${driveId}?alt=media&access_token=${token}`;
+                
+                // Menonaktifkan flag iframe secara aman hanya jika variabel tersebut eksis di kode Anda
+                if (typeof e !== 'undefined') e = false;
+                if (typeof isIframe !== 'undefined') isIframe = false;
+            }
         }
+    } catch (safeErr) {
+        console.error("Sistem menangkap eror secara aman, fallback aktif:", safeErr);
     }
-    // =============================================
+    // =============================================================================
 
 document.querySelector('.vid-fs-btn').style.display='none';if(d){document.getElementById('ytVideoPlayer').style.display='block';document.getElementById('mpVideoBox').style.display='flex';document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>'}else if(e){const driveId=getDriveId(b.img);this.driveFrame.src=driveId?`https://drive.google.com/file/d/${driveId}/preview`:b.img;this.driveFrame.style.display='block';document.getElementById('mpVideoBox').style.display='flex';document.getElementById('visualizerCanvas').style.display='none';this.isPlaying=a;this.progBar.parentElement.style.visibility='hidden';document.querySelector('.mp-time').innerHTML='<span style="width:100%;text-align:center;color:var(--neu-text);opacity:0.6;font-size:10px;">Iframe Drive (Kontrol di video)</span>'}else if('video'===c){document.querySelector('.vid-fs-btn').style.display='flex';document.getElementById('mpVideoBox').style.display='flex',this.vEl.style.display='block',this.vEl.src=playSrc,a&&this.vEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)});this.isPlaying=a;document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVid.src=playSrc;miniVid.style.display='block';if(a)miniVid.play().catch(()=>{})}else{document.getElementById('mpVideoBox').style.display='none',this.aEl.src=playSrc,a&&this.audioCtx.resume().then(()=>this.aEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)}));this.isPlaying=a;document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVis.style.display='block';if(!this.sleepMode)document.getElementById('visualizerCanvas').style.display='block'} this.currTimeEl=document.getElementById('mpCurrTime'); this.durTimeEl=document.getElementById('mpDurTime'); const setCoverAndLyrics=async()=>{let coverUrl=null;let isLocalBlob=false;this.parseLyrics("");if(b.customCover&&b.id){try{const blob=await dbAmbilCover(b.id);if(blob)coverUrl=URL.createObjectURL(blob)}catch(err){}}if('audio'===c){if(b.isLocal&&b.id){try{const audioBlob=await dbAmbilFile(b.id);if(audioBlob){MediaPlayer.readID3(audioBlob,this.currentIndex);isLocalBlob=true}}catch(err){}}else if(playSrc&&playSrc!=='LOCAL_FILE'){MediaPlayer.readID3(playSrc,this.currentIndex);isLocalBlob=true}}if(!coverUrl&&!isLocalBlob&&'video'===c&&b.img&&b.img!=='LOCAL_FILE')coverUrl=getThumbUrl(b.img);if(!coverUrl&&!isLocalBlob&&'audio'===c&&b.img&&b.img!=='LOCAL_FILE')coverUrl=getThumbUrl(b.img);if(coverUrl){g.style.backgroundImage=`url('${coverUrl}')`;g.innerHTML='';h.style.backgroundImage=`url('${coverUrl}')`;h.innerHTML=''}else if(!isLocalBlob){g.style.backgroundImage='none';h.style.backgroundImage='none';if('audio'===c||'video'===c){g.innerHTML='';h.innerHTML=''}}};await setCoverAndLyrics();
         // Update Running Text
