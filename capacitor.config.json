@@ -3,12 +3,9 @@
   "appName": "Feathera Gallery",
   "webDir": "www",
   "bundledWebRuntime": false,
-  "server": {
-    "allowNavigation": ["www.googleapis.com", "*.googleapis.com"]
-  },
   "plugins": {
     "GoogleAuth": {
-      "scopes": ["profile", "email", "https://www.googleapis.com/auth/drive.readonly"],
+      "scopes": ["profile", "email"],
       "serverClientId": "324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com"
     }
   }
