@@ -2334,8 +2334,8 @@ function getAllDescendantIds(a){let b=[];const c=document.querySelectorAll('.car
 function linkify(a){return a?a.replace(/(https?:\/\/[^\s]+)/g,b=>{try{const c=new URL(b).hostname;return `<a href="${b}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; vertical-align:middle;"><img src="https://www.google.com/s2/favicons?domain=${c}&sz=32" style="width:1em; height:1em; border-radius:2px;" onerror="this.style.display='none'"><span style="text-decoration:underline;">${b}</span></a>`}catch(d){return `<a href="${b}" target="_blank">${b}</a>`}}):""}
 function getYoutubeId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);return b&&11===b[2].length?b[2]:null}
 function getDriveId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/(?:file\/d\/|id=|open\?id=)([^/&?]+)/);return b?b[1]:null}
-function getDirectUrl(a){if(!a||'LOCAL_FILE'===a)return a;let b=a.trim();if(b.includes('dropbox.com'))return b.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");const c=getDriveId(b);if(c&&(b.includes('drive.google.com')||b.includes('googleusercontent.com'))){return `https://drive.google.com/uc?export=download&id=${c}`;}return b;}
-function getDownloadUrl(a){if(!a||'LOCAL_FILE'===a)return"#";const b=getDriveId(a);return b?`https://drive.google.com/uc?export=download&id=${b}`:a.includes('dropbox.com')?a.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,""):a}
+function getDirectUrl(a){if(!a||'LOCAL_FILE'===a)return a;let b=a.trim();if(b.includes('dropbox.com'))return b.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");const c=getDriveId(b);if(c&&(b.includes('drive.google.com')||b.includes('googleusercontent.com'))){return `https://www.googleapis.com/drive/v3/files/${c}?alt=media&key=${firebaseConfig.apiKey}`;}return b;}
+function getDownloadUrl(a){if(!a||'LOCAL_FILE'===a)return"#";const b=getDriveId(a);return b?`https://www.googleapis.com/drive/v3/files/${b}?alt=media&key=${firebaseConfig.apiKey}`:a.includes('dropbox.com')?a.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,""):a}
 function getThumbUrl(a){if('LOCAL_FILE'===a)return'LOCAL_FILE';const b=getDriveId(a);if(b&&a.includes('drive.google.com'))return `https://drive.google.com/thumbnail?id=${b}&sz=w400`;if(a.includes('dropbox.com'))return a.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");return a;}
 
 function getPreviewUrl(a){const b=getDriveId(a);return b?`https://drive.google.com/file/d/${b}/preview`:a}
@@ -3435,7 +3435,7 @@ async function tambahKePlaylistBatch(){
                 const child = document.querySelector(`.card[data-id="${id}"]`);
                 if (child && child.getAttribute('data-itemType') === 'file') {
                     const img = child.getAttribute('data-img');
-                    const name = child.querySelector('.file-info').innerText;
+                    const name = child.querySelector('.file-info').textContent;
                     const type = getMediaType(img, name);
                     if (type === 'audio' || type === 'video') {
                         validItems.set(id, child);
@@ -3445,7 +3445,7 @@ async function tambahKePlaylistBatch(){
         } else {
             // Jika yang diceklis adalah file langsung
             const img = c.getAttribute('data-img');
-            const name = c.querySelector('.file-info').innerText;
+            const name = c.querySelector('.file-info').textContent;
             const type = getMediaType(img, name);
             if (type === 'audio' || type === 'video') {
                 validItems.set(c.getAttribute('data-id'), c);
@@ -3458,7 +3458,7 @@ async function tambahKePlaylistBatch(){
 
     // Looping hanya pada item yang tervalidasi sebagai Audio / Video
     for(const [id, c] of validItems){
-        const d=c.getAttribute('data-img'),e=c.querySelector('.file-info').innerText,g=getDriveId(d);
+        const d=c.getAttribute('data-img'),e=c.querySelector('.file-info').textContent,g=getDriveId(d);
         let h=d;
         if('LOCAL_FILE'===d){try{const i=await dbAmbilFile(id);if(i)h=URL.createObjectURL(i)}catch(j){}}
         
