@@ -2799,7 +2799,8 @@ function buatKartu(a, b = !1) {
     if (isLocal) {
         statusIconHtml = `<div class="local-storage-icon" title="Tersimpan di Memori Lokal"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path><path d="M8 2v4"></path><path d="M12 2v4"></path><path d="M16 4v2"></path></svg></div>`;
     } else if (isDrive) {
-        statusIconHtml = `<div class="local-storage-icon" title="Tersimpan di Google Drive"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 20 2 20"></polygon><polyline points="12 2 7 20"></polyline><polyline points="22 20 12 13"></polyline></svg></div>`;
+        // Menggunakan logo asli berwarna dengan sediki opacity agar tetap serasi dengan lingkungan desain
+        statusIconHtml = `<div class="local-storage-icon" style="opacity: 0.85;" title="Tersimpan di Google Drive"><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" style="width: 12px; height: 12px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));" alt="Drive"></div>`;
     }
 
     c.innerHTML = `${statusIconHtml}<button class="menu-dots" onclick="wrapBukaEdit(event, this)">${SVG_EDIT}</button><div class="thumb-container"></div><span class="file-info">${a.name}</span><span class="file-year">${a.year || ''}</span>`;
