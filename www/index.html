@@ -2121,6 +2121,33 @@ document.addEventListener("DOMContentLoaded",()=>{
             if(!fieldName.value)fieldName.value=name;
         }
     });
+    
+        // [PEMBARUAN]: Auto-deteksi Metadata dari Appwrite URL
+    document.getElementById('fImgUrl').addEventListener('input', async function(e) {
+        const url = this.value.trim();
+        const nameInput = document.getElementById('fName');
+        
+        // Cek apakah URL valid dari struktur storage Appwrite
+        if (url.includes('/v1/storage/buckets/') && url.includes('/files/')) {
+            try {
+                // Transformasi URL endpoint View/Download menjadi endpoint Metadata API
+                const apiUrl = url.replace(/\/files\/([^\/]+)\/(view|download)/, '/files/$1');
+                
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.name) {
+                        // Isi otomatis jika input nama masih kosong atau default
+                        if (!nameInput.value || nameInput.value === 'Memori Baru') {
+                            nameInput.value = data.name;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("Gagal mengekstrak metadata Appwrite:", err);
+            }
+        }
+    });
 
     // --- Logika Splash Screen ---
     setTimeout(() => {
@@ -3037,7 +3064,15 @@ async function prosesSimpan(){
             // -------------------------------------------------------------------
 
             try {
-                await dbSimpanFile(newItemId, fileKameraTertunda);
+                // [PEMBARUAN]: Penyelamatan MIME Type agar file dibaca utuh oleh browser
+                let safeBlob = fileKameraTertunda;
+                if (!safeBlob.type || safeBlob.type === 'application/octet-stream' || safeBlob.type === '') {
+                    const correctMime = isVideo ? 'video/mp4' : 'image/jpeg';
+                    safeBlob = new Blob([fileKameraTertunda], { type: correctMime });
+                }
+                
+                await dbSimpanFile(newItemId, safeBlob);
+
                 let linkAset = 'LOCAL_FILE';
                 let driveErrorMsg = null;
                 const gToken = localStorage.getItem('feathera_gdrive_token');
@@ -5431,24 +5466,27 @@ async function hapusRbSelected() {
         }
     }
 
-    if (deletedCount > 0) {
-        setLocal('recycle_bin', JSON.stringify(rbData));
-        renderRecycleBinList();
-        
-        // KODE BARU: Melakukan polling ringan untuk mengakali delay Garbage Collection browser Chrome
-        let cekMemoriKe = 0;
-        const intervalCekMemori = setInterval(() => {
-            updateStats();
-            cekMemoriKe++;
-            // Berhenti melakukan pengecekan setelah 2.5 detik (5 iterasi x 500ms)
-            if (cekMemoriKe >= 5) {
-                clearInterval(intervalCekMemori);
+            if (deletedCount > 0) {
+                setLocal('recycle_bin', JSON.stringify(rbData));
+                renderRecycleBinList(); 
+                
+                logActivity('Musnahkan File', `Menghapus permanen ${deletedCount} item`);
+                
+                // [PEMBARUAN]: Ganti polling tidak stabil dengan Refresh Siluman.
+                // Memberi tahu pengguna bahwa sistem sedang menyinkronkan data fisik.
+                alert(`${deletedCount} item dimusnahkan. Menyinkronkan ulang memori...`);
+                
+                // Beri jeda 2 detik agar Toast terbaca, lalu paksa WebView mereset cache memori.
+                setTimeout(() => {
+                    // Tutup koneksi database agar OS segera melepaskan kapasitas ruang IndexedDB
+                    if (dbInstance) {
+                        dbInstance.close();
+                    }
+                    // Refresh aplikasi untuk mendapatkan angka Storage Quota yang 100% akurat
+                    window.location.reload();
+                }, 2000);
             }
-        }, 500);
-        logActivity('Musnahkan File', `Menghapus permanen ${deletedCount} item`);
-        alert(`${deletedCount} item berhasil dimusnahkan.`);
-    }
-}
+        }
 
 // --- HELPER KAMERA ---
 function getExtFromMime(mimeType) {
@@ -5500,9 +5538,6 @@ function tampungFileKamera(inputEl) {
     }
 
     window.alert(`✅ Media tertangkap!\nSilakan lengkapi catatan (opsional) lalu klik tombol "Simpan" di bawah.`);
-    
-    // Mencegah bug HTML5 DOM agar tombol bisa dipicu ulang jika mengambil ulang gambar
-    inputEl.value = '';
 }
 
 </script>
