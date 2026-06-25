@@ -3092,11 +3092,20 @@ async function prosesSimpan(){
                         
                         const dataMedia = await resMedia.json();
                         if (resMedia.ok && dataMedia.id) {
+                            // 1. Update nama file
                             await fetch(`https://www.googleapis.com/drive/v3/files/${dataMedia.id}`, {
                                 method: 'PATCH',
                                 headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ name: finalNameCamera })
                             });
+                            
+                            // 2. Set file menjadi Publik (Bisa dilihat siapa saja yang punya link) agar Thumbnail & Gambar bisa dirender di aplikasi
+                            await fetch(`https://www.googleapis.com/drive/v3/files/${dataMedia.id}/permissions`, {
+                                method: 'POST',
+                                headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ role: 'reader', type: 'anyone' })
+                            });
+                            
                             linkAset = `https://drive.google.com/file/d/${dataMedia.id}/view`;
                         } else {
                             driveErrorMsg = dataMedia.error ? `${dataMedia.error.code}: ${dataMedia.error.message}` : `HTTP Status ${resMedia.status}`;
@@ -5458,9 +5467,9 @@ async function hapusRbSelected() {
             const itemData = rbData[itemIndex];
             // --- PEMUSNAHAN AKTUAL DARI INDEXED DB ---
             await dbHapusCover(itemData.id);
-            if (itemData.img === 'LOCAL_FILE') {
-                await dbHapusFile(itemData.id);
-            }
+            // PENGHAPUSAN FILE FISIK: Eksekusi mutlak tanpa syarat LOCAL_FILE untuk mencegah memory leak file kamera
+            await dbHapusFile(itemData.id).catch(e => console.warn(e));
+            
             rbData.splice(itemIndex, 1);
             deletedCount++;
         }
