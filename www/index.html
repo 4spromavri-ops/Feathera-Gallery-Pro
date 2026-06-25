@@ -1368,6 +1368,10 @@ body.dark-mode #btnScrollTop {
     <span style="font-size: 20px;">➕</span>
 </button>
 
+<button id="fabBackFolder" class="floating-fab" onclick="goUpFolder()" title="Kembali">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+</button>
+
 <main id="mainContent" class="hidden">
     <div id="folderNavUI"><div id="folderBreadcrumbs" class="breadcrumbs"></div></div>
     <div id="emptyState"><span><svg class="feather-icon sunken-icon" style="width:100px; height:100px;" viewBox="0 0 394 462"><use href="#feather-icon-def"></use></svg></span><p>Belum ada memori disini.<br>Tekan tahan untuk upload.</p></div>
@@ -2786,15 +2790,13 @@ function setFilter(a,b){
     renderChips();
     
     // Logic seleksi & tampilan (Cegah kalkulasi ganda)
-    if(isSelectionMode&&!isAddMediaMode) {
-        toggleSelectionMode(false);
-    } else {
-        updateSelectCount(); // Hanya panggil jika toggleSelectionMode tidak dieksekusi
-    }
+    // [PERBAIKAN]: Hapus `toggleSelectionMode(false)` agar status mode pemilihan tidak reset saat pindah kategori
+    updateSelectCount(); 
     
     // Scroll paling ringan tanpa membebani animasi CSS
     window.scrollTo(0, 0);
 }
+
 function toggleFavoriteForm() {
     const favInput = document.getElementById('fFavorite');
     const favBtn = document.getElementById('btnFavoriteToggle');
@@ -3504,17 +3506,18 @@ function toggleSelectionMode(force){
 }
 
 function updateSelectCount() {
-    // [PEMBARUAN]: Filter menggunakan JS Native, hindari selector atribut CSS [style*="..."]
+    // [PERBAIKAN]: Hitung semua item terpilih secara GLOBAL, tidak peduli disembunyikan oleh filter kategori atau tidak
     const rawSelected = document.querySelectorAll('.card.selected, .card.move-pending');
-    const selectedCards = Array.from(rawSelected).filter(card => card.style.display !== 'none');
+    const globalSelectedCards = Array.from(rawSelected);
     
     const rawAll = document.querySelectorAll('.card');
-    const totalVisible = Array.from(rawAll).filter(card => card.style.display !== 'none').length;
+    const visibleCards = Array.from(rawAll).filter(card => card.style.display !== 'none');
+    const totalVisible = visibleCards.length;
     
     let foldersCount = 0;
-    const totalSelected = selectedCards.length;
+    const totalSelected = globalSelectedCards.length; // Menggunakan hitungan global
 
-    selectedCards.forEach(card => {
+    globalSelectedCards.forEach(card => {
         if (card.getAttribute('data-itemType') === 'folder') foldersCount++;
     });
 
@@ -3529,13 +3532,16 @@ function updateSelectCount() {
 
     const btnFloatingSelectAll = document.getElementById('btnFloatingSelectAll');
     if (btnFloatingSelectAll) {
-        const isAllSelected = totalVisible > 0 && totalSelected === totalVisible;
+        // [PERBAIKAN]: Untuk tombol 'Pilih Semua', hanya cek apakah file yang VISIBLE di layar saat ini semuanya sudah terpilih
+        const visibleSelectedCount = visibleCards.filter(card => card.classList.contains('selected') || card.classList.contains('move-pending')).length;
+        const isAllSelected = totalVisible > 0 && totalVisible === visibleSelectedCount;
         btnFloatingSelectAll.innerHTML = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
     }
 
     const btnHide = document.getElementById('btnToggleHide');
-    if (btnHide) btnHide.innerHTML = selectedCards.some(b => 'true' === b.getAttribute('data-hidden')) ? `<span>${SVG_EYE_OPEN}</span> Tampilkan` : `<span>${SVG_EYE_CLOSED}</span> Sembunyi`;
+    if (btnHide) btnHide.innerHTML = globalSelectedCards.some(b => 'true' === b.getAttribute('data-hidden')) ? `<span>${SVG_EYE_OPEN}</span> Tampilkan` : `<span>${SVG_EYE_CLOSED}</span> Sembunyi`;
     const floatingInfo = document.getElementById('floatingSelectionInfo');
+
     const chipsArea = document.getElementById('dynamicChipsArea');
     const baseBottom = (70 + (chipsArea ? chipsArea.offsetHeight : 0) + 10) + 'px';
     
@@ -3550,14 +3556,40 @@ function updateSelectCount() {
     }
 
     const fab = document.getElementById('fabAddMemori');
+    const fabBack = document.getElementById('fabBackFolder');
+    
     if (fab) {
         const isRestrictedPage = curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite';
-        if (currentRole === 'none' || isRestrictedPage || isSelectionMode || isMovePending || isAddMediaMode || totalSelected > 0) {
+        const hideFabAdd = currentRole === 'none' || isRestrictedPage || isSelectionMode || isMovePending || isAddMediaMode || totalSelected > 0;
+        
+        // Logika Tombol Add Memori
+        if (hideFabAdd) {
             fab.classList.remove('visible');
             fab.style.bottom = '-60px';
         } else {
             fab.classList.add('visible');
             fab.style.bottom = baseBottom;
+        }
+
+        // Logika Tombol Back Folder & Auto-Stacking
+        if (fabBack) {
+            const inFolder = currentFolderId && currentFolderId !== 'none';
+            const hideFabBack = isSelectionMode || isMovePending || isAddMediaMode || totalSelected > 0;
+
+            if (inFolder && !hideFabBack) {
+                fabBack.classList.add('visible');
+                if (hideFabAdd) {
+                    // Jika Add tersembunyi, Back mengisi posisinya (Bawah)
+                    fabBack.style.bottom = baseBottom;
+                } else {
+                    // Jika Add tampil, Back bertumpuk di atasnya
+                    const baseVal = parseInt(baseBottom, 10);
+                    fabBack.style.bottom = (baseVal + 60) + 'px';
+                }
+            } else {
+                fabBack.classList.remove('visible');
+                fabBack.style.bottom = '-60px';
+            }
         }
     }
 }
@@ -3577,8 +3609,9 @@ function togglePilihSemua() {
     const selectedCount = visibleCards.filter(card => card.classList.contains(targetClass)).length;
     const isAllSelected = selectedCount === visibleCards.length;
 
-    visibleCards.forEach(card => {
-        if (isAllSelected) {
+    // Helper untuk memproses kartu (tambah/hapus kelas dan ID)
+    const prosesKartu = (card, isRemove) => {
+        if (isRemove) {
             card.classList.remove(targetClass);
             if (isMoveMode) {
                 const idToRemove = card.getAttribute('data-id');
@@ -3590,6 +3623,22 @@ function togglePilihSemua() {
                 const idToAdd = card.getAttribute('data-id');
                 if (!movePendingIds.includes(idToAdd)) movePendingIds.push(idToAdd);
             }
+        }
+    };
+
+    visibleCards.forEach(card => {
+        // 1. Eksekusi kartu yang terlihat di layar
+        prosesKartu(card, isAllSelected);
+        
+        // 2. [PERBAIKAN KUNCI]: Jika kartu ini adalah folder, eksekusi juga semua isi di dalamnya!
+        if (card.getAttribute('data-itemType') === 'folder') {
+            const folderId = card.getAttribute('data-id');
+            const descendants = getAllDescendantIds(folderId);
+            
+            descendants.forEach(descId => {
+                const childCard = document.querySelector(`.card[data-id="${descId}"]`);
+                if (childCard) prosesKartu(childCard, isAllSelected);
+            });
         }
     });
 
@@ -3974,7 +4023,15 @@ async function tambahKePlaylistBatch(){
     window.targetPlaylistIndexForAdd = null;
 }
 
-function bukaFolder(a){currentFolderId=a,filterFiles(),window.scrollTo(0, 0)}
+function bukaFolder(a){currentFolderId=a,filterFiles(),updateSelectCount(),window.scrollTo(0, 0)}
+
+function goUpFolder() {
+    if(currentFolderId && currentFolderId !== 'none') {
+        const fld = document.querySelector(`.card[data-id="${currentFolderId}"]`);
+        const pId = fld ? fld.getAttribute('data-folderId') : null;
+        bukaFolder(!pId || pId === 'none' ? null : pId);
+    }
+}
 
 function setViewMode(mode) {
     currentViewMode = mode;
