@@ -85,7 +85,6 @@ body.dark-mode {
 
 body { font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 150px; -webkit-tap-highlight-color: transparent; background: var(--bg); min-height: 100vh; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; color: var(--text); transition: color 0.3s; overflow-x: hidden; touch-action: manipulation; }
 
-body.dark-mode::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: -2; pointer-events: none; }
 body.no-scroll { overflow: hidden !important; height: 100vh; }
 
 #bgOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; transition: all 0.8s ease; opacity: 0; pointer-events: none; }
@@ -106,7 +105,7 @@ body.app-ready #bgOverlay { opacity: 0.85; background: var(--bg); }
 .splash-logos img { width: 24px; height: 24px; object-fit: contain; }
 /* Penyesuaian skala optik agar visual ikon terlihat seragam */
 .splash-logos img[alt="Drive"] { transform: scale(0.8); }
-.splash-logos img[alt="Dropbox"] { transform: scale(2); }
+.splash-logos img[alt="Dropbox"] { transform: scale(1.1); }
 .splash-logos img[alt="YouTube"] { transform: scale(1); }
 /*======================================*/
 .splash-spinner {
@@ -1198,6 +1197,25 @@ body.dark-mode #btnScrollTop {
 <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
     <defs>
         <path id="feather-icon-def" d="M 11.00 447.03 C11.00,444.46 11.97,443.40 18.25,439.17 C22.24,436.49 27.30,433.30 29.50,432.10 C31.70,430.90 36.99,427.80 41.25,425.21 C75.72,404.27 83.50,399.07 83.50,397.00 C83.50,395.94 81.31,395.04 76.00,393.94 C68.62,392.40 65.48,392.56 58.17,394.86 C55.23,395.78 54.98,395.73 56.09,394.39 C58.97,390.92 63.40,389.62 72.50,389.56 C77.45,389.53 82.74,389.89 84.25,390.36 C88.02,391.54 87.71,390.28 82.91,385.00 C74.04,375.23 68.65,368.40 67.35,365.30 C65.36,360.54 65.65,360.36 69.25,364.12 C71.04,365.99 76.05,370.38 80.39,373.88 C89.26,381.04 89.17,381.19 84.25,367.50 C80.48,357.02 79.02,349.59 78.44,338.00 C77.98,328.65 79.07,327.78 80.33,336.50 C81.83,346.79 88.52,362.38 93.40,366.92 C96.53,369.84 96.56,369.48 93.95,360.08 C90.37,347.13 88.91,338.76 88.47,328.50 L 88.04 318.50 L 90.38 327.00 C91.67,331.67 93.22,336.74 93.84,338.25 C96.20,344.08 99.07,350.00 99.53,350.00 C99.80,350.00 99.78,348.31 99.48,346.25 C98.16,336.98 97.85,319.75 98.86,311.62 C100.00,302.37 102.92,291.00 104.15,291.00 C104.54,291.00 104.48,292.33 104.01,293.96 C102.30,299.93 103.61,321.84 106.30,332.10 C108.73,341.39 111.99,349.26 113.90,350.44 C114.45,350.78 114.84,345.62 114.87,337.75 C114.91,324.93 116.09,316.55 120.41,298.50 C121.98,291.94 124.24,285.43 125.31,284.35 C125.69,283.98 126.00,282.62 126.00,281.33 C126.00,280.05 126.45,279.00 127.00,279.00 C127.55,279.00 128.00,278.39 128.00,277.65 C128.00,276.07 130.79,270.24 131.88,269.58 C132.29,269.32 132.21,272.12 131.70,275.81 C130.15,286.93 130.45,307.61 132.29,316.21 C133.90,323.75 136.66,331.70 137.39,330.90 C137.59,330.68 138.04,324.13 138.39,316.35 C138.98,303.11 143.31,277.34 145.92,271.50 C146.41,270.40 148.02,266.35 149.49,262.50 C150.96,258.65 153.40,253.48 154.90,251.00 C156.40,248.52 157.96,245.82 158.35,245.00 C160.29,240.99 167.04,231.21 173.77,222.66 C175.58,220.37 178.62,216.48 180.55,214.00 C182.48,211.52 185.50,207.67 187.28,205.43 C190.77,201.01 191.53,199.99 199.06,189.50 C201.82,185.65 204.63,181.79 205.29,180.92 C205.96,180.05 206.95,178.62 207.50,177.74 C209.70,174.22 221.42,157.47 222.00,157.00 C222.35,156.73 224.98,152.68 227.86,148.00 C230.73,143.32 234.83,136.80 236.97,133.50 C239.11,130.20 240.89,126.94 240.93,126.25 C240.97,125.56 241.40,125.00 241.89,125.00 C242.38,125.00 243.07,123.88 243.41,122.50 C243.76,121.12 244.48,120.00 245.02,120.00 C245.56,120.00 246.00,119.56 246.00,119.02 C246.00,117.33 252.14,107.97 252.92,108.45 C253.34,108.71 253.75,110.95 253.84,113.45 C254.40,128.12 258.43,144.00 265.48,159.23 C269.01,166.86 270.03,167.21 268.36,160.22 C267.61,157.08 266.78,153.38 266.51,152.00 C266.24,150.62 265.79,148.38 265.50,147.00 C265.21,145.62 264.80,143.38 264.57,142.00 C264.35,140.62 263.59,136.12 262.90,132.00 C262.20,127.88 261.65,116.62 261.66,107.00 C261.68,89.74 261.72,89.43 264.46,84.50 C268.64,77.00 285.62,51.66 287.78,49.70 C289.61,48.04 289.78,48.23 292.51,55.20 C295.29,62.29 302.90,76.43 303.58,75.76 C303.76,75.57 303.23,72.76 302.38,69.53 C299.96,60.25 298.00,47.99 298.00,42.08 C298.00,36.85 298.17,36.51 303.25,31.73 C308.85,26.46 312.82,23.48 313.44,24.11 C313.65,24.33 314.09,26.98 314.42,30.00 C315.31,38.17 316.12,41.96 317.11,42.57 C317.60,42.87 318.00,43.96 318.00,45.00 C318.00,46.04 318.38,47.11 318.84,47.40 C319.30,47.68 319.69,42.20 319.71,35.21 C319.74,28.22 320.21,21.36 320.77,19.96 C322.74,15.05 338.67,9.33 347.89,10.22 C356.11,11.01 365.48,16.82 366.08,21.50 C366.39,23.94 365.17,32.50 363.98,36.25 C362.55,40.73 364.26,39.38 367.99,33.07 C371.86,26.53 372.86,26.52 375.00,32.99 C375.72,35.19 376.64,37.00 377.04,37.00 C378.25,37.00 381.12,50.06 380.41,52.35 C380.04,53.53 377.71,57.55 375.23,61.27 C372.74,64.99 370.92,68.25 371.17,68.51 C371.43,68.76 374.08,67.43 377.07,65.55 C381.73,62.61 382.61,62.35 383.37,63.69 C384.54,65.79 384.36,98.32 383.11,109.00 C381.09,126.30 380.58,127.56 372.12,136.10 C364.72,143.57 355.55,151.43 351.49,153.79 C350.24,154.51 350.02,154.95 350.90,154.97 C353.15,155.02 362.82,150.14 370.21,145.22 C373.96,142.73 377.24,140.91 377.50,141.17 C377.76,141.43 377.29,144.09 376.44,147.07 C375.59,150.06 374.31,154.98 373.59,158.00 C371.93,164.98 369.13,173.98 367.93,176.24 C367.42,177.19 367.00,178.61 367.00,179.39 C367.00,183.00 348.01,198.43 330.00,209.46 C324.77,212.66 319.60,215.93 318.50,216.73 C316.58,218.13 316.60,218.16 319.00,217.48 C327.36,215.14 341.73,208.79 349.84,203.87 C359.41,198.05 359.55,198.21 354.64,209.66 C348.04,225.05 338.66,242.34 334.85,246.15 C331.00,250.00 318.49,256.77 307.50,260.94 C304.20,262.19 300.15,263.87 298.50,264.67 C295.54,266.11 295.56,266.12 300.50,265.55 C303.25,265.24 306.40,264.82 307.50,264.62 C309.39,264.28 320.75,260.63 324.00,259.31 C326.41,258.33 329.00,257.96 329.00,258.60 C329.00,259.24 320.72,271.81 313.92,281.50 C297.16,305.36 271.53,334.81 262.04,341.10 C257.50,344.10 238.87,350.39 231.50,351.40 C229.30,351.70 226.60,352.13 225.50,352.36 C224.40,352.60 219.90,353.11 215.50,353.51 C211.10,353.91 206.86,354.58 206.08,355.00 C202.79,356.78 224.82,357.85 238.25,356.57 C246.26,355.80 248.25,356.72 243.77,359.12 C242.54,359.78 240.87,360.99 240.05,361.80 C237.82,364.04 225.91,371.51 219.14,374.93 C206.65,381.23 188.06,384.45 167.61,383.84 C161.23,383.65 156.00,383.78 156.00,384.12 C156.00,386.06 178.96,391.52 191.50,392.57 C199.13,393.20 200.04,393.46 197.50,394.24 C194.35,395.20 168.37,395.53 161.50,394.70 C159.30,394.43 154.35,393.92 150.50,393.57 L 143.50 392.94 L 148.99 395.52 C152.01,396.94 156.06,398.52 157.99,399.04 C159.92,399.55 164.54,400.77 168.24,401.74 C171.95,402.71 174.99,403.91 174.99,404.41 C175.00,405.71 148.81,404.25 141.00,402.52 C133.47,400.84 128.36,400.61 127.55,401.91 C126.45,403.70 139.01,411.58 151.74,417.08 C154.63,418.33 156.85,419.48 156.70,419.64 C156.12,420.21 136.47,415.84 135.55,414.94 C135.03,414.42 134.03,414.00 133.33,414.00 C132.62,414.00 129.10,412.65 125.50,411.00 C113.78,405.63 113.02,407.39 122.75,417.40 C130.63,425.51 127.85,424.14 114.22,413.19 C109.11,409.09 104.65,406.02 104.30,406.37 C103.95,406.72 104.19,409.29 104.83,412.08 C106.24,418.21 106.32,424.96 105.00,427.00 C104.24,428.18 104.03,427.93 104.02,425.86 C103.99,421.66 100.20,410.49 98.18,408.66 C95.76,406.47 95.00,407.42 95.00,412.61 C95.00,414.96 94.55,417.16 94.00,417.50 C93.45,417.84 93.00,418.79 93.00,419.60 C93.00,420.42 92.17,421.98 91.15,423.07 C89.35,425.00 89.33,424.89 90.54,418.46 C91.88,411.37 91.53,408.00 89.47,408.00 C88.76,408.00 84.96,409.91 81.04,412.25 C77.11,414.59 72.24,417.45 70.20,418.62 C68.17,419.78 59.08,425.13 50.00,430.50 C29.86,442.41 15.42,450.00 12.89,450.00 C11.46,450.00 11.00,449.28 11.00,447.03 ZM 129.60 384.95 C144.34,375.96 162.67,361.84 185.96,341.54 C194.89,333.76 226.71,301.31 235.52,291.00 C240.46,285.23 245.10,279.87 245.84,279.09 C246.57,278.32 249.05,275.17 251.33,272.09 C253.62,269.02 255.72,266.27 256.00,266.00 C259.60,262.46 282.12,228.94 290.39,214.82 C296.56,204.28 310.54,176.97 315.89,165.00 C320.72,154.21 331.16,126.22 335.49,112.47 C339.20,100.69 347.00,71.10 347.00,68.81 C347.00,65.73 344.99,70.38 342.00,80.38 C328.92,124.05 303.89,177.78 278.11,217.52 C276.67,219.73 275.05,222.25 274.50,223.12 C268.34,232.87 245.00,263.83 236.80,273.11 C235.54,274.54 232.03,278.59 229.02,282.11 C217.37,295.70 177.58,334.53 167.99,341.67 C164.97,343.92 161.53,346.60 160.35,347.63 C156.80,350.73 134.18,367.60 123.50,375.13 C118.00,379.01 113.36,382.32 113.18,382.49 C112.80,382.87 114.97,386.84 116.85,389.19 C118.51,391.26 120.14,390.72 129.60,384.95 Z" />
+        <symbol id="icon-apk-def" viewBox="0 0 50 50">
+            <path fill="#95CF00" fill-rule="evenodd" d="M26.727 9.6c-.792 0-1.432-.623-1.432-1.393s.64-1.392 1.432-1.392c.792 0 1.432.621 1.432 1.392 0 .77-.64 1.394-1.432 1.394zm-11.454 0c-.792 0-1.432-.623-1.432-1.393s.64-1.392 1.432-1.392c.792 0 1.432.621 1.432 1.392 0 .77-.64 1.394-1.432 1.394zm12.3-5.581.534-.785.534-.773L29.83.722a.454.454 0 0 0-.134-.643.478.478 0 0 0-.658.13l-1.815 2.644-.545.796A16.069 16.069 0 0 0 21 2.633a16.08 16.08 0 0 0-5.678 1.016l-.542-.796-.536-.782L12.968.209a.489.489 0 0 0-.664-.13.459.459 0 0 0-.134.643l1.19 1.739.533.773.536.785c-4.05 1.837-6.791 5.317-6.791 9.299h26.724c0-3.982-2.74-7.462-6.788-9.3zM7.843 15.175h-.205v20.438c0 1.623 1.354 2.944 3.024 2.944h2.181a2.616 2.616 0 0 0-.116.773v5.884c0 1.539 1.285 2.786 2.865 2.786 1.58 0 2.865-1.247 2.865-2.786V39.33c0-.27-.044-.528-.116-.773h5.318a2.713 2.713 0 0 0-.113.773v5.884c0 1.539 1.282 2.786 2.862 2.786 1.583 0 2.868-1.247 2.868-2.786V39.33c0-.27-.044-.528-.119-.773h2.184c1.67 0 3.021-1.32 3.021-2.944V15.175H7.844zm-4.978 0C1.282 15.175 0 16.422 0 17.96v11.924c0 1.538 1.282 2.786 2.865 2.786 1.58 0 2.862-1.248 2.862-2.786V17.96c0-1.538-1.282-2.785-2.862-2.785zm36.273 0c-1.583 0-2.865 1.247-2.865 2.785v11.924c0 1.538 1.282 2.786 2.865 2.786 1.58 0 2.862-1.248 2.862-2.786V17.96c0-1.538-1.282-2.785-2.862-2.785z"/>
+        </symbol>
+        <symbol id="icon-exe-def" viewBox="0 0 24 24">
+            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" fill="#26A69A"/>
+            <circle cx="12" cy="12" r="2.5" fill="#00897B"/>
+        </symbol>
+        <symbol id="icon-pdf-def" viewBox="0 0 24 24">
+            <path fill="#C51F1A" d="M23.63 15.3c-.71-.745-2.166-1.17-4.224-1.17-1.1 0-2.377.106-3.761.354a19.443 19.443 0 0 1-2.307-2.661c-.532-.71-.994-1.49-1.42-2.236.817-2.484 1.207-4.507 1.207-5.962 0-1.632-.603-3.336-2.342-3.336-.532 0-1.065.32-1.349.781-.78 1.384-.425 4.4.923 7.381a60.277 60.277 0 0 1-1.703 4.507c-.568 1.349-1.207 2.733-1.917 4.01C2.834 18.53.314 20.34.03 21.758c-.106.533.071 1.03.462 1.42.142.107.639.533 1.49.533 2.59 0 5.323-4.188 6.707-6.707 1.065-.355 2.13-.71 3.194-.994a34.963 34.963 0 0 1 3.407-.745c2.732 2.448 5.145 2.839 6.352 2.839 1.49 0 2.023-.604 2.2-1.1.32-.64.106-1.349-.213-1.704zm-1.42 1.03c-.107.532-.64.887-1.384.887-.213 0-.39-.036-.604-.071-1.348-.32-2.626-.994-3.903-2.059a17.717 17.717 0 0 1 2.98-.248c.746 0 1.385.035 1.81.142.497.106 1.278.426 1.1 1.348zm-7.524-1.668a38.01 38.01 0 0 0-2.945.674 39.68 39.68 0 0 0-2.52.745 40.05 40.05 0 0 0 1.207-2.555c.426-.994.78-2.023 1.136-2.981.354.603.745 1.207 1.135 1.739a50.127 50.127 0 0 0 1.987 2.378zM10.038 1.46a.768.768 0 0 1 .674-.425c.745 0 .887.851.887 1.526 0 1.135-.355 2.874-.958 4.861-1.03-2.768-1.1-5.074-.603-5.962zM6.134 17.997c-1.81 2.981-3.549 4.826-4.613 4.826a.872.872 0 0 1-.532-.177c-.213-.213-.32-.461-.249-.745.213-1.065 2.271-2.555 5.394-3.904Z"/>
+        </symbol>
+        <symbol id="icon-doc-ms-def" viewBox="-0.12979372698077785 0 32.12979372698078 32">
+            <path d="M30.667 2H9.333A1.333 1.333 0 0 0 8 3.333V9l12 3.5L32 9V3.333A1.333 1.333 0 0 0 30.667 2z" fill="#41a5ee"/><path d="M32 9H8v7l12 3.5L32 16z" fill="#2b7cd3"/><path d="M32 16H8v7l12 3.5L32 23z" fill="#185abd"/><path d="M32 23H8v5.667A1.333 1.333 0 0 0 9.333 30h21.334A1.333 1.333 0 0 0 32 28.667z" fill="#103f91"/><path d="M16.667 7H8v19h8.667A1.337 1.337 0 0 0 18 24.667V8.333A1.337 1.337 0 0 0 16.667 7z" opacity=".1"/><path d="M15.667 8H8v19h7.667A1.337 1.337 0 0 0 17 25.667V9.333A1.337 1.337 0 0 0 15.667 8z" opacity=".2"/><path d="M15.667 8H8v17h7.667A1.337 1.337 0 0 0 17 23.667V9.333A1.337 1.337 0 0 0 15.667 8z" opacity=".2"/><path d="M14.667 8H8v17h6.667A1.337 1.337 0 0 0 16 23.667V9.333A1.337 1.337 0 0 0 14.667 8z" opacity=".2"/><path d="M1.333 8h13.334A1.333 1.333 0 0 1 16 9.333v13.334A1.333 1.333 0 0 1 14.667 24H1.333A1.333 1.333 0 0 1 0 22.667V9.333A1.333 1.333 0 0 1 1.333 8z" fill="#185abd"/><path d="M11.95 21h-1.8l-2.1-6.9-2.2 6.9h-1.8l-2-10h1.8l1.4 7 2.1-6.8h1.5l2 6.8 1.4-7h1.7z" fill="#fff"/>
+        </symbol>
+        <symbol id="icon-xls-def" viewBox="-0.12979372698077785 0 32.12979372698078 32">
+            <path d="M20 2H9.333A1.333 1.333 0 0 0 8 3.333V9l12 7 6 2.532L32 16V9z" fill="#21a366"/><path fill="#107c41" d="M8 9h12v7H8z"/><path d="M30.667 2H20v7h12V3.333A1.333 1.333 0 0 0 30.667 2z" fill="#33c481"/><path d="M20 16H8v12.667A1.333 1.333 0 0 0 9.333 30h21.334A1.333 1.333 0 0 0 32 28.667V23z" fill="#185c37"/><path fill="#107c41" d="M20 16h12v7H20z"/><path d="M16.667 7H8v19h8.667A1.337 1.337 0 0 0 18 24.667V8.333A1.337 1.337 0 0 0 16.667 7z" opacity=".1"/><path d="M15.667 8H8v19h7.667A1.337 1.337 0 0 0 17 25.667V9.333A1.337 1.337 0 0 0 15.667 8z" opacity=".2"/><path d="M15.667 8H8v17h7.667A1.337 1.337 0 0 0 17 23.667V9.333A1.337 1.337 0 0 0 15.667 8z" opacity=".2"/><path d="M14.667 8H8v17h6.667A1.337 1.337 0 0 0 16 23.667V9.333A1.337 1.337 0 0 0 14.667 8z" opacity=".2"/><path data-name="Back Plate" d="M1.333 8h13.334A1.333 1.333 0 0 1 16 9.333v13.334A1.333 1.333 0 0 1 14.667 24H1.333A1.333 1.333 0 0 1 0 22.667V9.333A1.333 1.333 0 0 1 1.333 8z" fill="#107c41"/><path d="M3.533 21l3.236-5.014L3.805 11H6.19l1.618 3.187q.223.453.307.676h.021q.16-.362.335-.704L10.2 11h2.189l-3.04 4.958L12.466 21h-2.33l-1.869-3.5a2.922 2.922 0 0 1-.223-.468h-.028a2.207 2.207 0 0 1-.216.453L5.877 21z" fill="#fff"/>
+        </symbol>
+        <symbol id="icon-ppt-def" viewBox="-0.12979372698077785 0 32.152389301176754 32">
+            <path d="M18 2A14.041 14.041 0 0 0 4 16l17.737 3.737z" fill="#ed6c47"/><path d="M18 2a14.041 14.041 0 0 1 14 14l-7 4.758L18 16z" fill="#ff8f6b"/><path d="M18 30a14.041 14.041 0 0 0 14-14H4a14.041 14.041 0 0 0 14 14z" fill="#d35230"/><path d="M16.666 7h-9.36a13.914 13.914 0 0 0 .93 19h8.43A1.337 1.337 0 0 0 18 24.667V8.333A1.337 1.337 0 0 0 16.666 7z" opacity=".1"/><path d="M15.666 8H6.54a13.906 13.906 0 0 0 2.845 19h6.282A1.337 1.337 0 0 0 17 25.667V9.333A1.337 1.337 0 0 0 15.666 8z" opacity=".2"/><path d="M15.666 8H6.54a13.89 13.89 0 0 0 .766 17h8.361A1.337 1.337 0 0 0 17 23.667V9.333A1.337 1.337 0 0 0 15.666 8z" opacity=".2"/><path d="M14.666 8H6.54a13.89 13.89 0 0 0 .766 17h7.361A1.337 1.337 0 0 0 16 23.667V9.333A1.337 1.337 0 0 0 14.666 8z" opacity=".2"/><path d="M1.333 8h13.334A1.333 1.333 0 0 1 16 9.333v13.334A1.333 1.333 0 0 1 14.667 24H1.333A1.333 1.333 0 0 1 0 22.667V9.333A1.333 1.333 0 0 1 1.333 8z" fill="#c43e1c"/><path d="M7.997 11a4.168 4.168 0 0 1 2.755.805 2.878 2.878 0 0 1 .956 2.331 2.726 2.726 0 0 1-.473 1.588 3.164 3.164 0 0 1-1.344 1.186 4.57 4.57 0 0 1-2.02.424h-1.91V21H4V11zM5.96 15.683h1.687a2.194 2.194 0 0 0 1.492-.444 1.107 1.107 0 0 0 .504-1.026q0-1.659-1.933-1.659H5.96z" fill="#f9f7f7"/>
+        </symbol>
     </defs>
 </svg>
 
@@ -1250,7 +1268,7 @@ body.dark-mode #btnScrollTop {
  
             <div class="splash-logos" style="margin-bottom: 20px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt="Drive" style="display: none;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/cb/Dropbox_logo_2017.svg" alt="Dropbox" style="display: none;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Dropbox_Icon.svg" alt="Dropbox" style="display: none;">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg" alt="YouTube">
             </div>
 
@@ -1904,12 +1922,12 @@ SVG_CANCEL=`<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke
 SVG_MORE_VERT=`<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>`,
 SVG_TAB_NOTE=`<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
 SVG_TAB_FILE=`<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
-SVG_ICON_APK=`<svg xmlns="http://www.w3.org/2000/svg" width="42" height="48" viewBox="0 0 50 50" style="margin-left:5px;" id="android"><path fill="#95CF00" fill-rule="evenodd" d="M26.727 9.6c-.792 0-1.432-.623-1.432-1.393s.64-1.392 1.432-1.392c.792 0 1.432.621 1.432 1.392 0 .77-.64 1.394-1.432 1.394zm-11.454 0c-.792 0-1.432-.623-1.432-1.393s.64-1.392 1.432-1.392c.792 0 1.432.621 1.432 1.392 0 .77-.64 1.394-1.432 1.394zm12.3-5.581.534-.785.534-.773L29.83.722a.454.454 0 0 0-.134-.643.478.478 0 0 0-.658.13l-1.815 2.644-.545.796A16.069 16.069 0 0 0 21 2.633a16.08 16.08 0 0 0-5.678 1.016l-.542-.796-.536-.782L12.968.209a.489.489 0 0 0-.664-.13.459.459 0 0 0-.134.643l1.19 1.739.533.773.536.785c-4.05 1.837-6.791 5.317-6.791 9.299h26.724c0-3.982-2.74-7.462-6.788-9.3zM7.843 15.175h-.205v20.438c0 1.623 1.354 2.944 3.024 2.944h2.181a2.616 2.616 0 0 0-.116.773v5.884c0 1.539 1.285 2.786 2.865 2.786 1.58 0 2.865-1.247 2.865-2.786V39.33c0-.27-.044-.528-.116-.773h5.318a2.713 2.713 0 0 0-.113.773v5.884c0 1.539 1.282 2.786 2.862 2.786 1.583 0 2.868-1.247 2.868-2.786V39.33c0-.27-.044-.528-.119-.773h2.184c1.67 0 3.021-1.32 3.021-2.944V15.175H7.844zm-4.978 0C1.282 15.175 0 16.422 0 17.96v11.924c0 1.538 1.282 2.786 2.865 2.786 1.58 0 2.862-1.248 2.862-2.786V17.96c0-1.538-1.282-2.785-2.862-2.785zm36.273 0c-1.583 0-2.865 1.247-2.865 2.785v11.924c0 1.538 1.282 2.786 2.865 2.786 1.58 0 2.862-1.248 2.862-2.786V17.96c0-1.538-1.282-2.785-2.862-2.785z"></path></svg>`,
-SVG_ICON_EXE=`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="feather-icon"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" fill="#26A69A"/><circle cx="12" cy="12" r="2.5" fill="#00897B"/></svg>`,
-SVG_ICON_PDF=`<svg fill="#C51F1A" width="44px" height="44px" viewBox="0 0 24 24" style="margin-top:5px" role="img" xmlns="http://www.w3.org/2000/svg"><title>Adobe Acrobat Reader icon</title><path d="M23.63 15.3c-.71-.745-2.166-1.17-4.224-1.17-1.1 0-2.377.106-3.761.354a19.443 19.443 0 0 1-2.307-2.661c-.532-.71-.994-1.49-1.42-2.236.817-2.484 1.207-4.507 1.207-5.962 0-1.632-.603-3.336-2.342-3.336-.532 0-1.065.32-1.349.781-.78 1.384-.425 4.4.923 7.381a60.277 60.277 0 0 1-1.703 4.507c-.568 1.349-1.207 2.733-1.917 4.01C2.834 18.53.314 20.34.03 21.758c-.106.533.071 1.03.462 1.42.142.107.639.533 1.49.533 2.59 0 5.323-4.188 6.707-6.707 1.065-.355 2.13-.71 3.194-.994a34.963 34.963 0 0 1 3.407-.745c2.732 2.448 5.145 2.839 6.352 2.839 1.49 0 2.023-.604 2.2-1.1.32-.64.106-1.349-.213-1.704zm-1.42 1.03c-.107.532-.64.887-1.384.887-.213 0-.39-.036-.604-.071-1.348-.32-2.626-.994-3.903-2.059a17.717 17.717 0 0 1 2.98-.248c.746 0 1.385.035 1.81.142.497.106 1.278.426 1.1 1.348zm-7.524-1.668a38.01 38.01 0 0 0-2.945.674 39.68 39.68 0 0 0-2.52.745 40.05 40.05 0 0 0 1.207-2.555c.426-.994.78-2.023 1.136-2.981.354.603.745 1.207 1.135 1.739a50.127 50.127 0 0 0 1.987 2.378zM10.038 1.46a.768.768 0 0 1 .674-.425c.745 0 .887.851.887 1.526 0 1.135-.355 2.874-.958 4.861-1.03-2.768-1.1-5.074-.603-5.962zM6.134 17.997c-1.81 2.981-3.549 4.826-4.613 4.826a.872.872 0 0 1-.532-.177c-.213-.213-.32-.461-.249-.745.213-1.065 2.271-2.555 5.394-3.904Z"/></svg>`,
-SVG_ICON_DOC_MS=`<svg viewBox="-0.12979372698077785 0 32.12979372698078 32" xmlns="http://www.w3.org/2000/svg" width="50" height="48"><path d="M30.667 2H9.333A1.333 1.333 0 0 0 8 3.333V9l12 3.5L32 9V3.333A1.333 1.333 0 0 0 30.667 2z" fill="#41a5ee"/><path d="M32 9H8v7l12 3.5L32 16z" fill="#2b7cd3"/><path d="M32 16H8v7l12 3.5L32 23z" fill="#185abd"/><path d="M32 23H8v5.667A1.333 1.333 0 0 0 9.333 30h21.334A1.333 1.333 0 0 0 32 28.667z" fill="#103f91"/><path d="M16.667 7H8v19h8.667A1.337 1.337 0 0 0 18 24.667V8.333A1.337 1.337 0 0 0 16.667 7z" opacity=".1"/><path d="M15.667 8H8v19h7.667A1.337 1.337 0 0 0 17 25.667V9.333A1.337 1.337 0 0 0 15.667 8z" opacity=".2"/><path d="M15.667 8H8v17h7.667A1.337 1.337 0 0 0 17 23.667V9.333A1.337 1.337 0 0 0 15.667 8z" opacity=".2"/><path d="M14.667 8H8v17h6.667A1.337 1.337 0 0 0 16 23.667V9.333A1.337 1.337 0 0 0 14.667 8z" opacity=".2"/><path d="M1.333 8h13.334A1.333 1.333 0 0 1 16 9.333v13.334A1.333 1.333 0 0 1 14.667 24H1.333A1.333 1.333 0 0 1 0 22.667V9.333A1.333 1.333 0 0 1 1.333 8z" fill="#185abd"/><path d="M11.95 21h-1.8l-2.1-6.9-2.2 6.9h-1.8l-2-10h1.8l1.4 7 2.1-6.8h1.5l2 6.8 1.4-7h1.7z" fill="#fff"/><path d="M0 0h32v32H0z" fill="none"/></svg>`,
-SVG_ICON_XLS=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="-0.12979372698077785 0 32.12979372698078 32" width="50" height="48"><g data-name="STYLE = COLOR"><path d="M20 2H9.333A1.333 1.333 0 0 0 8 3.333V9l12 7 6 2.532L32 16V9z" fill="#21a366"/><path fill="#107c41" d="M8 9h12v7H8z"/><path d="M30.667 2H20v7h12V3.333A1.333 1.333 0 0 0 30.667 2z" fill="#33c481"/><path d="M20 16H8v12.667A1.333 1.333 0 0 0 9.333 30h21.334A1.333 1.333 0 0 0 32 28.667V23z" fill="#185c37"/><path fill="#107c41" d="M20 16h12v7H20z"/><path d="M16.667 7H8v19h8.667A1.337 1.337 0 0 0 18 24.667V8.333A1.337 1.337 0 0 0 16.667 7z" opacity=".1"/><path d="M15.667 8H8v19h7.667A1.337 1.337 0 0 0 17 25.667V9.333A1.337 1.337 0 0 0 15.667 8z" opacity=".2"/><path d="M15.667 8H8v17h7.667A1.337 1.337 0 0 0 17 23.667V9.333A1.337 1.337 0 0 0 15.667 8z" opacity=".2"/><path d="M14.667 8H8v17h6.667A1.337 1.337 0 0 0 16 23.667V9.333A1.337 1.337 0 0 0 14.667 8z" opacity=".2"/><path data-name="Back Plate" d="M1.333 8h13.334A1.333 1.333 0 0 1 16 9.333v13.334A1.333 1.333 0 0 1 14.667 24H1.333A1.333 1.333 0 0 1 0 22.667V9.333A1.333 1.333 0 0 1 1.333 8z" fill="#107c41"/><path d="M3.533 21l3.236-5.014L3.805 11H6.19l1.618 3.187q.223.453.307.676h.021q.16-.362.335-.704L10.2 11h2.189l-3.04 4.958L12.466 21h-2.33l-1.869-3.5a2.922 2.922 0 0 1-.223-.468h-.028a2.207 2.207 0 0 1-.216.453L5.877 21z" fill="#fff"/><path fill="none" d="M0 0h32v32H0z"/></g></svg>`,
-SVG_ICON_PPT=`<svg viewBox="-0.12979372698077785 0 32.152389301176754 32" xmlns="http://www.w3.org/2000/svg" width="50" height="48"><path d="M18 2A14.041 14.041 0 0 0 4 16l17.737 3.737z" fill="#ed6c47"/><path d="M18 2a14.041 14.041 0 0 1 14 14l-7 4.758L18 16z" fill="#ff8f6b"/><path d="M18 30a14.041 14.041 0 0 0 14-14H4a14.041 14.041 0 0 0 14 14z" fill="#d35230"/><path d="M16.666 7h-9.36a13.914 13.914 0 0 0 .93 19h8.43A1.337 1.337 0 0 0 18 24.667V8.333A1.337 1.337 0 0 0 16.666 7z" opacity=".1"/><path d="M15.666 8H6.54a13.906 13.906 0 0 0 2.845 19h6.282A1.337 1.337 0 0 0 17 25.667V9.333A1.337 1.337 0 0 0 15.666 8z" opacity=".2"/><path d="M15.666 8H6.54a13.89 13.89 0 0 0 .766 17h8.361A1.337 1.337 0 0 0 17 23.667V9.333A1.337 1.337 0 0 0 15.666 8z" opacity=".2"/><path d="M14.666 8H6.54a13.89 13.89 0 0 0 .766 17h7.361A1.337 1.337 0 0 0 16 23.667V9.333A1.337 1.337 0 0 0 14.666 8z" opacity=".2"/><path d="M1.333 8h13.334A1.333 1.333 0 0 1 16 9.333v13.334A1.333 1.333 0 0 1 14.667 24H1.333A1.333 1.333 0 0 1 0 22.667V9.333A1.333 1.333 0 0 1 1.333 8z" fill="#c43e1c"/><path d="M7.997 11a4.168 4.168 0 0 1 2.755.805 2.878 2.878 0 0 1 .956 2.331 2.726 2.726 0 0 1-.473 1.588 3.164 3.164 0 0 1-1.344 1.186 4.57 4.57 0 0 1-2.02.424h-1.91V21H4V11zM5.96 15.683h1.687a2.194 2.194 0 0 0 1.492-.444 1.107 1.107 0 0 0 .504-1.026q0-1.659-1.933-1.659H5.96z" fill="#f9f7f7"/><path d="M0 0h32v32H0z" fill="none"/></svg>`,
+SVG_ICON_APK=`<svg class="feather-icon" width="42" height="48" viewBox="0 0 50 50" style="margin-left:5px;"><use href="#icon-apk-def"></use></svg>`,
+SVG_ICON_EXE=`<svg class="feather-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-exe-def"></use></svg>`,
+SVG_ICON_PDF=`<svg style="margin-top:5px" width="44px" height="44px" viewBox="0 0 24 24"><use href="#icon-pdf-def"></use></svg>`,
+SVG_ICON_DOC_MS=`<svg width="50" height="48" viewBox="-0.12979372698077785 0 32.12979372698078 32"><use href="#icon-doc-ms-def"></use></svg>`,
+SVG_ICON_XLS=`<svg width="50" height="48" viewBox="-0.12979372698077785 0 32.12979372698078 32"><use href="#icon-xls-def"></use></svg>`,
+SVG_ICON_PPT=`<svg width="50" height="48" viewBox="-0.12979372698077785 0 32.152389301176754 32"><use href="#icon-ppt-def"></use></svg>`,
 SVG_ICON_DOC_FALLBACK=`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="feather-icon"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#757575"/><path d="M14 2V8H20" fill="#424242"/><path d="M8 13H16M8 17H16M8 9H11" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`,
 SVG_ICON_TXT=`<svg class="svg-grid-only feather-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" fill="#9E9E9E"/><path d="M14 2V8H20" fill="#616161"/><text x="12" y="15.5" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="6.5" text-anchor="middle">TXT</text></svg><svg class="svg-list-only" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 3H9C7.8954 3 7 3.8954 7 5V19C7 20.1046 7.8954 21 9 21H15C16.1046 21 17 20.1046 17 19V5C17 3.8954 16.1046 3 15 3Z" fill="#e0e0e0" stroke="#757575" stroke-width="1.5"/><line x1="9.5" y1="8.5" x2="14.5" y2="8.5" stroke="#9e9e9e" stroke-width="1.5" stroke-linecap="round"/><line x1="9.5" y1="12.5" x2="14.5" y2="12.5" stroke="#9e9e9e" stroke-width="1.5" stroke-linecap="round"/><line x1="9.5" y1="16.5" x2="12.5" y2="16.5" stroke="#9e9e9e" stroke-width="1.5" stroke-linecap="round"/><path d="M9 2V4M12 2V4M15 2V4" stroke="#616161" stroke-width="2" stroke-linecap="round"/></svg>`,
 SVG_ICON_DEFAULT=`<svg class="svg-grid-only feather-icon" version="1.0" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="46px" height="46px" viewBox="0 0 64 64" enable-background="new 0 0 64 64" xml:space="preserve"><line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" x1="0" y1="7" x2="64" y2="7"/><line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" x1="0" y1="17" x2="46" y2="17"/><line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" x1="0" y1="27" x2="64" y2="27"/><line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" x1="0" y1="37" x2="50" y2="37"/><line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" x1="0" y1="47" x2="64" y2="47"/><line fill="none" stroke="#000000" stroke-width="2" stroke-miterlimit="10" x1="0" y1="57" x2="54" y2="57"/></svg><svg class="svg-list-only" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 3H9C7.8954 3 7 3.8954 7 5V19C7 20.1046 7.8954 21 9 21H15C16.1046 21 17 20.1046 17 19V5C17 3.8954 16.1046 3 15 3Z" fill="#e0e0e0" stroke="#757575" stroke-width="1.5"/><line x1="9.5" y1="8.5" x2="14.5" y2="8.5" stroke="#9e9e9e" stroke-width="1.5" stroke-linecap="round"/><line x1="9.5" y1="12.5" x2="14.5" y2="12.5" stroke="#9e9e9e" stroke-width="1.5" stroke-linecap="round"/><line x1="9.5" y1="16.5" x2="12.5" y2="16.5" stroke="#9e9e9e" stroke-width="1.5" stroke-linecap="round"/><path d="M9 2V4M12 2V4M15 2V4" stroke="#616161" stroke-width="2" stroke-linecap="round"/></svg>`,
@@ -2274,15 +2292,12 @@ function submitPin(){
 }
 
 function cancelPin(){toggleModal('modalPin', false),pinActionCallback=null,isChangingPin=false,isForgotPinReset=false}
-
 const toggleModal = (id, show) => { document.getElementById(id).style.display = show ? 'flex' : 'none'; cekScrollLayar(); };
 function cekScrollLayar() {
-    // Optimasi: Gunakan querySelector agar eksekusi ditarik langsung ke engine CSS C++ browser (tanpa membuat Array baru di JS)
-    const anyModalOpen = document.querySelector('.modal[style*="display: flex"], .modal[style*="display: block"]') !== null;
+    // Optimasi: Validasi properti style langsung tanpa regex/attribute selector DOM
+    const anyModalOpen = Array.from(document.querySelectorAll('.modal')).some(m => m.style.display === 'flex' || m.style.display === 'block');
     const isPlayerMaximized = MediaPlayer.ui && !MediaPlayer.ui.classList.contains('hidden') && !MediaPlayer.minimized;
     document.body.classList.toggle('no-scroll', anyModalOpen || isPlayerMaximized);
-    
-    // [BARU] Menyuntikkan state player-maximized ke body untuk mengontrol visibilitas FAB
     document.body.classList.toggle('player-maximized', isPlayerMaximized);
 }
 
@@ -2330,12 +2345,47 @@ function updateLockUI() {
 function bukaMasterViaSettings(){'none'===currentRole?requestPin(a=>{setAppRole(a),toggleModal('modalSettings', false),bukaMaster()}):(toggleModal('modalSettings', false),bukaMaster())}
 function loadConfig(){config=JSON.parse(getLocal('config_v1')||JSON.stringify(defaultConfig)),flattenConfig(),renderNav(),renderChips(),initMasterTree()}
 function flattenConfig(){flatConfig={};const a=(b,c=null)=>{b&&b.forEach(d=>{flatConfig[d.id]={...d,parentId:c},d.children&&a(d.children,d.id)})};a(config)}
-function getAllDescendantIds(a){let b=[];const c=document.querySelectorAll('.card');const map={};c.forEach(f=>{const p=f.getAttribute('data-folderId');if(p&&p!=='none'){if(!map[p])map[p]=[];map[p].push({id:f.getAttribute('data-id'),type:f.getAttribute('data-itemType')})}});const d=e=>{if(map[e]){map[e].forEach(child=>{b.push(child.id);if(child.type==='folder')d(child.id)})}};return d(a),b}
+let _childrenCache = null, _childrenCacheTimer = null;
+function getChildrenMap() {
+    if(_childrenCache) return _childrenCache;
+    _childrenCache = {};
+    document.querySelectorAll('.card').forEach(f => {
+        const p = f.getAttribute('data-folderId');
+        if(p && p !== 'none') {
+            if(!_childrenCache[p]) _childrenCache[p] = [];
+            _childrenCache[p].push({id: f.getAttribute('data-id'), type: f.getAttribute('data-itemType')});
+        }
+    });
+    clearTimeout(_childrenCacheTimer);
+    _childrenCacheTimer = setTimeout(() => _childrenCache = null, 50);
+    return _childrenCache;
+}
+function getAllDescendantIds(a){let b=[];const map=getChildrenMap();const d=e=>{if(map[e]){map[e].forEach(child=>{b.push(child.id);if(child.type==='folder')d(child.id)})}};return d(a),b}
+
 function linkify(a){return a?a.replace(/(https?:\/\/[^\s]+)/g,b=>{try{const c=new URL(b).hostname;return `<a href="${b}" target="_blank" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; vertical-align:middle;"><img src="https://www.google.com/s2/favicons?domain=${c}&sz=32" style="width:1em; height:1em; border-radius:2px;" onerror="this.style.display='none'"><span style="text-decoration:underline;">${b}</span></a>`}catch(d){return `<a href="${b}" target="_blank">${b}</a>`}}):""}
 function getYoutubeId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);return b&&11===b[2].length?b[2]:null}
 function getDriveId(a){if(!a||'LOCAL_FILE'===a)return null;const b=a.match(/(?:file\/d\/|id=|open\?id=)([^/&?]+)/);return b?b[1]:null}
-function getDirectUrl(a){if(!a||'LOCAL_FILE'===a)return a;let b=a.trim();if(b.includes('dropbox.com'))return b.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");const c=getDriveId(b);if(c&&(b.includes('drive.google.com')||b.includes('googleusercontent.com'))){return `https://www.googleapis.com/drive/v3/files/${c}?alt=media&key=${firebaseConfig.apiKey}&acknowledgeAbuse=true`;}return b;}
-function getDownloadUrl(a){if(!a||'LOCAL_FILE'===a)return"#";const b=getDriveId(a);return b?`https://www.googleapis.com/drive/v3/files/${b}?alt=media&key=${firebaseConfig.apiKey}&acknowledgeAbuse=true`:a.includes('dropbox.com')?a.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,""):a}
+function getDirectUrl(a){
+    if(!a||'LOCAL_FILE'===a)return a;
+    let b=a.trim();
+    
+    // [MODIFIKASI] Sanitasi khusus untuk link Supabase
+    if(b.includes('supabase.co')){
+        // 1. Buang parameter download agar bisa di-streaming oleh HTML5 Player
+        b = b.replace(/[?&]download(=[^&]*)?(?=&|$)/, '');
+        // 2. Encode spasi mentah menjadi %20 agar tidak error di Webview Android/iOS
+        b = b.replace(/ /g, '%20');
+    }
+    
+    if(b.includes('dropbox.com'))return b.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");
+    const c=getDriveId(b);
+    if(c&&(b.includes('drive.google.com')||b.includes('googleusercontent.com'))){
+        return `https://www.googleapis.com/drive/v3/files/${c}?alt=media&key=${firebaseConfig.apiKey}&acknowledgeAbuse=true`;
+    }
+    return b;
+}
+
+function getDownloadUrl(a){if(!a||'LOCAL_FILE'===a)return"#";const b=getDriveId(a);return b?`https://www.googleapis.com/drive/v3/files/${b}?alt=media&key=${firebaseConfig.apiKey}&acknowledgeAbuse=true`:a.includes('dropbox.com')?a.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,""):a.includes('appwrite.io')?a.replace('/view','/download'):(a.includes('supabase.co')&&!a.includes('download'))?(a.includes('?')?a+'&download=':a+'?download='):a}
 
 function getThumbUrl(a){if('LOCAL_FILE'===a)return'LOCAL_FILE';const b=getDriveId(a);if(b&&a.includes('drive.google.com'))return `https://drive.google.com/thumbnail?id=${b}&sz=w400`;if(a.includes('dropbox.com'))return a.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");return a;}
 
@@ -2787,23 +2837,32 @@ async function prosesSimpan(){
 function buatKartu(a, b = !1) {
     const c = document.createElement('div');
     c.className = 'card';
+    const cachedMediaType = getMediaType(a.img, a.name);
     ['cat', 'sub', 'type', 'detail', 'year', 'img', 'note', 'id', 'itemType', 'folderId', 'font', 'customCover', 'related', 'descaura', 'favorite'].forEach(d => c.setAttribute(`data-${d}`, a[d] || 'none'));
-    
+    c.setAttribute('data-mediatype', cachedMediaType);
+
     c.setAttribute('data-name', a.name.toLowerCase());
     'true' === a.hidden && (c.setAttribute('data-hidden', 'true'), c.classList.add('is-hidden-file'));
 
-    // INJEKSI ICON STATUS (Lokal / Drive): Deteksi sumber file
+    // INJEKSI ICON STATUS (Lokal / Drive / Supabase / Appwrite): Deteksi sumber file
     const isLocal = a.img === 'LOCAL_FILE' || (typeof a.img === 'string' && a.img.startsWith('NATIVE:'));
     const isDrive = !isLocal && typeof a.img === 'string' && !!getDriveId(a.img);
-    
+    const isSupabase = !isLocal && !isDrive && typeof a.img === 'string' && a.img.includes('supabase.co');
+    const isAppwrite = !isLocal && !isDrive && !isSupabase && typeof a.img === 'string' && a.img.includes('appwrite.io');
+    const isDropbox = !isLocal && !isDrive && !isSupabase && !isAppwrite && typeof a.img === 'string' && a.img.includes('dropbox.com');
+   
     let statusIconHtml = '';
     if (isLocal) {
-        statusIconHtml = `<div class="local-storage-icon" title="Tersimpan di Memori Lokal"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path><path d="M8 2v4"></path><path d="M12 2v4"></path><path d="M16 4v2"></path></svg></div>`;
+        statusIconHtml = `<div class="local-storage-icon" title="Tersimpan di Memori Lokal"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path><path d="M8 2v4"></path><path d="M12 2v4"></path><path d="M16 4v2"></path></svg></div>`;
     } else if (isDrive) {
-        // Menggunakan logo asli berwarna dengan sediki opacity agar tetap serasi dengan lingkungan desain
-        statusIconHtml = `<div class="local-storage-icon" style="opacity: 0.85;" title="Tersimpan di Google Drive"><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" style="width: 12px; height: 12px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));" alt="Drive"></div>`;
+        statusIconHtml = `<div class="local-storage-icon" style="opacity: 0.85;" title="Tersimpan di Google Drive"><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" style="width: 11px; height: 11px; object-fit: contain; filter: drop-shadow(0 0px 0px rgba(0,0,0,0.2));" alt="Drive"></div>`;
+    } else if (isSupabase) {
+        statusIconHtml = `<div class="local-storage-icon" style="opacity: 0.85;" title="Tersimpan di Supabase"><svg width="12" height="12" viewBox="0 0 24 24" fill="#3ECF8E" style="filter: drop-shadow(0 0px 0px rgba(0,0,0,0.2));"><path d="M11.99 2.21L2.83 11.36h7.24v10.42l9.16-9.15h-7.24V2.21z"/></svg></div>`;
+    } else if (isAppwrite) {
+        statusIconHtml = `<div class="local-storage-icon" style="opacity: 0.85;" title="Tersimpan di Appwrite"><img src="https://www.google.com/s2/favicons?domain=appwrite.io&sz=32" style="width: 10px; height: 10px; object-fit: contain; filter: drop-shadow(0 0px 0px rgba(0,0,0,0.2));" alt="Appwrite"></div>`;
+    } else if (isDropbox) {
+        statusIconHtml = `<div class="local-storage-icon" style="opacity: 0.85;" title="Tersimpan di Dropbox"><img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Dropbox_Icon.svg" style="width: 11px; height: 11px; object-fit: contain; filter: drop-shadow(0 0px 0px rgba(0,0,0,0.2));" alt="Dropbox"></div>`;
     }
-
     c.innerHTML = `${statusIconHtml}<button class="menu-dots" onclick="wrapBukaEdit(event, this)">${SVG_EDIT}</button><div class="thumb-container"></div><span class="file-info">${a.name}</span><span class="file-year">${a.year || ''}</span>`;
 
     refreshCardIcon(c);
@@ -3050,72 +3109,61 @@ function toggleSelectionMode(force){
     updateSelectCount();
 }
 
-function updateSelectCount(){
-    const a = document.querySelectorAll('.card.selected, .card.move-pending');
-    const total = a.length;
+function updateSelectCount() {
+    // Optimized: Let the CSS engine isolate selected elements instead of mapping the entire grid
+    const selectedCards = document.querySelectorAll('.card.selected:not([style*="display: none"]), .card.move-pending:not([style*="display: none"])');
+    const totalVisible = document.querySelectorAll('.card:not([style*="display: none"])').length;
     
-    let folders = 0;
-    a.forEach(card => { if (card.getAttribute('data-itemType') === 'folder') folders++; });
-    const files = total - folders;
+    let foldersCount = 0;
+    const totalSelected = selectedCards.length;
 
+    selectedCards.forEach(card => {
+        if (card.getAttribute('data-itemType') === 'folder') foldersCount++;
+    });
+
+    const filesCount = totalSelected - foldersCount;
     const selText = document.getElementById('selTextInfo');
 
     if (selText) {
-        if (isMovePending) {
-            selText.innerText = `${folders} folder ${files} file akan dipindah`;
-        } else if (isAddMediaMode) {
-            selText.innerText = `${files} file dipilih`;
-        } else {
-            selText.innerText = `${folders} folder ${files} file dipilih`;
-        }
+        if (isMovePending) selText.innerText = `${foldersCount} folder ${filesCount} file akan dipindah`;
+        else if (isAddMediaMode) selText.innerText = `${filesCount} file dipilih`;
+        else selText.innerText = `${foldersCount} folder ${filesCount} file dipilih`;
     }
 
     const btnFloatingSelectAll = document.getElementById('btnFloatingSelectAll');
     if (btnFloatingSelectAll) {
-        const visibleCardsLength = document.querySelectorAll('.card:not([style*="display: none"])').length;
-        let selectedVisibleCount = 0;
-        a.forEach(card => { 
-            if (card.style.display !== 'none') selectedVisibleCount++; 
-        });
-        const isAllSelected = visibleCardsLength > 0 && selectedVisibleCount === visibleCardsLength;
+        const isAllSelected = totalVisible > 0 && totalSelected === totalVisible;
         btnFloatingSelectAll.innerHTML = isAllSelected ? SVG_SELECT_ACTIVE : SVG_SELECT_INACTIVE;
     }
 
     const btnHide = document.getElementById('btnToggleHide');
-    if(btnHide) btnHide.innerHTML = Array.from(a).some(b => 'true' === b.getAttribute('data-hidden')) ? `<span>${SVG_EYE_OPEN}</span> Tampilkan` : `<span>${SVG_EYE_CLOSED}</span> Sembunyi`;
+    if (btnHide) btnHide.innerHTML = Array.from(selectedCards).some(b => 'true' === b.getAttribute('data-hidden')) ? `<span>${SVG_EYE_OPEN}</span> Tampilkan` : `<span>${SVG_EYE_CLOSED}</span> Sembunyi`;
 
     const btnLink = document.getElementById('btnToggleLink');
-    if(btnLink) {
-        const isLinked = Array.from(a).some(b => b.getAttribute('data-related') !== 'none' && b.getAttribute('data-related') !== null);
+    if (btnLink) {
+        const isLinked = Array.from(selectedCards).some(b => b.getAttribute('data-related') !== 'none' && b.getAttribute('data-related') !== null);
         btnLink.innerHTML = isLinked ? `<span>${SVG_UNLINK}</span> Putus` : `<span>${SVG_LINK}</span> Hubung`;
     }
 
+    // Keep the rest of the existing layout calculation code below...
     const floatingInfo = document.getElementById('floatingSelectionInfo');
     const chipsArea = document.getElementById('dynamicChipsArea');
-    const chipsHeight = chipsArea ? chipsArea.offsetHeight : 0;
-    const baseBottom = (70 + chipsHeight + 10) + 'px';
+    const baseBottom = (70 + (chipsArea ? chipsArea.offsetHeight : 0) + 10) + 'px';
     
     if (floatingInfo) {
-        if (total > 0 || (isMovePending) || isSelectionMode || isAddMediaMode) {
+        if (totalSelected > 0 || isMovePending || isSelectionMode || isAddMediaMode) {
             floatingInfo.classList.add('visible'); 
-            if (isSelectionMode && !isAddMediaMode) {
-                floatingInfo.style.bottom = '75px';
-            } else {
-
-                floatingInfo.style.bottom = baseBottom;
-            }
+            floatingInfo.style.bottom = (isSelectionMode && !isAddMediaMode) ? '75px' : baseBottom;
         } else {
             floatingInfo.classList.remove('visible'); 
             floatingInfo.style.bottom = '-60px'; 
         }
     }
 
-    // --- LOGIKA VISIBILITAS FAB (TOMBOL TAMBAH) ---
     const fab = document.getElementById('fabAddMemori');
     if (fab) {
         const isRestrictedPage = curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite';
-        // Sembunyikan jika: Terkunci, Halaman Terlarang, Mode Seleksi, Mode Pindah, Mode Add Media, atau ada item yang diceklis
-        if (currentRole === 'none' || isRestrictedPage || isSelectionMode || isMovePending || isAddMediaMode || total > 0) {
+        if (currentRole === 'none' || isRestrictedPage || isSelectionMode || isMovePending || isAddMediaMode || totalSelected > 0) {
             fab.classList.remove('visible');
             fab.style.bottom = '-60px';
         } else {
@@ -3129,31 +3177,25 @@ function toggleSelectCard(a){a.classList.toggle('selected'),updateSelectCount()}
 
 // --- FITUR BARU: SELECT ALL / DESELECT ALL ---
 function togglePilihSemua() {
-    // 1. Ambil semua kartu yang saat ini TAMPIL di layar menggunakan Native CSS Engine
-    const visibleCards = document.querySelectorAll('.card:not([style*="display: none"])');
+    // Optimasi: Membaca style statis via JS murni, bukan via DOM Parser
+    const visibleCards = Array.from(document.querySelectorAll('.card')).filter(c => c.style.display !== 'none');
 
     if (visibleCards.length === 0) return alert("Tidak ada item yang dapat dipilih di tampilan saat ini.");
 
-    // 2. Deteksi apakah sedang dalam mode Pindah (Move-Pending) atau Seleksi Normal
     const isMoveMode = typeof isMovePending !== 'undefined' && isMovePending;
     const targetClass = isMoveMode ? 'move-pending' : 'selected';
 
-    // 3. Cek apakah semua item yang tampak sudah terpilih
-    // [PERBAIKAN]: Konversi NodeList ke Array murni agar .filter() dapat dijalankan
-    const selectedCount = Array.from(visibleCards).filter(card => card.classList.contains(targetClass)).length;
+    const selectedCount = visibleCards.filter(card => card.classList.contains(targetClass)).length;
     const isAllSelected = selectedCount === visibleCards.length;
 
-    // 4. Lakukan Toggle (Pilih Semua ATAU Batal Pilih Semua)
     visibleCards.forEach(card => {
         if (isAllSelected) {
-            // Batalkan Seleksi
             card.classList.remove(targetClass);
             if (isMoveMode) {
                 const idToRemove = card.getAttribute('data-id');
                 movePendingIds = movePendingIds.filter(id => id !== idToRemove);
             }
         } else {
-            // Pilih Semua
             card.classList.add(targetClass);
             if (isMoveMode) {
                 const idToAdd = card.getAttribute('data-id');
@@ -3162,7 +3204,6 @@ function togglePilihSemua() {
         }
     });
 
-    // 5. Update UI atau batalkan mode pindah jika semuanya di-deselect
     if (isMoveMode && isAllSelected) {
         batalBatchAksi();
     } else {
@@ -3359,9 +3400,7 @@ function eksekusiTempel(){
         }
     });
 
-    // Keamanan tambahan: Pastikan tidak ada sisa seleksi di layar
-    document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
-
+    // Keamanan tambahan: Pastikan tidak ada sisa seleksi di layar (Ditangani langsung secara efisien oleh fungsi batalBatchAksi di bawah)
     logActivity('Pindah', `Memindahkan ${movedCount} item ke lokasi baru.`);
     simpanKeLokal();
     filterFiles();
@@ -3468,7 +3507,7 @@ async function tambahKePlaylistBatch(){
         if(isTargetingSaved&&targetPlaylist){
             targetPlaylist.items.push(itemData);b++;
         }else{
-            MediaPlayer.addToPlaylist(itemData,false);b++;
+            MediaPlayer.addToPlaylist(itemData,false,true);b++;
         }
     }
     
@@ -3493,11 +3532,12 @@ async function tambahKePlaylistBatch(){
         if(isTargetingSaved && targetPlaylist) {
             alert(`${b} item ditambahkan ke playlist '${targetPlaylist.name}'.`);
         } else {
+            if(MediaPlayer.activeViewIndex==='queue') MediaPlayer.renderViewingPlaylist(MediaPlayer.queue,'queue'); else MediaPlayer.loadPlaylistMenu();
             alert(`${b} item diproses ke Antrian Saat Ini.`);
         }
         batalBatchAksi(); 
     }
-    
+
     // Pembersihan variabel disatukan di akhir
     window.targetPlaylistIndexForAdd = null;
 }
@@ -3620,13 +3660,12 @@ function filterFiles(){
         // Default: year_desc
         return j!==k ? k-j : nameF.localeCompare(nameG);
     });
-
-    
-    const f=document.getElementById('fileGrid');
-    const frag=document.createDocumentFragment();
-    e.forEach(g=>frag.appendChild(g));
-    f.appendChild(frag);
-    
+   
+    // Menggunakan CSS Order untuk meminimalisir DOM Reflow
+    e.forEach((g, index) => {
+        g.style.order = index;
+    });
+   
     // Ubah teks empty state secara dinamis
     const emptyStateText = document.querySelector('#emptyState p');
     if (curFilter.l0 === 'favorite') {
@@ -3722,7 +3761,9 @@ document.getElementById('textViewContainer').style.display='none',document.getEl
     next:function(){this.index=(this.index+1)%this.list.length,this.render()},
     prev:function(){this.index=(this.index-1+this.list.length)%this.list.length,this.render()},
     toggleSlide:function(){this.timer?(clearInterval(this.timer),this.timer=null,document.getElementById('btnSlideImg').innerText='▶ Slideshow'):(this.timer=setInterval(()=>this.next(),3000),document.getElementById('btnSlideImg').innerText='⏹ Slideshow')},
-    viewFull:function(){const a=document.querySelector('.full-image-container');a.requestFullscreen?a.requestFullscreen():a.webkitRequestFullscreen?a.webkitRequestFullscreen():a.msRequestFullscreen&&a.msRequestFullscreen()},     exitFull:function(){document.exitFullscreen?document.exitFullscreen():document.webkitExitFullscreen?document.webkitExitFullscreen():document.msExitFullscreen&&document.msExitFullscreen()},     downloadCurrent:function(){const a=this.list[this.index];if(!a)return;const b=document.createElement('a');b.download=a.name;a.isLocal&&a.src.startsWith('blob:')?b.href=a.src:(b.href=getDownloadUrl(a.src)||a.src,b.target='_blank');b.click();},
+    viewFull:function(){const a=document.querySelector('.full-image-container');if(a.requestFullscreen)a.requestFullscreen();},
+    exitFull:function(){if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen();},
+    downloadCurrent:function(){const a=this.list[this.index];if(!a)return;const b=document.createElement('a');b.download=a.name;a.isLocal&&a.src.startsWith('blob:')?b.href=a.src:(b.href=getDownloadUrl(a.src)||a.src,b.target='_blank');b.click();},
     close:function(){this.timer&&this.toggleSlide(),stopRelatedAnimations(),toggleModal('modalImageViewer', false),document.getElementById('textViewContainer').style.display='none',document.getElementById('imgViewFull').style.display='block'; this.list.forEach(item => { if(item.src && item.src.startsWith('blob:')) { URL.revokeObjectURL(item.src); } }); document.getElementById('imgViewFull').removeAttribute('src'); this.list = [];}
 };
 
@@ -3741,7 +3782,7 @@ const MediaPlayer={
     syncPlayState:function(state){this.isPlaying=state;this.updatePlayBtn()},
     changeMode:function(){this.mode=(this.mode+1)%3;const a=document.getElementById('btnMode');0===this.mode?(a.innerHTML=SVG_LOOP,a.title="Loop All"):1===this.mode?(a.innerHTML=SVG_SHUFFLE,a.title="Shuffle"):(a.innerHTML=SVG_ONE,a.title="Repeat One")},
     
-    addToPlaylist:function(a,b=false){this.queue.push(a),b?(this.currentIndex=this.queue.length-1,this.loadTrack(true),this.show()):(1===this.queue.length&&!this.isPlaying&&(this.currentIndex=0,this.loadTrack(false)));if(this.activeViewIndex==='queue')this.renderViewingPlaylist(this.queue,'queue');else this.loadPlaylistMenu()},
+    addToPlaylist:function(a,b=false,c=false){this.queue.push(a),b?(this.currentIndex=this.queue.length-1,this.loadTrack(true),this.show()):(1===this.queue.length&&!this.isPlaying&&(this.currentIndex=0,this.loadTrack(false)));if(!c){if(this.activeViewIndex==='queue')this.renderViewingPlaylist(this.queue,'queue');else this.loadPlaylistMenu()}},
     removeFromQueue:function(a){this.queue.splice(a,1),a<this.currentIndex?this.currentIndex--:a===this.currentIndex&&this.queue.length>0?(this.currentIndex=a%this.queue.length,this.loadTrack(this.isPlaying)):0===this.queue.length&&this.handleEmptyState();
     if(this.activeViewIndex==='queue')this.renderViewingPlaylist(this.queue,'queue');else this.loadPlaylistMenu()},
     clearPlaylist:function(){this.queue=[],this.handleEmptyState(),this.close();document.getElementById('mpPlaylistList').innerHTML=''},
@@ -3806,7 +3847,12 @@ try{const freshBlob=await dbAmbilFile(b.id);if(freshBlob){playSrc=URL.createObje
         if(miniTitleEl) miniTitleEl.innerText = b.name;
         
         document.getElementById('miniSub').innerText=b.year||'Unknown';
-        if(d){this.isPlaying=a,ytPlayer?(ytPlayer.loadVideoById(d),a?ytPlayer.playVideo():ytPlayer.pauseVideo()):ytPlayer=new YT.Player('ytVideoPlayer',{height:'100%',width:'100%',videoId:d,playerVars:{'autoplay':a?1:0,'controls':0,'rel':0},events:{'onStateChange':this.onPlayerStateChange,'onReady':k=>{a&&k.target.playVideo()}}});ytInterval=setInterval(()=>this.syncYoutubeTime(),500)}this.updatePlayBtn();if(this.activeViewIndex!==null){if(this.activeViewIndex==='queue')this.renderViewingPlaylist(this.queue,'queue');else{const bArray=JSON.parse(getLocal('playlists')||'[]');if(bArray[this.activeViewIndex])this.renderViewingPlaylist(bArray[this.activeViewIndex].items,this.activeViewIndex)}}},onPlayerStateChange:function(a){MediaPlayer.isPlaying=a.data==YT.PlayerState.PLAYING,a.data==YT.PlayerState.ENDED&&MediaPlayer.onTrackEnd(),MediaPlayer.updatePlayBtn()},renderProgressUI: function(cur, dur) {         if(this.progBar) this.progBar.style.width = (cur / dur * 100) + '%';         if(this.currTimeEl) this.currTimeEl.innerText = formatTimeMedia(cur);         if(this.durTimeEl) this.durTimeEl.innerText = formatTimeMedia(dur);     },     syncYoutubeTime:function(){if(ytPlayer&&ytPlayer.getCurrentTime){const a=ytPlayer.getCurrentTime(),b=ytPlayer.getDuration();if(b){this.renderProgressUI(a, b);}}},togglePlay:function(){const a=this.queue[this.currentIndex];if(!a)return;if(getYoutubeId(a.img)&&ytPlayer){ytPlayer.getPlayerState()===YT.PlayerState.PLAYING?ytPlayer.pauseVideo():ytPlayer.playVideo()}else if(this.aEl.src&&this.aEl.src!==window.location.href){this.aEl.paused?this.aEl.play().then(()=>this.syncPlayState(true)).catch(e=>{alert("Gagal memutar Audio. Kemungkinan besar API Key Google Cloud Anda dibatasi (Restricted) atau file tidak bersifat Publik. Detil: "+e.message);this.syncPlayState(false)}):this.aEl.pause()}else if(this.vEl.src&&this.vEl.src!==window.location.href){if(this.vEl.paused){this.vEl.play().then(()=>this.syncPlayState(true)).catch(e=>{alert("Gagal memutar Video. Kemungkinan besar API Key Google Cloud Anda dibatasi (Restricted) atau file tidak bersifat Publik. Detil: "+e.message);this.syncPlayState(false)});document.getElementById('miniVideoPreview').play().catch(()=>{})}else{this.vEl.pause();document.getElementById('miniVideoPreview').pause()}}this.updatePlayBtn()},next:function(){0!==this.queue.length&&(this.currentIndex=1===this.mode?Math.floor(Math.random()*this.queue.length):(this.currentIndex+1)%this.queue.length,this.loadTrack())},prev:function(){0!==this.queue.length&&(this.currentIndex=(this.currentIndex-1+this.queue.length)%this.queue.length,this.loadTrack())},onTrackEnd:function(){2===this.mode?this.loadTrack(true):(this.queue.length<=1?(this.isPlaying=false,this.updatePlayBtn()):this.next())},seek:function(a){if(0===this.queue.length||(this.queue[this.currentIndex].isDrive&&!getDirectUrl(this.queue[this.currentIndex].img).includes('export=download')))return;const b=a.offsetX/a.currentTarget.offsetWidth;if(getYoutubeId(this.queue[this.currentIndex].img)&&ytPlayer){ytPlayer.seekTo(ytPlayer.getDuration()*b,true)}else{if(this.aEl.duration)this.aEl.currentTime=this.aEl.duration*b;if(this.vEl.duration){this.vEl.currentTime=this.vEl.duration*b;document.getElementById('miniVideoPreview').currentTime=this.vEl.duration*b;}}},updateTime:function(a){if(!a.duration)return;const b=a.currentTime,c=a.duration;this.renderProgressUI(b, c);if(a===this.vEl){const miniVid=document.getElementById('miniVideoPreview');if(Math.abs(miniVid.currentTime-b)>0.5)miniVid.currentTime=b}if(a===this.aEl){this.updateLyricsSync(b)}},updatePlayBtn:function(){this.btnPlay.innerHTML=this.isPlaying?SVG_PAUSE_CIRCLE:SVG_PLAY_CIRCLE;this.btnMiniPlay.innerHTML=this.isPlaying?SVG_PAUSE_CIRCLE:SVG_PLAY_CIRCLE;this.btnMiniPlay.classList.toggle('is-playing-state',this.isPlaying)},
+        if(d){this.isPlaying=a,ytPlayer?(ytPlayer.loadVideoById(d),a?ytPlayer.playVideo():ytPlayer.pauseVideo()):ytPlayer=new YT.Player('ytVideoPlayer',{height:'100%',width:'100%',videoId:d,playerVars:{'autoplay':a?1:0,'controls':0,'rel':0},events:{'onStateChange':this.onPlayerStateChange,'onReady':k=>{a&&k.target.playVideo()}}});ytInterval=setInterval(()=>this.syncYoutubeTime(),500)}this.updatePlayBtn();if(this.activeViewIndex!==null){if(this.activeViewIndex==='queue')this.renderViewingPlaylist(this.queue,'queue');else{const bArray=JSON.parse(getLocal('playlists')||'[]');if(bArray[this.activeViewIndex])this.renderViewingPlaylist(bArray[this.activeViewIndex].items,this.activeViewIndex)}}},onPlayerStateChange:function(a){MediaPlayer.isPlaying=a.data==YT.PlayerState.PLAYING,a.data==YT.PlayerState.ENDED&&MediaPlayer.onTrackEnd(),MediaPlayer.updatePlayBtn()},renderProgressUI: function(cur, dur) {         
+          if(this.progBar) this.progBar.style.width = (cur / dur * 100) + '%';         
+          if(this.currTimeEl) this.currTimeEl.innerText = formatTimeMedia(cur);         
+          if(this.durTimeEl) this.durTimeEl.innerText = formatTimeMedia(dur);},
+        syncYoutubeTime:function(){if(ytPlayer&&ytPlayer.getCurrentTime){const a=ytPlayer.getCurrentTime(),b=ytPlayer.getDuration();if(b){this.renderProgressUI(a, b);}}},    
+        togglePlay:function(){const a=this.queue[this.currentIndex];if(!a)return;if(getYoutubeId(a.img)&&ytPlayer){ytPlayer.getPlayerState()===YT.PlayerState.PLAYING?ytPlayer.pauseVideo():ytPlayer.playVideo()}else if(this.aEl.src&&this.aEl.src!==window.location.href){this.aEl.paused?this.aEl.play().then(()=>this.syncPlayState(true)).catch(e=>{alert("Gagal memutar Audio. Kemungkinan besar API Key Google Cloud Anda dibatasi (Restricted) atau file tidak bersifat Publik. Detil: "+e.message);this.syncPlayState(false)}):this.aEl.pause()}else if(this.vEl.src&&this.vEl.src!==window.location.href){if(this.vEl.paused){this.vEl.play().then(()=>this.syncPlayState(true)).catch(e=>{alert("Gagal memutar Video. Kemungkinan besar API Key Google Cloud Anda dibatasi (Restricted) atau file tidak bersifat Publik. Detil: "+e.message);this.syncPlayState(false)});this.miniVid.play().catch(()=>{})}else{this.vEl.pause();this.miniVid.pause()}}this.updatePlayBtn()},next:function(){0!==this.queue.length&&(this.currentIndex=1===this.mode?Math.floor(Math.random()*this.queue.length):(this.currentIndex+1)%this.queue.length,this.loadTrack())},prev:function(){0!==this.queue.length&&(this.currentIndex=(this.currentIndex-1+this.queue.length)%this.queue.length,this.loadTrack())},onTrackEnd:function(){2===this.mode?this.loadTrack(true):(this.queue.length<=1?(this.isPlaying=false,this.updatePlayBtn()):this.next())},seek:function(a){if(0===this.queue.length||(this.queue[this.currentIndex].isDrive&&!getDirectUrl(this.queue[this.currentIndex].img).includes('export=download')))return;const b=a.offsetX/a.currentTarget.offsetWidth;if(getYoutubeId(this.queue[this.currentIndex].img)&&ytPlayer){ytPlayer.seekTo(ytPlayer.getDuration()*b,true)}else{if(this.aEl.duration)this.aEl.currentTime=this.aEl.duration*b;if(this.vEl.duration){this.vEl.currentTime=this.vEl.duration*b;document.getElementById('miniVideoPreview').currentTime=this.vEl.duration*b;}}},    updateTime:function(a){if(!a.duration)return;const b=a.currentTime,c=a.duration;this.renderProgressUI(b, c);if(a===this.vEl){if(Math.abs(this.miniVid.currentTime-b)>0.5)this.miniVid.currentTime=b;}if(a===this.aEl){this.updateLyricsSync(b);}},updatePlayBtn:function(){this.btnPlay.innerHTML=this.isPlaying?SVG_PAUSE_CIRCLE:SVG_PLAY_CIRCLE;this.btnMiniPlay.innerHTML=this.isPlaying?SVG_PAUSE_CIRCLE:SVG_PLAY_CIRCLE;this.btnMiniPlay.classList.toggle('is-playing-state',this.isPlaying)},
 
         show:function(){
         this.ui.classList.remove('hidden');
@@ -3915,11 +3961,9 @@ try{const freshBlob=await dbAmbilFile(b.id);if(freshBlob){playSrc=URL.createObje
         }
     },
 
-renderViewingPlaylist:function(items,listIndex){const a=document.getElementById('mpPlaylistList');a.innerHTML='';if(items.length===0){a.innerHTML='<div style="padding:20px; text-align:center; color:#888;">Playlist Kosong</div>';return}items.forEach((b,c)=>{const isCurrent=(listIndex==='queue'&&c===this.currentIndex)||(listIndex!=='queue'&&this.queue.length===items.length&&this.queue[c]&&this.queue[c].id===b.id&&c===this.currentIndex);const d=document.createElement('div');d.className=`pl-item ${isCurrent?'active':''}`;d.setAttribute('draggable','true');d.setAttribute('data-index',c);d.setAttribute('data-list-index',listIndex);d.addEventListener('dragstart',this.itemDragStart);d.addEventListener('dragover',this.itemDragOver);d.addEventListener('drop',this.itemDrop);
-    
-const downloadBtnHtml = b.isLocal ? '' : `<button class="pl-ctx-btn" style="display:flex; align-items:center; gap:5px;" onclick="MediaPlayer.downloadItemView('${listIndex}', ${c})">${SVG_DOWNLOAD} Download</button>`;
-    
-d.innerHTML=`<div class="pl-info" onclick="MediaPlayer.playFromView('${listIndex}', ${c})"><div class="pl-name">${b.name}</div><div class="pl-dur">${b.year||''}</div></div><button class="pl-action" onclick="MediaPlayer.toggleCtxMenu(event, ${c})">${SVG_MORE_VERT}</button><div id="ctxMenu_${c}" class="pl-ctx-menu">${downloadBtnHtml}<button class="pl-ctx-btn" style="color:red; display:flex; align-items:center; gap:5px;" onclick="MediaPlayer.removeItemView('${listIndex}', ${c})">${SVG_TRASH} Hapus</button><button class="pl-ctx-btn" style="display:flex; align-items:center; gap:5px;" onclick="event.stopPropagation(); this.parentElement.classList.remove('show');">${SVG_CANCEL} Batal</button></div>`;a.appendChild(d);if(isCurrent)setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'center'}),200)})},
+    renderViewingPlaylist:function(items,listIndex){const a=document.getElementById('mpPlaylistList');a.innerHTML='';if(items.length===0){a.innerHTML='<div style="padding:20px; text-align:center; color:#888;">Playlist Kosong</div>';return}const frag=document.createDocumentFragment();let currentEl=null;items.forEach((b,c)=>{const isCurrent=(listIndex==='queue'&&c===this.currentIndex)||(listIndex!=='queue'&&this.queue.length===items.length&&this.queue[c]&&this.queue[c].id===b.id&&c===this.currentIndex);const d=document.createElement('div');d.className=`pl-item ${isCurrent?'active':''}`;d.setAttribute('draggable','true');d.setAttribute('data-index',c);d.setAttribute('data-list-index',listIndex);d.addEventListener('dragstart',this.itemDragStart);d.addEventListener('dragover',this.itemDragOver);d.addEventListener('drop',this.itemDrop);
+    const downloadBtnHtml = b.isLocal ? '' : `<button class="pl-ctx-btn" style="display:flex; align-items:center; gap:5px;" onclick="MediaPlayer.downloadItemView('${listIndex}', ${c})">${SVG_DOWNLOAD} Download</button>`;
+    d.innerHTML=`<div class="pl-info" onclick="MediaPlayer.playFromView('${listIndex}', ${c})"><div class="pl-name">${b.name}</div><div class="pl-dur">${b.year||''}</div></div><button class="pl-action" onclick="MediaPlayer.toggleCtxMenu(event, ${c})">${SVG_MORE_VERT}</button><div id="ctxMenu_${c}" class="pl-ctx-menu">${downloadBtnHtml}<button class="pl-ctx-btn" style="color:red; display:flex; align-items:center; gap:5px;" onclick="MediaPlayer.removeItemView('${listIndex}', ${c})">${SVG_TRASH} Hapus</button><button class="pl-ctx-btn" style="display:flex; align-items:center; gap:5px;" onclick="event.stopPropagation(); this.parentElement.classList.remove('show');">${SVG_CANCEL} Batal</button></div>`;frag.appendChild(d);if(isCurrent)currentEl=d;});a.appendChild(frag);if(currentEl)setTimeout(()=>currentEl.scrollIntoView({behavior:'smooth',block:'center'}),200)},
 
     playFromView:function(listIndex,itemIndex){if(listIndex==='queue'){this.currentIndex=itemIndex;this.loadTrack();}else{const b=JSON.parse(getLocal('playlists')||'[]');this.queue=[...b[listIndex].items];this.currentIndex=itemIndex;this.loadTrack();}},
     removeItemView:function(listIndex,itemIndex){if(listIndex==='queue'){this.removeFromQueue(itemIndex)}else{const b=JSON.parse(getLocal('playlists')||'[]');b[listIndex].items.splice(itemIndex,1);setLocal('playlists',JSON.stringify(b));this.openSavedPlaylist(listIndex)}},
@@ -3971,13 +4015,26 @@ d.innerHTML=`<div class="pl-info" onclick="MediaPlayer.playFromView('${listIndex
     },
 
     toggleCtxMenu:function(e,idx){e.stopPropagation();document.querySelectorAll('.pl-ctx-menu').forEach(el=>el.classList.remove('show'));const menu=document.getElementById(`ctxMenu_${idx}`);if(menu)menu.classList.toggle('show')},
-    drawVisualizer:function(){const a=document.getElementById('visualizerCanvas'),b=a.getContext('2d');const miniA=document.getElementById('miniVisualizer'),miniB=miniA.getContext('2d');const c=this.analyser.frequencyBinCount,d=new Uint8Array(c);a.width=a.offsetWidth||300;a.height=a.offsetHeight||150;miniA.width=miniA.offsetWidth||40;miniA.height=miniA.offsetHeight||40;const e=()=>{requestAnimationFrame(e);if(this.ui.classList.contains('hidden')||'block'===this.vEl.style.display)return;this.analyser.getByteFrequencyData(d);
-if(!this.minimized){b.clearRect(0,0,a.width,a.height);const gradient=b.createLinearGradient(0,a.height,0,0);gradient.addColorStop(0,'#ffff00');gradient.addColorStop(1,'#ff0000');b.fillStyle=gradient;const barWidth=(a.width/c)*2.5;let x=0;for(let i=0;i<c;i++){let barHeight=(d[i]/255)*a.height;b.fillRect(x,a.height-barHeight,barWidth,barHeight);x+=barWidth+1}}if(this.minimized&&'block'===miniA.style.display){miniB.clearRect(0,0,miniA.width,miniA.height);miniB.fillStyle='#ff4500';const step=4;const barWidthMini=(miniA.width/(c/step))*1.5;let x=0;for(let i=0;i<c;i+=step){let val=d[i];let h=(val/255)*miniA.height;let y=(miniA.height-h)/2;miniB.fillRect(x,y,barWidthMini,h);x+=barWidthMini+1}}};e()},
-    dragSrcEl:null,
-    itemDragStart:function(a){MediaPlayer.dragSrcEl=this;a.dataTransfer.effectAllowed='move';a.dataTransfer.setData('text/html',this.getAttribute('data-index'));this.classList.add('dragging')},
-    itemDragOver:function(a){return a.preventDefault(),a.dataTransfer.dropEffect='move',false},
-    itemDrop:function(a){a.stopPropagation();const srcEl=MediaPlayer.dragSrcEl;srcEl.classList.remove('dragging');document.querySelectorAll('.pl-item.dragging').forEach(el=>el.classList.remove('dragging'));if(srcEl===this)return;const b=parseInt(srcEl.getAttribute('data-index'));const c=parseInt(this.getAttribute('data-index'));const listIndex=this.getAttribute('data-list-index');if(listIndex==='queue'){const d=MediaPlayer.queue.splice(b,1)[0];MediaPlayer.queue.splice(c,0,d);if(MediaPlayer.currentIndex===b)MediaPlayer.currentIndex=c;else if(MediaPlayer.currentIndex>b&&MediaPlayer.currentIndex<=c)MediaPlayer.currentIndex--;else if(MediaPlayer.currentIndex<b&&MediaPlayer.currentIndex>=c)MediaPlayer.currentIndex++;MediaPlayer.renderViewingPlaylist(MediaPlayer.queue,'queue')}else{const playlists=JSON.parse(getLocal('playlists')||'[]');const playlist=playlists[listIndex];if(!playlist)return;const d=playlist.items.splice(b,1)[0];playlist.items.splice(c,0,d);setLocal('playlists',JSON.stringify(playlists));MediaPlayer.renderViewingPlaylist(playlist.items,listIndex)}return false}
-};
+    drawVisualizer:function(){
+        const a=document.getElementById('visualizerCanvas'),b=a.getContext('2d');
+        const miniA=document.getElementById('miniVisualizer'),miniB=miniA.getContext('2d');
+        const c=this.analyser.frequencyBinCount,d=new Uint8Array(c);
+        a.width=a.offsetWidth||300;a.height=a.offsetHeight||150;
+        miniA.width=miniA.offsetWidth||40;miniA.height=miniA.offsetHeight||40;
+        
+        const e=()=>{
+            // [DIOPTIMASI]: Hentikan perputaran 60fps jika sedang tidak aktif/pause
+            if(this.ui.classList.contains('hidden') || !this.isPlaying || 'block'===this.vEl.style.display) {
+                setTimeout(e, 500); // Mode hemat baterai (2fps) saat standby
+                return;
+            }
+            
+            // Mode performa penuh (60fps) hanya saat lagu menyala
+            requestAnimationFrame(e);
+            this.analyser.getByteFrequencyData(d);
+
+            // ... (Biarkan kode di bawahnya tetap sama tanpa perubahan)
+            if(!this.minimized){b.clearRect(0,0,a.width,a.height);const gradient=b.createLinearGradient(0,a.height,0,0);gradient.addColorStop(0,'#ffff00');gradient.addColorStop(1,'#ff0000');b.fillStyle=gradient;const barWidth=(a.width/c)*2.5;let x=0;for(let i=0;i<c;i++){let barHeight=(d[i]/255)*a.height;b.fillRect(x,a.height-barHeight,barWidth,barHeight);x+=barWidth+1}}if(this.minimized&&'block'===miniA.style.display){miniB.clearRect(0,0,miniA.width,miniA.height);miniB.fillStyle='#ff4500';const step=4;const barWidthMini=(miniA.width/(c/step))*1.5;let x=0;for(let i=0;i<c;i+=step){let val=d[i];let h=(val/255)*miniA.height;let y=(miniA.height-h)/2;miniB.fillRect(x,y,barWidthMini,h);x+=barWidthMini+1}}};e()},dragSrcEl:null,itemDragStart:function(a){MediaPlayer.dragSrcEl=this;a.dataTransfer.effectAllowed='move';a.dataTransfer.setData('text/html',this.getAttribute('data-index'));this.classList.add('dragging')},itemDragOver:function(a){return a.preventDefault(),a.dataTransfer.dropEffect='move',false},itemDrop:function(a){a.stopPropagation();const srcEl=MediaPlayer.dragSrcEl;if(srcEl)srcEl.classList.remove('dragging');if(srcEl===this)return;const b=parseInt(srcEl.getAttribute('data-index'));const c=parseInt(this.getAttribute('data-index'));const listIndex=this.getAttribute('data-list-index');if(listIndex==='queue'){const d=MediaPlayer.queue.splice(b,1)[0];MediaPlayer.queue.splice(c,0,d);if(MediaPlayer.currentIndex===b)MediaPlayer.currentIndex=c;else if(MediaPlayer.currentIndex>b&&MediaPlayer.currentIndex<=c)MediaPlayer.currentIndex--;else if(MediaPlayer.currentIndex<b&&MediaPlayer.currentIndex>=c)MediaPlayer.currentIndex++;MediaPlayer.renderViewingPlaylist(MediaPlayer.queue,'queue')}else{const playlists=JSON.parse(getLocal('playlists')||'[]');const playlist=playlists[listIndex];if(!playlist)return;const d=playlist.items.splice(b,1)[0];playlist.items.splice(c,0,d);setLocal('playlists',JSON.stringify(playlists));MediaPlayer.renderViewingPlaylist(playlist.items,listIndex)}return false}};
 
 function simpanKeLokal(){const a=[];document.querySelectorAll('.card').forEach(b=>a.push({id:b.getAttribute('data-id'),itemType:b.getAttribute('data-itemType'),folderId:b.getAttribute('data-folderId'),name:b.querySelector('.file-info').textContent,year:b.getAttribute('data-year'),note:b.getAttribute('data-note'),img:b.getAttribute('data-img'),cat:b.getAttribute('data-cat'),sub:b.getAttribute('data-sub'),type:b.getAttribute('data-type'),detail:b.getAttribute('data-detail'),hidden:b.getAttribute('data-hidden'),font:b.getAttribute('data-font'),customCover:b.getAttribute('data-customCover'),related:b.getAttribute('data-related'),descaura:b.getAttribute('data-descaura'),favorite:b.getAttribute('data-favorite')||'false'})),setLocal('files_db',JSON.stringify(a))}
 
@@ -3990,9 +4047,9 @@ function updateStats() {
     a.forEach(i => {
         if ('true' === i.getAttribute('data-hidden') && 'master' !== currentRole) return;
         counts.total++;
-        // PERBAIKAN: Mengambil nama/ekstensi file via data-name untuk mencegah isu render layout DOM
-        const j = i.getAttribute('data-cat'), k = getMediaType(i.getAttribute('data-img'), i.getAttribute('data-name'));
-        
+        // PERBAIKAN: Ekstraksi tipe ekstensi via cache atribut untuk mencegah pemborosan CPU
+        const j = i.getAttribute('data-cat'), k = i.getAttribute('data-mediatype');
+
         if ('aplikasi' === j || 'app' === k || 'archive' === k) counts.app++;
         else if ('dokumen' === j || 'doc' === k) counts.doc++;
         else if ('catatan' === j || 'text' === k) counts.txt++;
@@ -4003,30 +4060,12 @@ function updateStats() {
 
     const map = { statTotal: counts.total, statGambar: counts.img, statVideo: counts.vid, statAudio: counts.aud, statApp: counts.app, statDokumen: counts.doc, statCatatan: counts.txt };
     Object.entries(map).forEach(([id, val]) => document.getElementById(id).innerText = val);
-    // --- CEK KUOTA STORAGE DOM ---
+    // --- CEK KUOTA STORAGE DOM (DIOPTIMASI) ---
     const storageItemDOM = document.getElementById('statStorageItem');
     if (navigator.storage && navigator.storage.estimate) {
-        navigator.storage.estimate().then(async estimate => {
-            let usage = estimate.usage;
-            
-            // Pengurangan ukuran file tersembunyi jika bukan Master
-            if (currentRole !== 'master') {
-                let hiddenSize = 0;
-                const hiddenCards = document.querySelectorAll('.card[data-hidden="true"]');
-                for (const card of hiddenCards) {
-                    const id = card.getAttribute('data-id');
-                    
-                    if (card.getAttribute('data-img') === 'LOCAL_FILE') {
-                        try { const fileBlob = await dbAmbilFile(id); if (fileBlob) hiddenSize += fileBlob.size; } catch(e) {}
-                    }
-                    if (card.getAttribute('data-customCover') === 'true') {
-                        try { const coverBlob = await dbAmbilCover(id); if (coverBlob) hiddenSize += coverBlob.size; } catch(e) {}
-                    }
-                }
-                usage = Math.max(0, usage - hiddenSize);
-            }
-
-            const usedMB = (usage / (1024 * 1024)).toFixed(1);
+        navigator.storage.estimate().then(estimate => {
+            // Langsung gunakan kalkulasi bawaan sistem (Cepat & 0 Beban RAM)
+            const usedMB = (estimate.usage / (1024 * 1024)).toFixed(1);
             const totalGB = (estimate.quota / (1024 * 1024 * 1024)).toFixed(1);
             document.getElementById('statStorage').innerText = `${usedMB}MB / ${totalGB}GB`;
         }).catch(() => {
