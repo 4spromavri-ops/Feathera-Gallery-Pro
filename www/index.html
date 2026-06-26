@@ -151,7 +151,6 @@ body.dark-mode .filter-separator { border-left-color: #333; }
 .stats-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; margin-bottom: 5px; }
 .stats-item { background: var(--btn-bg); border: 0.5px solid var(--btn-border); padding: 4px 10px; border-radius: 12px; font-size: 11px; color: var(--primary-dark); white-space: nowrap; display: flex; align-items: center; gap: 5px; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 3px rgba(0,0,0,0.1); text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
 body.dark-mode .stats-item { color: #ffa000; text-shadow: 0 0 0 rgba(0,0,0,0.8); }
-
 #dynamicChipsArea { position: fixed; bottom: 70px; left: 0; width: 100%; z-index: 98; display: flex; flex-direction: column-reverse; gap: 5px; background: var(--header-bg); border-top: 0.5px solid var(--header-border); padding: 5px 0 10px 0; box-shadow: 0 -4px 8px rgba(0,0,0,0.2); transition: transform 0.3s ease; }
 body.action-mode:not(.add-media-mode) #dynamicChipsArea { transform: translateY(150%); }
 .chip-container { display: flex; gap: 8px; overflow-x: auto; padding: 5px 15px; scrollbar-width: none; align-items: center; }
@@ -159,19 +158,15 @@ body.action-mode:not(.add-media-mode) #dynamicChipsArea { transform: translateY(
 .chip { padding: 6px 14px; background: var(--chip-bg); border-radius: 15px; font-size: 12px; white-space: nowrap; cursor: pointer; transition: 0.2s; color: var(--chip-text); flex-shrink: 0; border: 1px solid var(--btn-border); box-shadow: var(--btn-shadow); text-shadow: 0 1px 0 rgba(255,255,255,0.4); font-weight: 600; }
 body.dark-mode .chip { text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
 .chip.active { background: var(--primary-gradient); border-color: var(--primary-dark); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,0.5); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); transform: translateY(1px); }
-
 #folderNavUI { padding: 10px 15px; margin-top: 0; display: block; position: sticky; top: 140px; z-index: 90; transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
 body.has-mini-player #folderNavUI { top: 200px; }
-
 .breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; font-size: 13px; color: #444; background: var(--btn-bg); padding: 6px 12px; border-radius: 5px; box-shadow: var(--btn-shadow); border: 1px solid var(--btn-border); text-shadow: 0 1px 0 rgba(255,255,255,0.6); font-weight: bold; }
 body.dark-mode .breadcrumbs { color: #bbb; text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
 .crumb-item { cursor: pointer; color: var(--primary-dark); text-decoration: none; }
 body.dark-mode .crumb-item { color: #ffb74d; }
 .crumb-item:last-child { color: var(--text); pointer-events: none; }
-
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; padding: 15px; transition: margin-top 0.3s ease; will-change: transform, opacity; }
 body.has-mini-player #fileGrid { margin-top: 55px; }
-
 /* Physical Polaroid / Folder Cards */
 .card { 
     -webkit-touch-callout: none !important; 
@@ -180,10 +175,8 @@ body.has-mini-player #fileGrid { margin-top: 55px; }
     -webkit-user-drag: none !important; 
     content-visibility: auto; contain-intrinsic-size: 100px 150px; background: var(--card-bg); border-radius: 4px; padding: 8px 8px 15px 8px; text-align: center; border: 1px solid var(--card-border); border-bottom-width: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); position: relative; cursor: pointer; transition: transform 0.1s; 
 }
-
 /* Mematikan aksi "tahan gambar" bawaan Android */
 .thumb-container img { pointer-events: none !important; -webkit-user-drag: none !important; }
-
 .card:active { transform: scale(0.97) translateY(2px); box-shadow: 0 2px 5px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5); border-bottom-width: 1px; margin-bottom: 2px; }
 .thumb-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: flex-start; justify-content: center; padding-top: 19px; box-sizing: border-box; background: transparent; border-radius: inherit; margin-bottom: 0; overflow: hidden; box-shadow: none; border: none; z-index: 0; -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%); mask-image: linear-gradient(to bottom, black 40%, transparent 100%); }
 .thumb-container img { width: 100%; height: 100%; object-fit: cover; opacity: 0.95; position: absolute; top: 0; left: 0; z-index: -1; }
@@ -218,11 +211,10 @@ body.dark-mode .card.selected .thumb-container::after { background-image: url("d
     border-bottom: 1px solid rgba(150, 150, 150, 0.2) !important;
 }
 
-/* KUNCI PERBAIKAN BARU: Memaksa Flexbox tanpa membebani Regex CSS Engine di Mobile */
 .list-view .card { 
     display: flex !important; 
 }
-/* Menghormati injeksi JS untuk file yang difilter/dihide */
+
 .list-view .card[style*="display: none"] {
     display: none !important; 
 }
@@ -248,11 +240,11 @@ body.dark-mode .list-view .card:active {
 /* Menyelaraskan Wadah Ikon ke Kiri */
 .list-view .thumb-container { 
     display: flex !important; 
-    position: relative !important; /* Diubah ke relative agar ikon checklist presisi menumpuk di atasnya */
+    position: relative !important;
     width: 28px !important; 
     height: 28px !important; 
     padding: 0 !important; 
-    margin: 0 12px 0 0 !important; /* Memastikan 0 margin vertikal */
+    margin: 0 12px 0 0 !important;
     flex-shrink: 0 !important; 
     align-items: center !important; 
     justify-content: center !important; 
@@ -271,7 +263,6 @@ body.dark-mode .list-view .card:active {
     height: 100%; 
 }
 
-/* Memperbaiki Ikon (Audio dll) yang kebesaran/terpotong */
 .list-view .thumb-container .icon img,
 .list-view .thumb-container img { 
     width: 100% !important; 
@@ -286,7 +277,7 @@ body.dark-mode .list-view .card:active {
 
 /* Mengurangi ukuran khusus untuk semua SVG di mode list view */
 .list-view .thumb-container .icon svg { 
-    width: 18px !important; /* Diperkecil dari sebelumnya 100% (28px) */
+    width: 18px !important;
     height: 18px !important; 
     position: static !important;
     -webkit-mask-image: none !important; 
@@ -332,16 +323,16 @@ body.dark-mode .list-view .card:active {
 
 /* Menyelaraskan Teks Nama File di Tengah */
 .list-view .file-info { 
-    margin: 0 !important; /* Membatalkan margin-top 85px dari grid */
-    font-size: 12px !important; /* Font diperkecil sesuai instruksi */
+    margin: 0 !important;
+    font-size: 12px !important;
     font-weight: 500 !important; 
-    flex: 1 !important; /* Memaksa teks menempati sisa ruang */
+    flex: 1 !important;
     text-shadow: none !important; 
     white-space: nowrap !important; 
     overflow: hidden !important; 
     text-overflow: ellipsis !important; 
     position: static !important; 
-    line-height: normal !important; /* Menjamin posisi tengah presisi */
+    line-height: normal !important;
 }
 
 /* Teks Tahun */
@@ -356,7 +347,7 @@ body.dark-mode .list-view .card:active {
 /* Membuang Menu Titik Tiga ke Ujung Kanan dan Sejajar */
 .list-view .menu-dots { 
     position: static !important; 
-    margin: 0 0 0 auto !important; /* Mendorong ke kanan tanpa margin vertikal */
+    margin: 0 0 0 auto !important;
     box-shadow: none !important; 
     border: none !important; 
     background: transparent !important; 
@@ -367,7 +358,7 @@ body.dark-mode .list-view .card:active {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    align-self: center !important; /* Paksa ikon sejajar lurus dengan teks */
+    align-self: center !important;
 }
 
 /* Efek Checklist / Pindah pada List View */
@@ -376,25 +367,24 @@ body.dark-mode .list-view .card.selected { background: rgba(255, 160, 0, 0.1) !i
 
     /* Menyesuaikan Skala Ikon SVG Overlay pada List View */
     .list-view .card.selected .thumb-container::after {
-        background-size: 18px 18px; /* Dikecilkan agar proporsional dengan ikon file */
+        background-size: 18px 18px;
         border-radius: 4px;
-        box-shadow: inset 0 0 0 1.5px var(--primary); /* Border inset lebih halus */
+        box-shadow: inset 0 0 0 1.5px var(--primary);
     }
     body.dark-mode .list-view .card.selected .thumb-container::after {
         box-shadow: inset 0 0 0 1.5px #ffa000;
     }
 
-    /* Efek Move-Pending (Pindah) pada List View agar seragam dengan Checklist & Tidak Merusak Batas */
     .list-view .card.move-pending { 
         background: rgba(33, 150, 243, 0.1) !important; 
-        transform: none !important; /* Mencegah baris mengecil/berkerut saat di-long press */
+        transform: none !important;
     }
     body.dark-mode .list-view .card.move-pending { 
-        background: rgba(100, 181, 246, 0.1) !important; 
+        background: rgba(100, 181, 246, 0.1) !important;
     }
 
     .list-view .card.move-pending .thumb-container::after {
-        font-size: 14px; /* Ukuran diturunkan dari 32px agar proporsional di dalam wadah 28px */
+        font-size: 14px;
         border-radius: 4px;
         box-shadow: inset 0 0 0 1.5px #2196F3 !important;
     }
@@ -428,11 +418,11 @@ body.dark-mode .view-toggle-btn.active { color: #ffa000; }
 
 /* Efek Timbul (Embossed) untuk Folder Card */
 .embossed-icon {
-    fill: #fff3cd; /* Diubah dari stroke ke fill agar icon terisi penuh */
+    fill: #fff3cd;
     filter: drop-shadow(0px -1px 0px rgba(255, 255, 255, 0.8)) drop-shadow(0px 0.5px 1px rgba(198, 142, 23, 0.3));
 }
 body.dark-mode .embossed-icon {
-    fill: #5d4037; /* Diubah dari stroke ke fill */
+    fill: #5d4037;
     filter: drop-shadow(0px -1px 0px rgba(255, 255, 255, 0.2)) drop-shadow(0px 0.5px 1px rgba(62, 39, 35, 1));
 }
 
@@ -770,17 +760,11 @@ body.dark-mode .pl-ctx-btn:hover { background: rgba(255,255,255,0.1); }
     width: 40px; 
     height: 40px; 
     border-radius: 4px; 
-    
-    /* Border: Atas gelap, bawah terang untuk ilusi lubang pada plastik/metal terang */
     border: 1px solid #999; 
     border-bottom-color: #ddd; 
-    
     object-fit: cover; 
     background: #000; 
-    
-    /* Inset shadow sedang + Highlight putih tegas di tepi bawah luar */
     box-shadow: inset 0 4px 6px rgba(0,0,0,0.7), inset 0 1px 3px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.9); 
-    
     flex-shrink: 0; 
     position: relative; 
     overflow: hidden; 
@@ -791,11 +775,8 @@ body.dark-mode .pl-ctx-btn:hover { background: rgba(255,255,255,0.1); }
 
 /* --- Override: Efek Tenggelam untuk Dark Mode --- */
 body.dark-mode .mini-art {
-    /* Border: Atas sangat gelap, bawah sedikit abu-abu */
     border-color: #111;
     border-bottom-color: #444;
-    
-    /* Inset shadow lebih pekat + Highlight putih sangat tipis di tepi bawah luar */
     box-shadow: inset 0 4px 8px rgba(0,0,0,0.9), inset 0 1px 3px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.1); 
 }
 body.is-audio-mode #miniArtBg { display: none !important; }
@@ -863,13 +844,13 @@ body.dark-mode .saved-pl-item { text-shadow: 0 -1px 0 #000; }
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(1px);
     color: #fff;
-    padding: 5px 6px; /* Padding dipangkas agar memeluk tombol dengan pas */
+    padding: 5px 6px;
     border-radius: 30px;
     font-size: 12px;
     font-weight: bold;
     display: flex;
     align-items: center;
-    gap: 6px; /* Jarak antar tombol dan teks dirapatkan */
+    gap: 6px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
     z-index: 1002;
     transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s;
@@ -896,9 +877,9 @@ body.add-media-mode .floating-sel-info {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: var(--primary-gradient);
-    color: #fff;
-    border: 1px solid var(--primary-dark);
+    background: var(--btn-bg);
+    color: var(--primary-dark);
+    border: 1px solid var(--btn-border);
     box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4);
     display: flex;
     align-items: center;
@@ -908,7 +889,7 @@ body.add-media-mode .floating-sel-info {
     transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s, transform 0.2s;
     opacity: 0;
     pointer-events: none;
-    text-shadow: 0 -1px 0 rgba(0,0,0,0.5);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
 }
 .floating-fab.visible {
     opacity: 1;
@@ -919,6 +900,8 @@ body.add-media-mode .floating-sel-info {
     box-shadow: inset 0 4px 6px rgba(0,0,0,0.4);
 }
 body.dark-mode .floating-fab {
+    color: #fff;
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.8);
     box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
@@ -999,8 +982,8 @@ body.dark-mode .drag-over-nav { background: rgba(100, 181, 246, 0.2) !important;
     align-items: center;
     justify-content: center;
     z-index: 5;
-    opacity: 0.6; /* Membuatnya terlihat menyatu dengan background */
-    pointer-events: none; /* Menghilangkan fungsi klik agar tidak terasa seperti tombol */
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 body.dark-mode .local-storage-icon {
@@ -1307,15 +1290,12 @@ body.dark-mode #btnScrollTop {
            <div class="header-actions">
              <button id="btnSelectMode" class="btn-action" title="Pilih Item" onclick="toggleSelectionMode()" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#4CAF50"/><path d="M7 12.5L10.5 16L17 8" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
              </button>
-
-             <button class="btn-action" title="Buka Player" onclick="MediaPlayer.ui.classList.contains('minimized') ? MediaPlayer.maximize() : MediaPlayer.show()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polygon points="10 8 16 12 10 16 10 8"></polygon>
-                </svg>
-            </button>
-
-            <button class="btn-action" title="Ekspor / Impor" onclick="toggleModal('modalExportImport', true)">
+             <button class="btn-action" id="btnSourceFilter" onclick="toggleSourceFilter()" title="Filter Sumber File" style="color: #4CAF50;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+             </button>
+             <button class="btn-action" title="Buka Player" onclick="MediaPlayer.ui.classList.contains('minimized') ? MediaPlayer.maximize() : MediaPlayer.show()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+               </button>
+               <button class="btn-action" title="Ekspor / Impor" onclick="toggleModal('modalExportImport', true)">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <g stroke="#E53935">
                         <path d="M8 3L3 8l5 5"></path>
@@ -1509,13 +1489,12 @@ body.dark-mode #btnScrollTop {
                     </div>
                 </div>
                 <button id="btnLockToggle" class="settings-btn" onclick="toggleLockMode()"><span id="lockIcon">👑</span> <span id="lockText">Master</span></button>
-
-                <button class="settings-btn hide-on-lock" onclick="bukaMasterViaSettings()"><span>📑</span> Atur Kategori</button><button class="settings-btn" onclick="toggleDarkMode()"><span id="darkModeIcon">🌙</span> Mode Tampilan</button>
+                <button class="settings-btn hide-on-lock" onclick="bukaMasterViaSettings()"><span>📑</span> Atur Kategori</button>
+                <button class="settings-btn hide-on-lock" onclick="toggleModal('modalDriveSettings', true); loadDriveSettings();"><span><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" style="width: 18px; height: 18px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));"></span> Atur Folder Drive</button>
+                <button class="settings-btn" onclick="toggleDarkMode()"><span id="darkModeIcon">🌙</span> Mode Tampilan</button>
                 <button id="btnGantiPinSettings" class="settings-btn hide-on-lock" onclick="menuGantiPin()"><span>🔑</span> Ganti PIN</button>
-                
                 <button id="btnLogAktifitasSettings" class="settings-btn hide-on-lock" onclick="bukaLogAktifitas()"><span>📋</span> Log Aktifitas</button>
                 <button id="btnRecycleBinSettings" class="settings-btn hide-on-lock master-only" onclick="bukaRecycleBin()"><span><svg width="1em" height="1em" style="vertical-align: middle;"><use href="#icon-recycle-bin"></use></svg></span> Recycle Bin</button>
-                
                 <button class="settings-btn" onclick="logoutApp()"><span><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span> Logout</button>
 
                 <button class="settings-btn hide-on-lock master-only" style="color:red" onclick="hapusAkun()"><span><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></span> Hapus Akun</button>
@@ -1835,10 +1814,46 @@ body.dark-mode #btnScrollTop {
     </div>
 </div>
 
+<div class="modal" id="modalDriveSettings">
+    <div class="modal-content">
+        <div class="modal-header-fixed"><h3>Atur Folder Drive</h3></div>
+        <div class="modal-body-scroll">
+            <p style="font-size: 13px; color: var(--text); margin-top: 0; margin-bottom: 15px;">Masukkan ID atau Link Folder Google Drive untuk tujuan upload dan backup otomatis.</p>
+            <label style="font-size: 11px; font-weight: bold; color: #666;">Folder Foto</label>
+            <input type="text" id="driveIdFoto" placeholder="ID / Link Folder" style="margin-bottom: 12px; margin-top: 4px;">
+            
+            <label style="font-size: 11px; font-weight: bold; color: #666;">Folder Video</label>
+            <input type="text" id="driveIdVideo" placeholder="ID / Link Folder" style="margin-bottom: 12px; margin-top: 4px;">
+            
+            <label style="font-size: 11px; font-weight: bold; color: #666;">Folder Backup (.json)</label>
+            <input type="text" id="driveIdJson" placeholder="ID / Link Folder" style="margin-bottom: 15px; margin-top: 4px;">
+            
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-full btn-gray" style="margin-top: 0;" onclick="toggleModal('modalDriveSettings', false)">Batal</button>
+                <button class="btn-full btn-blue" style="margin-top: 0;" onclick="saveDriveSettings()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="toastContainer"></div>
 
 <script>
-  
+
+function loadDriveSettings() {
+    document.getElementById('driveIdFoto').value = getLocal('drive_folder_foto') || '';
+    document.getElementById('driveIdVideo').value = getLocal('drive_folder_video') || '';
+    document.getElementById('driveIdJson').value = getLocal('drive_folder_json') || '';
+}
+
+function saveDriveSettings() {
+    setLocal('drive_folder_foto', document.getElementById('driveIdFoto').value.trim());
+    setLocal('drive_folder_video', document.getElementById('driveIdVideo').value.trim());
+    setLocal('drive_folder_json', document.getElementById('driveIdJson').value.trim());
+    alert("Pengaturan ID Folder Drive berhasil disimpan!");
+    toggleModal('modalDriveSettings', false);
+}
+
     // OVERRIDE DEFAULT ALERT KE CUSTOM TOAST
 window.alert = function(message) {
     const container = document.getElementById('toastContainer');
@@ -3092,15 +3107,22 @@ async function prosesSimpan(){
                             body: bufferData
                         });
                         
-                        const dataMedia = await resMedia.json();
-                        if (resMedia.ok && dataMedia.id) {
-                            // 1. Update nama file
-                            await fetch(`https://www.googleapis.com/drive/v3/files/${dataMedia.id}`, {
-                                method: 'PATCH',
-                                headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ name: finalNameCamera })
-                            });
-                            
+                const dataMedia = await resMedia.json();
+                if (resMedia.ok && dataMedia.id) {
+                    // 1. Update nama file sekaligus penempatan Folder Drive
+                    let patchUrl = `https://www.googleapis.com/drive/v3/files/${dataMedia.id}`;
+                    const inputFolder = isVideo ? (getLocal('drive_folder_video') || '') : (getLocal('drive_folder_foto') || '');
+                    if (inputFolder) {
+                        const folderId = inputFolder.includes('folders/') ? inputFolder.split('folders/')[1].split(/[?&/]/)[0] : inputFolder;
+                        patchUrl += `?addParents=${folderId}&removeParents=root`;
+                    }
+
+                    await fetch(patchUrl, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: finalNameCamera })
+                    });
+
                             // 2. Set file menjadi Publik (Bisa dilihat siapa saja yang punya link) agar Thumbnail & Gambar bisa dirender di aplikasi
                             await fetch(`https://www.googleapis.com/drive/v3/files/${dataMedia.id}/permissions`, {
                                 method: 'POST',
@@ -3256,12 +3278,9 @@ function buatKartu(a, b = !1) {
 }
 
 async function refreshCardIcon(a){
-    // PERBAIKAN: Menggunakan data-name agar pemrosesan ikon bisa dieksekusi dengan aman pada unattached node
     const b=a.getAttribute('data-img'),c=a.getAttribute('data-id'),d=a.getAttribute('data-name'),e='folder'===a.getAttribute('data-itemType'),f=a.querySelector('.thumb-container');
     const hasCover=a.getAttribute('data-customCover')==='true';
-    const h=getMediaType(b,d); // Pindah ke atas untuk validasi tipe awal
-
-    // Bypass cover untuk aplikasi, dokumen, dan arsip di tampilan kartu (Grid/List)
+    const h=getMediaType(b,d);
     if(hasCover && !['app', 'archive', 'doc', 'other', 'unknown_local'].includes(h)){
         try{const blob=await dbAmbilCover(c);if(blob){const url=URL.createObjectURL(blob);f.innerHTML=`<img src="${url}" class="img-thumb" loading="lazy" decoding="async" onload="URL.revokeObjectURL(this.src)" style="object-fit:cover; width:100%; height:100%;"><span class="icon img-icon">${SVG_COVER}</span>`;return}}catch(err){}
     }
@@ -3284,7 +3303,6 @@ async function refreshCardIcon(a){
     }
     // -------------------------------
     if('LOCAL_FILE'===b){
-
         if('image'===h){
             f.innerHTML=`<span class="icon">${SVG_COVER}</span>`;
             try{const i=await dbAmbilFile(c);if(i){const j=URL.createObjectURL(i);f.innerHTML=`<img src="${j}" class="img-thumb" loading="lazy" decoding="async" onload="URL.revokeObjectURL(this.src)"><span class="icon img-icon">${SVG_COVER}</span>`}else f.innerHTML=`<span class="icon">${SVG_CANCEL}</span>`}catch(k){f.innerHTML=`<span class="icon">${SVG_ICON_UNKNOWN}</span>`}
@@ -3305,6 +3323,12 @@ async function cardClickHandler(a){
     if (isAddMediaMode && a.getAttribute('data-itemType') === 'folder') {
         if (a.classList.contains('selected')) {
             a.classList.remove('selected');
+            const folderId = a.getAttribute('data-id');
+            getAllDescendantIds(folderId).forEach(id => {
+                const child = document.querySelector(`.card[data-id="${id}"]`);
+                if (child) child.classList.remove('selected');
+            });
+            
             updateSelectCount();
             return; 
         }
@@ -3323,16 +3347,12 @@ async function cardClickHandler(a){
         }
         return;
     }
-
     // --- UPDATE: Logika saat Mode Pindah (Cut) aktif ---
     if (isMovePending) {
         if (a.classList.contains('move-pending')) {
-            // Uncheck / Batalkan cut dengan 1x klik
             a.classList.remove('move-pending');
             const idToRemove = a.getAttribute('data-id');
             movePendingIds = movePendingIds.filter(id => id !== idToRemove);
-            
-            // Hapus juga status cut pada sub-foldernya (jika yang di-uncheck adalah folder)
             if (a.getAttribute('data-itemType') === 'folder') {
                 const descendants = getAllDescendantIds(idToRemove);
                 descendants.forEach(descId => {
@@ -3348,20 +3368,17 @@ async function cardClickHandler(a){
             if(movePendingIds.length === 0){
                 batalBatchAksi();
             }
-            return; // Hentikan fungsi di sini
+            return;
         } else {
-            // Tambahkan file ke daftar cut cukup dengan 1x klik
             if (a.getAttribute('data-itemType') !== 'folder') {
                 a.classList.add('move-pending');
                 movePendingIds.push(a.getAttribute('data-id'));
                 updateSelectCount();
-                return; // Hentikan fungsi di sini
+                return;
             }
-            // Jika yang diklik folder, abaikan & biarkan kode berlanjut agar folder terbuka
         }
     }
     // ========================================
-
     const isFolder = a.getAttribute('data-itemType') === 'folder';
     const isSelected = a.classList.contains('selected');
     const hasAnySelection = document.querySelectorAll('.card.selected').length > 0;
@@ -3545,10 +3562,14 @@ function updateSelectCount() {
     const chipsArea = document.getElementById('dynamicChipsArea');
     const baseBottom = (70 + (chipsArea ? chipsArea.offsetHeight : 0) + 10) + 'px';
     
+    // LOGIKA TERPUSAT: Deteksi apakah panel info seleksi sedang tayang
+    const isFloatingInfoVisible = totalSelected > 0 || isMovePending || isSelectionMode || isAddMediaMode;
+    const floatingInfoBottom = (isSelectionMode && !isAddMediaMode) ? '75px' : baseBottom;
+
     if (floatingInfo) {
-        if (totalSelected > 0 || isMovePending || isSelectionMode || isAddMediaMode) {
+        if (isFloatingInfoVisible) {
             floatingInfo.classList.add('visible'); 
-            floatingInfo.style.bottom = (isSelectionMode && !isAddMediaMode) ? '75px' : baseBottom;
+            floatingInfo.style.bottom = floatingInfoBottom;
         } else {
             floatingInfo.classList.remove('visible'); 
             floatingInfo.style.bottom = '-60px'; 
@@ -3560,7 +3581,8 @@ function updateSelectCount() {
     
     if (fab) {
         const isRestrictedPage = curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite';
-        const hideFabAdd = currentRole === 'none' || isRestrictedPage || isSelectionMode || isMovePending || isAddMediaMode || totalSelected > 0;
+        // Tombol Add tetap disembunyikan jika panel info seleksi tampil
+        const hideFabAdd = currentRole === 'none' || isRestrictedPage || isFloatingInfoVisible;
         
         // Logika Tombol Add Memori
         if (hideFabAdd) {
@@ -3571,18 +3593,23 @@ function updateSelectCount() {
             fab.style.bottom = baseBottom;
         }
 
-        // Logika Tombol Back Folder & Auto-Stacking
+        // Logika Baru Tombol Back Folder & Auto-Stacking
         if (fabBack) {
+            // Syarat mutlak: Sedang berada di dalam sebuah folder
             const inFolder = currentFolderId && currentFolderId !== 'none';
-            const hideFabBack = isSelectionMode || isMovePending || isAddMediaMode || totalSelected > 0;
 
-            if (inFolder && !hideFabBack) {
+            if (inFolder) {
                 fabBack.classList.add('visible');
-                if (hideFabAdd) {
-                    // Jika Add tersembunyi, Back mengisi posisinya (Bawah)
+                
+                if (isFloatingInfoVisible) {
+                    // SUSUNAN 1: Jika Info Seleksi tampil, tumpuk Back di atas Info Seleksi (+50px)
+                    const fInfoVal = parseInt(floatingInfoBottom, 10);
+                    fabBack.style.bottom = (fInfoVal + 50) + 'px';
+                } else if (hideFabAdd) {
+                    // SUSUNAN 2: Jika Add tersembunyi & Info tersembunyi, Back turun mengisi posisinya (Dasar)
                     fabBack.style.bottom = baseBottom;
                 } else {
-                    // Jika Add tampil, Back bertumpuk di atasnya
+                    // SUSUNAN 3: Jika Add tampil, Back bertumpuk normal di atas tombol Add (+60px)
                     const baseVal = parseInt(baseBottom, 10);
                     fabBack.style.bottom = (baseVal + 60) + 'px';
                 }
@@ -4074,11 +4101,64 @@ function renderBreadcrumbs(){
 
 function wrapBukaEdit(a,b){a.stopPropagation(),'none'===currentRole?requestPin(c=>{setAppRole(c),bukaEdit(b.parentElement)}):bukaEdit(b.parentElement)}
 
+let currentSourceFilter = 'all'; 
+
+const SVG_FILTER_ALL = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>`;
+const SVG_FILTER_LOCAL = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path><path d="M8 2v4"></path><path d="M12 2v4"></path><path d="M16 4v2"></path></svg>`;
+const SVG_FILTER_ONLINE = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
+
+function toggleSourceFilter() {
+    const btn = document.getElementById('btnSourceFilter');
+    if (currentSourceFilter === 'all') {
+        currentSourceFilter = 'local';
+        btn.innerHTML = SVG_FILTER_LOCAL;
+        // KUNCI PERBAIKAN: Kosongkan inline color agar mewarisi warna bawaan persis seperti tombol Media Player
+        btn.style.color = ''; 
+        window.alert("Filter Aktif: Hanya menampilkan file Internal HP");
+    } else if (currentSourceFilter === 'local') {
+        currentSourceFilter = 'online';
+        btn.innerHTML = SVG_FILTER_ONLINE;
+        btn.style.color = '#2196F3'; // Tetap biru mutlak untuk file online
+        window.alert("Filter Aktif: Hanya menampilkan file Internet / URL");
+    } else {
+        currentSourceFilter = 'all';
+        btn.innerHTML = SVG_FILTER_ALL;
+        btn.style.color = '#4CAF50'; // Tetap hijau mutlak untuk semua file
+        window.alert("Filter Nonaktif: Menampilkan semua file");
+    }
+    filterFiles(); // Refresh grid galeri secara instan
+}
+
 // INSTRUKSI 2: Filter file disesuaikan agar menyembunyikan non AV File jika Add Media aktif.
 function filterFiles(){
     const a=document.getElementById('searchName').value.toLowerCase(),b=document.getElementById('searchYear').value,c=(a||b);
     renderBreadcrumbs();
     let d=0,e=[];
+    // LOGIKA FILTER LOKASI STORAGE (Lokal / Online)
+    const folderSourceMap = {};
+    if (typeof currentSourceFilter !== 'undefined' && currentSourceFilter !== 'all') {
+        const allCards = Array.from(document.querySelectorAll('.card'));
+        const parentMap = {};
+        allCards.forEach(c => parentMap[c.getAttribute('data-id')] = c.getAttribute('data-folderId'));
+
+        allCards.forEach(c => {
+            if (c.getAttribute('data-itemType') === 'file') {
+                const img = c.getAttribute('data-img');
+                const isLocal = img === 'LOCAL_FILE' || (img && img.startsWith('NATIVE:'));
+                
+                let pId = c.getAttribute('data-folderId');
+                // Traversing ke atas untuk melabeli semua parent folder
+                while (pId && pId !== 'none') {
+                    if (!folderSourceMap[pId]) folderSourceMap[pId] = { local: false, online: false };
+                    if (isLocal) folderSourceMap[pId].local = true;
+                    else folderSourceMap[pId].online = true;
+                    
+                    pId = parentMap[pId];
+                }
+            }
+        });
+    }
+
     document.querySelectorAll('.card').forEach(f => {
         if ('true' === f.getAttribute('data-hidden') && 'master' !== currentRole) {
             f.style.display = 'none';
@@ -4121,8 +4201,27 @@ function filterFiles(){
 
         const j = !b || fileYear.includes(b);
         
+        // Tambahan: Logika Pengecekan Sumber File
+        let matchesSource = true;
+        if (typeof currentSourceFilter !== 'undefined' && currentSourceFilter !== 'all') {
+            if (itemType === 'file') {
+                const isLocal = imgStr === 'LOCAL_FILE' || (imgStr && imgStr.startsWith('NATIVE:'));
+                if (currentSourceFilter === 'local' && !isLocal) matchesSource = false;
+                if (currentSourceFilter === 'online' && isLocal) matchesSource = false;
+            } else if (itemType === 'folder') {
+                const fId = f.getAttribute('data-id');
+                const stats = folderSourceMap[fId];
+                if (!stats) {
+                    matchesSource = false; // Sembunyikan folder jika isinya tidak sesuai filter
+                } else {
+                    if (currentSourceFilter === 'local' && !stats.local) matchesSource = false;
+                    if (currentSourceFilter === 'online' && !stats.online) matchesSource = false;
+                }
+            }
+        }
+        
         // Hindari operator ternary berantai yang sulit dibaca
-        if (g && h && i && j) {
+        if (g && h && i && j && matchesSource) {
             f.style.display = "block";
             // CACHE PROPERTI: Simpan value ke JS Object agar tidak perlu memanggil DOM lagi saat proses sort
             f._sortType = itemType;
@@ -4692,7 +4791,8 @@ function updateStats() {
 let fileKameraTertunda = null;
 
 function bukaModalBaru(){if(curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite') return alert("Buka folder atau kategori spesifik terlebih dahulu untuk membuat item baru."); editingCard=null,fileKameraTertunda=null,document.getElementById('formTitle').innerText="Tambah Baru",gantiTabUpload('file'),
-['fName','fImgUrl','fNote','fYear','fLocalFile','fCustomCover'].forEach(a=>document.getElementById(a).value=''),document.getElementById('btnHapusCover').style.display='none',document.getElementById('fHapusCoverFlag').value='false',document.getElementById('fDescAura').checked=false,document.getElementById('fFavorite').value='false',document.getElementById('btnFavoriteToggle').innerHTML='☆',document.getElementById('btnFavoriteToggle').style.color='#ccc',document.getElementById('btnFavoriteToggle').style.textShadow='none',document.getElementById('fFontStyle').value="'Segoe UI', sans-serif",toggleModal('modalForm', true)}
+['fName','fImgUrl','fNote','fYear','fLocalFile','fCustomCover'].forEach(a=>document.getElementById(a).value=''),
+document.getElementById('btnHapusCover').style.display='none',document.getElementById('fHapusCoverFlag').value='false',document.getElementById('fDescAura').checked=false,document.getElementById('fFavorite').value='false',document.getElementById('btnFavoriteToggle').innerHTML='☆',document.getElementById('btnFavoriteToggle').style.color='#ccc',document.getElementById('btnFavoriteToggle').style.textShadow='none',document.getElementById('fFontStyle').value="'Segoe UI', sans-serif",toggleModal('modalForm', true)}
 
 function tutupModal() {
     toggleModal('modalForm', false);
@@ -4830,8 +4930,10 @@ async function eksporData() {
 
     const isNative = window.Capacitor && window.Capacitor.isNative;
 
+    let pesanSukses = "";
+
     if (isNative) {
-        // JALUR NATIVE: Menggunakan Capacitor Filesystem untuk menyimpan ke HP
+        // JALUR NATIVE: Menyimpan ke HP (Documents)
         try {
             await window.Capacitor.Plugins.Filesystem.writeFile({
                 path: defaultFileName,
@@ -4839,27 +4941,65 @@ async function eksporData() {
                 directory: 'DOCUMENTS',
                 encoding: 'utf8'
             });
-            alert("Data berhasil diekspor! Periksa folder 'Documents' di memori internal HP Anda.");
+            pesanSukses += "Data berhasil diekspor ke folder 'Documents' memori internal.\n";
         } catch (err) {
             console.error("Gagal export native:", err);
-            alert("Gagal menyimpan file ke perangkat: " + err.message);
+            pesanSukses += "Gagal menyimpan file ke perangkat lokal: " + err.message + "\n";
         }
     } else {
-        // JALUR BROWSER: Menggunakan Blob URL klasik
+        // JALUR BROWSER: Download klasik
         const blob = new Blob([backupData], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = defaultFileName;
         document.body.appendChild(a);
         a.click();
-        
         document.body.removeChild(a); 
-        setTimeout(() => {
-            URL.revokeObjectURL(a.href);
-        }, 10000);
-
-        alert("Data diekspor beserta Thumbnail/Cover! Periksa folder Download Anda.");
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+        pesanSukses += "Data lokal diekspor (Periksa folder Download).\n";
     }
+
+    // JALUR CLOUD: Upload JSON ke Google Drive menggunakan token Capacitor/Firebase
+    const gToken = localStorage.getItem('feathera_gdrive_token');
+    const driveJsonUrl = getLocal('drive_folder_json');
+
+    if (gToken && currentUser !== 'Guest') {
+        try {
+            const jsonBlob = new Blob([backupData], { type: 'application/json' });
+            const resMedia = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + gToken,
+                    'Content-Type': 'application/json',
+                    'Content-Length': jsonBlob.size
+                },
+                body: jsonBlob
+            });
+
+            const dataMedia = await resMedia.json();
+            if (resMedia.ok && dataMedia.id) {
+                let patchUrl = `https://www.googleapis.com/drive/v3/files/${dataMedia.id}`;
+                if (driveJsonUrl) {
+                    const folderId = driveJsonUrl.includes('folders/') ? driveJsonUrl.split('folders/')[1].split(/[?&/]/)[0] : driveJsonUrl;
+                    patchUrl += `?addParents=${folderId}&removeParents=root`;
+                }
+
+                await fetch(patchUrl, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: defaultFileName })
+                });
+                pesanSukses += "☁️ Salinan Backup berhasil diunggah ke Google Drive Anda!";
+            } else {
+                pesanSukses += "☁️ Gagal upload ke Drive (API Ditolak).";
+            }
+        } catch (errDrive) {
+            console.warn("Koneksi gagal ke Drive", errDrive);
+            pesanSukses += "☁️ Gagal upload ke Drive (Jaringan/Timeout).";
+        }
+    }
+
+    alert(pesanSukses);
 }
 
 function imporData(a) {
@@ -5369,13 +5509,10 @@ window.addEventListener('touchend', e => {
 
 function geserHalaman(arah) {
     let urutanTab = [];
-    
-    // Tentukan urutan tab berdasarkan mode (Mode Add Media memiliki tab yang lebih sedikit)
     if (isAddMediaMode) {
         urutanTab = ['audiovideo'];
         ['video', 'audio'].forEach(id => { if (config.find(c => c.id === id)) urutanTab.push(id); });
     } else {
-        // Mode Normal: Home (all), All Media (audiovideo), Favorite, lalu sisanya sesuai config database
         urutanTab = ['all', 'audiovideo', 'favorite', ...config.map(c => c.id)];
     }
 
@@ -5384,34 +5521,26 @@ function geserHalaman(arah) {
 
     let indexBaru = indexSaatIni;
     if (arah === 'next' && indexSaatIni < urutanTab.length - 1) {
-        indexBaru++; // Swipe ke Kiri -> Geser ke Tab Kanan (Next)
+        indexBaru++;
     } else if (arah === 'prev' && indexSaatIni > 0) {
-        indexBaru--; // Swipe ke Kanan -> Geser ke Tab Kiri (Prev)
+        indexBaru--;
     }
 
-    // Jika index berubah (berarti berhasil ganti tab), eksekusi pembaruan beserta transisi
     if (indexBaru !== indexSaatIni) {
         const grid = document.getElementById('fileGrid');
         const emptyState = document.getElementById('emptyState');
-        
-        // Menentukan arah animasi keluar dan masuk
         const animOut = arah === 'next' ? 'slide-out-left' : 'slide-out-right';
         const animIn = arah === 'next' ? 'slide-in-right' : 'slide-in-left';
         
-                // 1. Eksekusi perpindahan data seketika (tanpa jeda 200ms)
         setFilter(0, urutanTab[indexBaru]);
 
-        // 2. Terapkan animasi masuk langsung untuk ilusi pergeseran tersinkronisasi
         grid.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
         emptyState.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
         
-        // Memaksa reflow agar animasi me-restart
         void grid.offsetWidth; 
         
         grid.classList.add(animIn);
         emptyState.classList.add(animIn);
-
-        // 3. Bersihkan kelas animasi setelah selesai
         setTimeout(() => {
             grid.classList.remove(animIn);
             emptyState.classList.remove(animIn);
@@ -5451,7 +5580,6 @@ function renderRecycleBinList() {
     }
 
     let htmlStr = '';
-    // Tampilkan diurutkan berdasarkan yang terbaru dihapus
     rbData.sort((a,b) => b.deletedAt - a.deletedAt).forEach(item => {
         const dateStr = new Date(item.deletedAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit'});
         const iconStr = item.itemType === 'folder' ? '📁' : '📄';
@@ -5490,15 +5618,15 @@ async function restoreRbSelected() {
         const itemIndex = rbData.findIndex(x => x.id === id);
         if (itemIndex > -1) {
             const itemData = rbData.splice(itemIndex, 1)[0];
-            delete itemData.deletedAt; // Bersihkan stempel waktu penghapusan
-            buatKartu(itemData, false); // Render ulang secara dinamis ke DOM grid
+            delete itemData.deletedAt;
+            buatKartu(itemData, false);
             restoredCount++;
         }
     });
 
     if (restoredCount > 0) {
         setLocal('recycle_bin', JSON.stringify(rbData));
-        simpanKeLokal(); // Sinkronisasikan rekonstruksi kartu ke database struktural (files_db)
+        simpanKeLokal();
         filterFiles();
         updateStats();
         renderRecycleBinList();
@@ -5517,14 +5645,12 @@ async function hapusRbSelected() {
     const idsToDelete = checkedBoxes.map(cb => cb.value);
 
     let deletedCount = 0;
-    // Menggunakan for...of untuk memastikan (await) eksekusi penghapusan fisik disk/memori tuntas secara berurutan
     for (const id of idsToDelete) {
         const itemIndex = rbData.findIndex(x => x.id === id);
         if (itemIndex > -1) {
             const itemData = rbData[itemIndex];
             // --- PEMUSNAHAN AKTUAL DARI INDEXED DB ---
             await dbHapusCover(itemData.id);
-            // PENGHAPUSAN FILE FISIK: Eksekusi mutlak tanpa syarat LOCAL_FILE untuk mencegah memory leak file kamera
             await dbHapusFile(itemData.id).catch(e => console.warn(e));
             
             rbData.splice(itemIndex, 1);
@@ -5538,17 +5664,12 @@ async function hapusRbSelected() {
                 
                 logActivity('Musnahkan File', `Menghapus permanen ${deletedCount} item`);
                 
-                // [PEMBARUAN]: Ganti polling tidak stabil dengan Refresh Siluman.
-                // Memberi tahu pengguna bahwa sistem sedang menyinkronkan data fisik.
+                // [PEMBARUAN]: Memberi tahu pengguna bahwa sistem sedang menyinkronkan data fisik.
                 alert(`${deletedCount} item dimusnahkan. Menyinkronkan ulang memori...`);
-                
-                // Beri jeda 2 detik agar Toast terbaca, lalu paksa WebView mereset cache memori.
                 setTimeout(() => {
-                    // Tutup koneksi database agar OS segera melepaskan kapasitas ruang IndexedDB
                     if (dbInstance) {
                         dbInstance.close();
                     }
-                    // Refresh aplikasi untuk mendapatkan angka Storage Quota yang 100% akurat
                     window.location.reload();
                 }, 2000);
             }
@@ -5568,24 +5689,16 @@ function getExtFromMime(mimeType) {
 
 function tampungFileKamera(inputEl) {
     fileKameraTertunda = inputEl.files[0];
-    if (!fileKameraTertunda) return; // Failsafe jika user batal di layar antarmuka kamera HP
-
+    if (!fileKameraTertunda) return;
     const isVideo = fileKameraTertunda.type.startsWith('video/');
     const trueExt = getExtFromMime(fileKameraTertunda.type) || (isVideo ? '.mp4' : '.jpg');
-
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
-    
     const judulOtomatis = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}${trueExt}`;
-
     document.getElementById('fName').value = judulOtomatis;
     document.getElementById('fYear').value = now.getFullYear();
-
-    // Kunci tab folder agar tidak terjadi perpindahan logika saat file terisi
     document.getElementById('tabFolder').style.pointerEvents = 'none';
     document.getElementById('tabFolder').style.opacity = '0.5';
-
-    // --- OPTIMASI UX: Ubah visual tombol dan sembunyikan opsi redundan ---
     const btnFoto = document.getElementById('btnPhotoCaptureUI');
     const btnVideo = document.getElementById('btnVideoCaptureUI');
     
@@ -5603,7 +5716,7 @@ function tampungFileKamera(inputEl) {
         btnVideo.style.display = 'none';
     }
 
-    window.alert(`✅ Media tertangkap!\nSilakan lengkapi catatan (opsional) lalu klik tombol "Simpan" di bawah.`);
+    window.alert(`✅ Media tertangkap!\nSilakan lengkapi catatan (opsional) lalu klik tombol "Simpan".`);
 }
 
 </script>
