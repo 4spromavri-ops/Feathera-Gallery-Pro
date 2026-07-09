@@ -762,14 +762,6 @@ function getDirectUrl(a){
         b = b.replace(/ /g, '%20');
     }
     
-    // [PERBAIKAN BARU] Sanitasi khusus untuk link Appwrite
-    if(b.includes('appwrite.io')){
-        // 1. Paksa endpoint ke /view agar media bisa di-stream, bukan didownload
-        b = b.replace(/\/download(?=\?|$)/, '/view');
-        // 2. Encode spasi mentah agar video tidak gagal dimuat di WebView
-        b = b.replace(/ /g, '%20');
-    }
-    
     if(b.includes('dropbox.com'))return b.replace('www.dropbox.com','dl.dropboxusercontent.com').replace(/[?&]dl=[01]/,"");
     const c=getDriveId(b);
     if(c&&(b.includes('drive.google.com')||b.includes('googleusercontent.com'))){
