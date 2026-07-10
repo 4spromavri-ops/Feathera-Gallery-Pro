@@ -978,13 +978,26 @@ function renderNav() {
     }
 
 function setFilter(a,b){
+    // FITUR BARU: Pencarian Dinamis Cerdas (Smart Contextual Search)
+    // Jika pindah tab utama (a === 0), sedang berada di folder, dan kolom pencarian masih kosong
+    if (a === 0 && currentFolderId && currentFolderId !== 'none') {
+        const currentFolderCard = document.querySelector(`.card[data-id="${currentFolderId}"]`);
+        const searchInput = document.getElementById('searchName');
+        if (currentFolderCard && searchInput && !searchInput.value) {
+            // Tarik nama folder dan jadikan kata kunci otomatis
+            searchInput.value = currentFolderCard.querySelector('.file-info').innerText;
+            if(typeof toggleClearSearchBtn === 'function') toggleClearSearchBtn();
+        }
+    }
+
     0===a?curFilter={l0:b,l1:'all',l2:'all',l3:'all'}:1===a?(curFilter.l1=b,curFilter.l2='all',curFilter.l3='all'):2===a?(curFilter.l2=b,curFilter.l3='all'):3===a&&(curFilter.l3=b);
     if(1>a) renderNav(); // Re-render nav utama hanya jika level 0 berubah
+    
+    // Folder direset agar algoritma pencarian mengambil alih filter global
     currentFolderId=null;
     renderChips();
     
     // Logic seleksi & tampilan (Cegah kalkulasi ganda)
-    // [PERBAIKAN]: Hapus `toggleSelectionMode(false)` agar status mode pemilihan tidak reset saat pindah kategori
     updateSelectCount(); 
     
     // Scroll paling ringan tanpa membebani animasi CSS
@@ -2454,6 +2467,23 @@ function debounceSearch() {
     }, 300);
 }
 
+// FITUR BARU: Menampilkan/Menyembunyikan Tombol Clear ('X')
+function toggleClearSearchBtn() {
+    const btn = document.getElementById('clearSearchBtn');
+    const input = document.getElementById('searchName');
+    if(btn && input) btn.style.display = input.value ? 'inline-block' : 'none';
+}
+
+// FITUR BARU: Menghapus Pencarian dengan 1 Klik Cepat
+function clearSearch() {
+    const input = document.getElementById('searchName');
+    if(input) {
+        input.value = '';
+        toggleClearSearchBtn();
+        debounceSearch(); // Trigger filter ulang agar semua file muncul kembali
+    }
+}
+
 function gantiUrutan(val){currentSortOpt=val;localStorage.setItem('feathera_sort_opt', val);filterFiles();}
 
 function bukaMaster(){toggleModal('modalMaster', true),initMasterTree(),masterResetForm()}
@@ -2661,8 +2691,8 @@ const MediaPlayer={
         if(this.currentLocalBlobUrl){URL.revokeObjectURL(this.currentLocalBlobUrl);this.currentLocalBlobUrl=null;}
         const a=document.getElementById('mpArt'),b=document.getElementById('miniArtBg');
 
-        a.style.backgroundImage='none',a.style.backgroundColor='transparent',a.innerHTML='';
-        b.style.backgroundImage='none',b.style.backgroundColor='transparent',b.innerHTML='';
+        a.style.backgroundImage='none',a.innerHTML='';
+        b.style.backgroundImage='none',b.innerHTML='';
         document.getElementById('mpVideoBox').style.display='none';
         document.getElementById('visualizerCanvas').style.display='none';
         document.getElementById('miniVisualizer').style.display='none';
@@ -2735,8 +2765,7 @@ sleepArea.style.display='none';const g=document.getElementById('mpArt'),h=docume
     // -------------------------------
     
     document.querySelector('.vid-fs-btn').style.display='none';
-if(d){document.getElementById('ytVideoPlayer').style.display='block';document.getElementById('mpVideoBox').style.display='flex';document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>'}else if('video'===c){document.querySelector('.vid-fs-btn').style.display='flex';document.getElementById('mpVideoBox').style.display='flex',this.vEl.style.display='block',this.vEl.src=playSrc,a&&this.vEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)});this.isPlaying=a;document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVid.src=playSrc;miniVid.style.display='block';if(a)miniVid.play().catch(()=>{})}else{document.getElementById('mpVideoBox').style.display='none',this.aEl.src=playSrc,a&&this.audioCtx.resume().then(()=>this.aEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)}));this.isPlaying=a;document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVis.style.display='block';if(!this.sleepMode)document.getElementById('visualizerCanvas').style.display='block'}this.currTimeEl=document.getElementById('mpCurrTime'); this.durTimeEl=document.getElementById('mpDurTime'); const setCoverAndLyrics=async()=>{let coverUrl=null;let isLocalBlob=false;this.parseLyrics("");if('video'===c||d){g.style.backgroundImage='none';g.style.backgroundColor='#000';g.innerHTML='';h.style.backgroundImage='none';h.style.backgroundColor='#000';h.innerHTML='';return}else{g.style.backgroundColor='transparent';h.style.backgroundColor='transparent'}if(b.customCover&&b.id){try{const blob=await dbAmbilCover(b.id);if(blob)coverUrl=URL.createObjectURL(blob)}catch(err){}}if('audio'===c){if(b.isLocal&&b.id){try{const audioBlob=await dbAmbilFile(b.id);if(audioBlob){MediaPlayer.readID3(audioBlob,this.currentIndex);isLocalBlob=true}}catch(err){}}else if(playSrc&&playSrc!=='LOCAL_FILE'){MediaPlayer.readID3(playSrc,this.currentIndex);isLocalBlob=true}}if(!coverUrl&&!isLocalBlob&&'audio'===c&&b.img&&b.img!=='LOCAL_FILE')coverUrl=getThumbUrl(b.img);if(coverUrl){g.style.backgroundImage=`url('${coverUrl}')`;g.innerHTML='';h.style.backgroundImage=`url('${coverUrl}')`;h.innerHTML=''}else if(!isLocalBlob){g.style.backgroundImage='none';h.style.backgroundImage='none';if('audio'===c){g.innerHTML='';h.innerHTML=''}}};await setCoverAndLyrics();
-
+if(d){document.getElementById('ytVideoPlayer').style.display='block';document.getElementById('mpVideoBox').style.display='flex';document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>'}else if('video'===c){document.querySelector('.vid-fs-btn').style.display='flex';document.getElementById('mpVideoBox').style.display='flex',this.vEl.style.display='block',this.vEl.src=playSrc,a&&this.vEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)});this.isPlaying=a;document.getElementById('visualizerCanvas').style.display='none';document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVid.src=playSrc;miniVid.style.display='block';if(a)miniVid.play().catch(()=>{})}else{document.getElementById('mpVideoBox').style.display='none',this.aEl.src=playSrc,a&&this.audioCtx.resume().then(()=>this.aEl.play().then(()=>this.syncPlayState(true)).catch(()=>{this.syncPlayState(false)}));this.isPlaying=a;document.querySelector('.mp-time').innerHTML='<span id="mpCurrTime">0:00</span><span id="mpDurTime">0:00</span>';miniVis.style.display='block';if(!this.sleepMode)document.getElementById('visualizerCanvas').style.display='block'}this.currTimeEl=document.getElementById('mpCurrTime'); this.durTimeEl=document.getElementById('mpDurTime'); const setCoverAndLyrics=async()=>{let coverUrl=null;let isLocalBlob=false;this.parseLyrics("");if(b.customCover&&b.id){try{const blob=await dbAmbilCover(b.id);if(blob)coverUrl=URL.createObjectURL(blob)}catch(err){}}if('audio'===c){if(b.isLocal&&b.id){try{const audioBlob=await dbAmbilFile(b.id);if(audioBlob){MediaPlayer.readID3(audioBlob,this.currentIndex);isLocalBlob=true}}catch(err){}}else if(playSrc&&playSrc!=='LOCAL_FILE'){MediaPlayer.readID3(playSrc,this.currentIndex);isLocalBlob=true}}if(!coverUrl&&!isLocalBlob&&'video'===c&&b.img&&b.img!=='LOCAL_FILE')coverUrl=getThumbUrl(b.img);if(!coverUrl&&!isLocalBlob&&'audio'===c&&b.img&&b.img!=='LOCAL_FILE')coverUrl=getThumbUrl(b.img);if(coverUrl){g.style.backgroundImage=`url('${coverUrl}')`;g.innerHTML='';h.style.backgroundImage=`url('${coverUrl}')`;h.innerHTML=''}else if(!isLocalBlob){g.style.backgroundImage='none';h.style.backgroundImage='none';if('audio'===c||'video'===c){g.innerHTML='';h.innerHTML=''}}};await setCoverAndLyrics();
         // Update Running Text
         const headerTitleEl = document.querySelector('#mpHeaderTitle .marquee-text');
         if(headerTitleEl) headerTitleEl.innerText = b.name;
