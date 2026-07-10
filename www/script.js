@@ -907,20 +907,20 @@ function renderNav() {
     setTimeout(() => { const b = a.querySelector('.nav-btn.active'); b && a.scrollTo({ left: b.offsetLeft - (a.clientWidth / 2) + (b.clientWidth / 2), behavior: 'smooth' }); }, 50);
 }
 
-    function renderChips(){
-        const a=document.getElementById('dynamicChipsArea');
-        
-        // 1. Simpan posisi scroll setiap baris chip sebelum elemen dihancurkan
-        const oldScrolls = Array.from(a.querySelectorAll('.chip-container')).map(el => el.scrollLeft);
-        
-        a.innerHTML='';
-        
-        if(curFilter.l0==='audiovideo'){
-            document.body.style.paddingBottom = '150px'; // Kembalikan ke ruang default
-            currentFolderId=null;
-            filterFiles();
-            return;
-        }
+function renderChips(){
+    const a=document.getElementById('dynamicChipsArea');
+    
+    // 1. Simpan posisi scroll setiap baris chip sebelum elemen dihancurkan
+    const oldScrolls = Array.from(a.querySelectorAll('.chip-container')).map(el => el.scrollLeft);
+    
+    a.innerHTML='';
+    
+    if(curFilter.l0==='audiovideo'){
+        document.body.style.paddingBottom = '150px'; // Kembalikan ke ruang default
+        currentFolderId=null;
+        filterFiles();
+        return;
+    }
 
     // Indeks untuk melacak baris chip yang mana
     let containerIndex = 0;
@@ -950,57 +950,60 @@ function renderNav() {
         const c=config.find(d=>d.id===curFilter.l0);
         if(c){
             c.children&&b(c.children,1,curFilter.l1,c.name);
+            
+            // AUTO-CORRECT FILTER: Validasi silang untuk mendukung lompatan dinamis
+            let d = null;
             if('all'!==curFilter.l1){
-                const d=c.children.find(d=>d.id===curFilter.l1);
-                if(d){
-                    d.children&&b(d.children,2,curFilter.l2,d.name);
-                        if('all'!==curFilter.l2){
-                            const e=d.children.find(d=>d.id===curFilter.l2);
-                            if(e){
-                                e.children&&b(e.children,3,curFilter.l3,e.name)
-                            }
-                        }
+                d=c.children ? c.children.find(x=>x.id===curFilter.l1) : null;
+                if(!d) { curFilter.l1='all'; curFilter.l2='all'; curFilter.l3='all'; }
+            }
+            
+            if(d){
+                d.children&&b(d.children,2,curFilter.l2,d.name);
+                
+                let e = null;
+                if('all'!==curFilter.l2){
+                    e=d.children ? d.children.find(x=>x.id===curFilter.l2) : null;
+                    if(!e) { curFilter.l2='all'; curFilter.l3='all'; }
+                }
+                
+                if(e){
+                    e.children&&b(e.children,3,curFilter.l3,e.name);
+                    
+                    if('all'!==curFilter.l3){
+                        const fItem = e.children ? e.children.find(x=>x.id===curFilter.l3) : null;
+                        if(!fItem) { curFilter.l3='all'; }
                     }
                 }
             }
         }
-        
-        // PERBAIKAN: Hitung tinggi dinamis chip area dan sesuaikan padding body
-        setTimeout(() => {
-            const chipsHeight = a.offsetHeight || 0;
-            // 100px adalah jarak aman (70px untuk navbar bawah + 30px ruang lega ekstra)
-            document.body.style.paddingBottom = chipsHeight > 0 ? (100 + chipsHeight) + 'px' : '150px';
-            updateSelectCount(); // Sinkronisasi posisi Floating FAB & Info
-        }, 50);
-
-        currentFolderId=null; 
-        filterFiles();
     }
+    
+    // PERBAIKAN: Hitung tinggi dinamis chip area dan sesuaikan padding body
+    setTimeout(() => {
+        const chipsHeight = a.offsetHeight || 0;
+        // 100px adalah jarak aman (70px untuk navbar bawah + 30px ruang lega ekstra)
+        document.body.style.paddingBottom = chipsHeight > 0 ? (100 + chipsHeight) + 'px' : '150px';
+        updateSelectCount(); // Sinkronisasi posisi Floating FAB & Info
+    }, 50);
+
+    currentFolderId=null; 
+    filterFiles();
+}
 
 function setFilter(a,b){
-    // FITUR BARU: Pencarian Dinamis Cerdas (Smart Contextual Search)
-    // Jika pindah tab utama (a === 0), sedang berada di folder, dan kolom pencarian masih kosong
-    if (a === 0 && currentFolderId && currentFolderId !== 'none') {
-        const currentFolderCard = document.querySelector(`.card[data-id="${currentFolderId}"]`);
-        const searchInput = document.getElementById('searchName');
-        if (currentFolderCard && searchInput && !searchInput.value) {
-            // Tarik nama folder dan jadikan kata kunci otomatis
-            searchInput.value = currentFolderCard.querySelector('.file-info').innerText;
-            if(typeof toggleClearSearchBtn === 'function') toggleClearSearchBtn();
-        }
-    }
+    // FITUR LOMPATAN KATEGORI DINAMIS (Dynamic Cross-Category Jump)
+    // Menggantikan reset statis agar pengguna bisa langsung melompat
+    // ke rute paralel tanpa mengulangi klik navigasi dari awal.
+    if(a === 0) curFilter.l0 = b;
+    else if(a === 1) curFilter.l1 = b;
+    else if(a === 2) curFilter.l2 = b;
+    else if(a === 3) curFilter.l3 = b;
 
-    0===a?curFilter={l0:b,l1:'all',l2:'all',l3:'all'}:1===a?(curFilter.l1=b,curFilter.l2='all',curFilter.l3='all'):2===a?(curFilter.l2=b,curFilter.l3='all'):3===a&&(curFilter.l3=b);
-    if(1>a) renderNav(); // Re-render nav utama hanya jika level 0 berubah
-    
-    // Folder direset agar algoritma pencarian mengambil alih filter global
+    if(1>a) renderNav(); 
     currentFolderId=null;
-    renderChips();
-    
-    // Logic seleksi & tampilan (Cegah kalkulasi ganda)
+    renderChips(); 
     updateSelectCount(); 
-    
-    // Scroll paling ringan tanpa membebani animasi CSS
     window.scrollTo(0, 0);
 }
 
@@ -2359,7 +2362,7 @@ function filterFiles(){
         // CACHING VARIABEL DOM: Memangkas beban kueri berulang
         const itemType = f.getAttribute('data-itemType');
         const imgStr = f.getAttribute('data-img');
-        const nameStr = f.getAttribute('data-name'); // Menggunakan data-name alih-alih querySelector
+        const nameStr = f.getAttribute('data-name'); 
         const fileYear = f.getAttribute('data-year');
         
         // HIDE SEMUA FILE SELAIN AUDIO & VIDEO SAAT SEDANG DALAM MODE ADD MEDIA
@@ -2367,28 +2370,33 @@ function filterFiles(){
             const typeStr = getMediaType(imgStr, nameStr);
             if (typeStr !== 'audio' && typeStr !== 'video') {
                 f.style.display = 'none';
-                return; // Langsung di-skip
+                return; 
             }
         }
 
-                // Logika Filter
-                let g;
-                if (curFilter.l0 === 'audiovideo') {
-                    const type = getMediaType(imgStr, nameStr);
-                    g = (type === 'audio' || type === 'video');
-                } else if (curFilter.l0 === 'favorite') {
-                    g = (f.getAttribute('data-favorite') === 'true');
-                } else {
-                    g = ('all' === curFilter.l0 || f.getAttribute('data-cat') === curFilter.l0) &&
-                        ('all' === curFilter.l1 || f.getAttribute('data-sub') === curFilter.l1) &&
-                        ('all' === curFilter.l2 || f.getAttribute('data-type') === curFilter.l2) &&
-                        ('all' === curFilter.l3 || f.getAttribute('data-detail') === curFilter.l3);
-                }
+        // Logika Filter: FITUR PENCARIAN DINAMIS & GLOBAL
+        let g;
+        if (c && !isAddMediaMode) {
+            // PENCARIAN DINAMIS & GLOBAL
+            // Saat mencari, abaikan batasan rute kategori agar 
+            // user dapat menemukan file multi-tipe secara global dengan cepat.
+            g = true;
+        } else if (curFilter.l0 === 'audiovideo') {
+            const type = getMediaType(imgStr, nameStr);
+            g = (type === 'audio' || type === 'video');
+        } else if (curFilter.l0 === 'favorite') {
+            g = (f.getAttribute('data-favorite') === 'true');
+        } else {
+            g = ('all' === curFilter.l0 || f.getAttribute('data-cat') === curFilter.l0) &&
+                ('all' === curFilter.l1 || f.getAttribute('data-sub') === curFilter.l1) &&
+                ('all' === curFilter.l2 || f.getAttribute('data-type') === curFilter.l2) &&
+                ('all' === curFilter.l3 || f.getAttribute('data-detail') === curFilter.l3);
+        }
 
-                // Logika Folder Check
-                const h = (curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite') ? true : (c ? true : (currentFolderId ? f.getAttribute('data-folderId') === currentFolderId : (!f.getAttribute('data-folderId') || 'none' === f.getAttribute('data-folderId'))));
-                
-                const i = !a || nameStr.includes(a);
+        // Logika Folder Check
+        const h = (curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite') ? true : (c ? true : (currentFolderId ? f.getAttribute('data-folderId') === currentFolderId : (!f.getAttribute('data-folderId') || 'none' === f.getAttribute('data-folderId'))));
+        
+        const i = !a || nameStr.includes(a);
 
         const j = !b || fileYear.includes(b);
         
@@ -2448,7 +2456,6 @@ function filterFiles(){
     if (curFilter.l0 === 'favorite') {
         emptyStateText.innerHTML = 'Belum ada memori tersimpan.<br>Silakan edit data spesifik, tandai (✩) lalu simpan.';
     } else if (curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo') {
-        // Diubah: Pengecekan halaman 'Semua' dipindah ke ATAS agar tidak tertimpa state terkunci
         emptyStateText.innerHTML = 'Belum ada memori tersimpan.<br>Buka kategori spesifik untuk menambah data.';
     } else if (currentRole === 'none') {
         emptyStateText.innerHTML = 'Belum ada memori disini.<br>Silakan pergi ke Pengaturan (⚙️) dan buka kunci terlebih dahulu untuk menambah data.';
@@ -2465,23 +2472,6 @@ function debounceSearch() {
     searchTimeout = setTimeout(() => {
         filterFiles();
     }, 300);
-}
-
-// FITUR BARU: Menampilkan/Menyembunyikan Tombol Clear ('X')
-function toggleClearSearchBtn() {
-    const btn = document.getElementById('clearSearchBtn');
-    const input = document.getElementById('searchName');
-    if(btn && input) btn.style.display = input.value ? 'inline-block' : 'none';
-}
-
-// FITUR BARU: Menghapus Pencarian dengan 1 Klik Cepat
-function clearSearch() {
-    const input = document.getElementById('searchName');
-    if(input) {
-        input.value = '';
-        toggleClearSearchBtn();
-        debounceSearch(); // Trigger filter ulang agar semua file muncul kembali
-    }
 }
 
 function gantiUrutan(val){currentSortOpt=val;localStorage.setItem('feathera_sort_opt', val);filterFiles();}
