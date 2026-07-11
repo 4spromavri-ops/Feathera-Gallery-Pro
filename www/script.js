@@ -966,10 +966,69 @@ function renderChips(){
     filterFiles();
 }
 
-function setFilter(a,b){
-    0===a?curFilter={l0:b,l1:'all',l2:'all',l3:'all'}:1===a?(curFilter.l1=b,curFilter.l2='all',curFilter.l3='all'):2===a?(curFilter.l2=b,curFilter.l3='all'):3===a&&(curFilter.l3=b);
-    if(1>a) renderNav(); // Re-render nav utama hanya jika level 0 berubah
+function setFilter(a, b) {
+    // LOGIKA BARU: Dynamic Chip Tree Selection berdasarkan Nama
+    if (b === 'all') {
+        0 === a ? curFilter = { l0: 'all', l1: 'all', l2: 'all', l3: 'all' } : 
+        1 === a ? (curFilter.l1 = 'all', curFilter.l2 = 'all', curFilter.l3 = 'all') : 
+        2 === a ? (curFilter.l2 = 'all', curFilter.l3 = 'all') : 
+        (curFilter.l3 = 'all');
+    } else if (curFilter['l' + a] === b) {
+        // Reset: Jika chip yang SAAT INI sedang aktif diklik lagi, kembalikan level di bawahnya ke 'Semua'
+        0 === a ? (curFilter.l1 = 'all', curFilter.l2 = 'all', curFilter.l3 = 'all') : 
+        1 === a ? (curFilter.l2 = 'all', curFilter.l3 = 'all') : 
+        2 === a && (curFilter.l3 = 'all');
+    } else {
+        // Simpan nama child yang sedang aktif sebelum filter level atas berpindah
+        const activeNames = {
+            l1: curFilter.l1 !== 'all' && flatConfig[curFilter.l1] ? flatConfig[curFilter.l1].name : null,
+            l2: curFilter.l2 !== 'all' && flatConfig[curFilter.l2] ? flatConfig[curFilter.l2].name : null,
+            l3: curFilter.l3 !== 'all' && flatConfig[curFilter.l3] ? flatConfig[curFilter.l3].name : null
+        };
+        
+        curFilter['l' + a] = b; // Set target filter yang baru
+        
+        // Reset seluruh child ke 'all' secara default terlebih dahulu
+        0 === a ? (curFilter.l1 = 'all', curFilter.l2 = 'all', curFilter.l3 = 'all') : 
+        1 === a ? (curFilter.l2 = 'all', curFilter.l3 = 'all') : 
+        2 === a && (curFilter.l3 = 'all');
+        
+        // Cari kecocokan NAMA di struktur tree kategori yang baru dituju
+        let currNode = flatConfig[b];
+        if (currNode && currNode.children) {
+            if (a < 1 && activeNames.l1) {
+                let m1 = currNode.children.find(c => c.name === activeNames.l1);
+                if (m1) {
+                    curFilter.l1 = m1.id;
+                    if (m1.children && activeNames.l2) {
+                        let m2 = m1.children.find(c => c.name === activeNames.l2);
+                        if (m2) {
+                            curFilter.l2 = m2.id;
+                            if (m2.children && activeNames.l3) {
+                                let m3 = m2.children.find(c => c.name === activeNames.l3);
+                                if (m3) curFilter.l3 = m3.id;
+                            }
+                        }
+                    }
+                }
+            } else if (a === 1 && activeNames.l2) {
+                let m2 = currNode.children.find(c => c.name === activeNames.l2);
+                if (m2) {
+                    curFilter.l2 = m2.id;
+                    if (m2.children && activeNames.l3) {
+                        let m3 = m2.children.find(c => c.name === activeNames.l3);
+                        if (m3) curFilter.l3 = m3.id;
+                    }
+                }
+            } else if (a === 2 && activeNames.l3) {
+                let m3 = currNode.children.find(c => c.name === activeNames.l3);
+                if (m3) curFilter.l3 = m3.id;
+            }
+        }
+    }
     
+    if (1 > a) renderNav(); // Re-render nav utama hanya jika level 0 berubah
+   
     // [FITUR BARU]: Sinkronisasi Folder Otomatis Berdasarkan Nama
     if (activeSearchFolderName) {
         const allFolders = Array.from(document.querySelectorAll('.card[data-itemType="folder"]'));
