@@ -7,7 +7,20 @@
 
     <link rel="stylesheet" href="style.css">
     
+    <!-- KODE TAMBAHAN MULAI: Sembunyikan ikon play bawaan WebView Capacitor -->
+    <style>
+        video::-webkit-media-controls-start-playback-button {
+            display: none !important;
+            -webkit-appearance: none !important;
+        }
+        video {
+            background-color: #000000 !important;
+        }
+    </style>
+    <!-- KODE TAMBAHAN SELESAI -->
+
     <link rel="icon" type="image/png" href="assets/icon.png">
+
     <link rel="apple-touch-icon" href="assets/icon.png">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
