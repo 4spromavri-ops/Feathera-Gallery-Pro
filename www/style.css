@@ -1177,3 +1177,14 @@ body.dark-mode #btnScrollTop {
 #diceBtn:active {
     transform: scale(0.9); /* Sedikit mengecil untuk sensasi ditekan */
 }
+
+/* Menghilangkan tombol play bawaan WebView Android pada elemen video */
+video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+}
+
+/* Memastikan latar belakang video berwarna hitam sebelum memuat/diputar */
+video {
+    background-color: #000000 !important;
+}
