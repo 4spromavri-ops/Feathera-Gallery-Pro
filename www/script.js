@@ -1028,7 +1028,7 @@ function setFilter(a, b) {
     }
     
     if (1 > a) renderNav(); // Re-render nav utama hanya jika level 0 berubah
-   
+
     // [FITUR BARU]: Sinkronisasi Folder Otomatis Berdasarkan Nama
     if (activeSearchFolderName) {
         const allFolders = Array.from(document.querySelectorAll('.card[data-itemType="folder"]'));
