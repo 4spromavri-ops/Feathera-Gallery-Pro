@@ -142,9 +142,9 @@ body.dark-mode .stats-item { color: #ffa000; text-shadow: 0 0 0 rgba(0,0,0,0.8);
 body.action-mode:not(.add-media-mode) #dynamicChipsArea { transform: translateY(150%); }
 .chip-container { display: flex; gap: 8px; overflow-x: auto; padding: 5px 15px; scrollbar-width: none; align-items: center; }
 .chip-container::-webkit-scrollbar { display: none; }
-.chip { padding: 6px 14px; background: var(--chip-bg); border-radius: 15px; font-size: 12px; white-space: nowrap; cursor: pointer; transition: 0.2s; color: var(--chip-text); flex-shrink: 0; border: 1px solid var(--btn-border); box-shadow: var(--btn-shadow); text-shadow: 0 1px 0 rgba(255,255,255,0.4); font-weight: 600; }
-body.dark-mode .chip { text-shadow: 0 -1px 0 rgba(0,0,0,0.8); }
-.chip.active { background: var(--primary-gradient); border-color: var(--primary-dark); color: #fff; text-shadow: 0 -1px 0 rgba(0,0,0,0.5); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); transform: translateY(1px); }
+.chip { padding: 6px 14px; background: var(--chip-bg); border-radius: 15px; font-size: 12px; white-space: nowrap; cursor: pointer; transition: 0.2s; color: var(--chip-text); flex-shrink: 0; border: 1px solid var(--btn-border); box-shadow: var(--btn-shadow); text-shadow: none; font-weight: 600; }
+body.dark-mode .chip { text-shadow: none; }
+.chip.active { background: var(--primary-gradient); border-color: var(--primary-dark); color: #fff; text-shadow: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); transform: translateY(1px); }
 #folderNavUI { padding: 10px 15px; margin-top: 0; display: block; position: sticky; top: 140px; z-index: 90; transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
 body.has-mini-player #folderNavUI { top: 200px; }
 .breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; font-size: 13px; color: #444; background: var(--btn-bg); padding: 6px 12px; border-radius: 5px; box-shadow: var(--btn-shadow); border: 1px solid var(--btn-border); text-shadow: 0 1px 0 rgba(255,255,255,0.6); font-weight: bold; }
