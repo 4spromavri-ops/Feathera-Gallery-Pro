@@ -129,7 +129,11 @@ async function loginDenganGoogle() {
     const loadingEl = document.getElementById('loginLoading');
     loadingEl.classList.remove('hidden');
     const isNative = window.Capacitor && window.Capacitor.isNative;
-    const driveScope = "https://www.googleapis.com/auth/drive.file";
+    
+    // [PEMBARUAN]: Mengubah scope dari 'drive.file' menjadi akses penuh 'drive'
+    // Hal ini wajib agar aplikasi bisa meng-upload file (Kamera/JSON) ke Folder ID yang 
+    // sudah dibuat di luar aplikasi (termasuk folder yang di-share dari akun lain).
+    const driveScope = "https://www.googleapis.com/auth/drive";
 
     try {
         let userCredential;
@@ -2341,7 +2345,15 @@ function renderBreadcrumbs(){
                 break;
             }
         }
-        d.forEach((f,g)=>crumbHtml+=`<span class="crumb-sep">></span><span class="${g===d.length-1?'':'crumb-item'}" ${g!==d.length-1?`onclick="bukaFolder('${f.id}')"`:''}>${f.name}</span>`);
+        
+        // Ikon SVG Kaca Pembesar Kecil (Diperbarui: Handle panjang & Warna Mencolok)
+        const svgSearchTiny = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9800" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:6px; vertical-align:middle; filter: drop-shadow(0 1px 2px rgba(255, 152, 0, 0.5));"><circle cx="10" cy="10" r="7"></circle><line x1="23" y1="23" x2="14.95" y2="14.95"></line></svg>`;
+
+        d.forEach((f,g) => {
+            let isLast = g === d.length - 1;
+            // Sisipkan svgSearchTiny jika ini adalah elemen terakhir (folder yang sedang aktif)
+            crumbHtml += `<span class="crumb-sep">></span><span class="${isLast?'':'crumb-item'}" ${!isLast?`onclick="bukaFolder('${f.id}')"`:''}>${f.name}${isLast ? svgSearchTiny : ''}</span>`;
+        });
     } else {
         crumbHtml += `<span class="crumb-item" onclick="bukaFolder(null)">Home</span>`;
     }
@@ -2526,6 +2538,26 @@ function filterFiles(){
     document.getElementById('emptyState').style.display = e.length === 0 ? "flex" : "none";
 }
 
+// FITUR BARU: Menampilkan/menyembunyikan tombol "X" pada input
+function toggleClearBtn(inputId) {
+    const input = document.getElementById(inputId);
+    const btnId = 'clear' + inputId.charAt(0).toUpperCase() + inputId.slice(1);
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.style.display = input.value.length > 0 ? 'inline-flex' : 'none';
+    }
+}
+
+// FITUR BARU: Mengosongkan input dan langsung memfilter ulang grid
+function clearInput(inputId) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.value = '';
+        toggleClearBtn(inputId);
+        debounceSearch(); // Panggil ulang filter secara otomatis
+    }
+}
+
 let searchTimeout;
 function debounceSearch() {
     clearTimeout(searchTimeout);
@@ -2536,24 +2568,196 @@ function debounceSearch() {
 
 function gantiUrutan(val){currentSortOpt=val;localStorage.setItem('feathera_sort_opt', val);filterFiles();}
 
-function bukaMaster(){toggleModal('modalMaster', true),initMasterTree(),masterResetForm()}
-function initMasterTree(){const a=document.getElementById('masterTreeList'),b=document.getElementById('mstParent');a.innerHTML='',b.innerHTML='<option value="ROOT">Sebagai Kategori Utama</option>';const c=(d,e)=>{d&&d.forEach(f=>{const g=document.createElement('option');g.value=f.id,g.innerHTML="  ".repeat(e)+(f.icon||'')+" "+f.name,b.appendChild(g);const h=document.createElement('div');h.className='tree-item',h.setAttribute('draggable','true'),h.setAttribute('data-id',f.id),h.setAttribute('ondragstart','masterDragStart(event)'),h.setAttribute('ondragover','masterDragOver(event)'),h.setAttribute('ondrop','masterDrop(event)'),h.setAttribute('ondragleave','masterDragLeave(event)'),h.innerHTML=`<div class="tree-label level-${e}" onclick="isiFormMaster('${f.id}')">${f.icon||'📄'} ${f.name}</div><div class="tree-actions"><button onclick="hapusNode('${f.id}')" style="color:red; display:inline-flex; align-items:center;">${SVG_TRASH}</button></div>`,a.appendChild(h),f.children&&c(f.children,e+1)})};c(config,0)}
+let tempMasterConfig = [];
+
+function bukaMaster() {
+    tempMasterConfig = JSON.parse(JSON.stringify(config));
+    toggleModal('modalMaster', true);
+    initMasterTree();
+    masterResetForm();
+}
+
+function simpanMasterKeseluruhan() {
+    config = JSON.parse(JSON.stringify(tempMasterConfig));
+    saveConfig();
+    toggleModal('modalMaster', false);
+    // Alert custom Feathera Gallery akan menyala dari helper bawaan
+    alert("Perubahan kategori berhasil disimpan!");
+}
+
+function batalMaster() {
+    tempMasterConfig = [];
+    toggleModal('modalMaster', false);
+}
+
+function initMasterTree(){
+    const a=document.getElementById('masterTreeList'),b=document.getElementById('mstParent');
+    a.innerHTML='';
+    b.innerHTML='<option value="ROOT">Sebagai Kategori Utama</option>';
+    const c=(d,e)=>{
+        d&&d.forEach(f=>{
+            const g=document.createElement('option');
+            g.value=f.id;
+            g.innerHTML="  ".repeat(e)+(f.icon||'')+" "+f.name;
+            b.appendChild(g);
+            const h=document.createElement('div');
+            h.className='tree-item';
+            h.setAttribute('draggable','true');
+            h.setAttribute('data-id',f.id);
+            h.setAttribute('ondragstart','masterDragStart(event)');
+            h.setAttribute('ondragover','masterDragOver(event)');
+            h.setAttribute('ondrop','masterDrop(event)');
+            h.setAttribute('ondragleave','masterDragLeave(event)');
+            h.innerHTML=`<div class="tree-label level-${e}" onclick="isiFormMaster('${f.id}')">${f.icon||'📄'} ${f.name}</div><div class="tree-actions"><button onclick="hapusNode('${f.id}')" style="color:red; display:inline-flex; align-items:center;">${SVG_TRASH}</button></div>`;
+            a.appendChild(h);
+            f.children&&c(f.children,e+1);
+        });
+    };
+    c(tempMasterConfig,0);
+}
+
 let dragSrcId=null;
-function masterDragStart(a){dragSrcId=a.currentTarget.getAttribute('data-id'),a.currentTarget.classList.add('dragging'),a.dataTransfer.effectAllowed='move'}
-function masterDragOver(a){return a.preventDefault(),a.currentTarget.getAttribute('data-id')!==dragSrcId&&a.currentTarget.classList.add('drag-over'),a.dataTransfer.dropEffect='move',false}
-function masterDragLeave(a){a.currentTarget.classList.remove('drag-over')}
-function masterDrop(a){a.stopPropagation(),a.currentTarget.classList.remove('drag-over');const b=a.currentTarget.getAttribute('data-id');document.querySelectorAll('.tree-item').forEach(c=>c.classList.remove('dragging')),dragSrcId&&b&&dragSrcId!==b&&reorderNodes(dragSrcId,b);return false}
-function reorderNodes(a,b){const c=findNodeAndParent(config,a,null),d=findNodeAndParent(config,b,null);if(c&&d){if(isDescendantConfig(c.node,b))return alert("Tidak bisa memindahkan folder induk ke dalam sub-folder sendiri!");c.array.splice(c.index,1);const e=findNodeAndParent(config,b,null);e.array.splice(e.index,0,c.node),saveConfig()}}
+function masterDragStart(a){
+    dragSrcId=a.currentTarget.getAttribute('data-id');
+    a.currentTarget.classList.add('dragging');
+    a.dataTransfer.effectAllowed='move';
+}
+
+function masterDragOver(a){
+    a.preventDefault();
+    if(a.currentTarget.getAttribute('data-id') !== dragSrcId) {
+        a.currentTarget.classList.add('drag-over');
+    }
+    a.dataTransfer.dropEffect='move';
+    return false;
+}
+
+function masterDragLeave(a){
+    a.currentTarget.classList.remove('drag-over');
+}
+
+function masterDrop(a){
+    a.stopPropagation();
+    a.currentTarget.classList.remove('drag-over');
+    const b=a.currentTarget.getAttribute('data-id');
+    document.querySelectorAll('.tree-item').forEach(c=>c.classList.remove('dragging'));
+    if(dragSrcId && b && dragSrcId !== b) reorderNodes(dragSrcId, b);
+    return false;
+}
+
+function reorderNodes(a,b){
+    const c=findNodeAndParent(tempMasterConfig,a,null), d=findNodeAndParent(tempMasterConfig,b,null);
+    if(c&&d){
+        if(isDescendantConfig(c.node,b)) return alert("Tidak bisa memindahkan folder induk ke dalam sub-folder sendiri!");
+        // Memindahkan node (c.node) yang inherently juga memindahkan array "children" (turunannya)
+        c.array.splice(c.index,1);
+        const e=findNodeAndParent(tempMasterConfig,b,null);
+        e.array.splice(e.index,0,c.node);
+        initMasterTree();
+    }
+}
+
 function findNodeAndParent(a,b,c){for(let d=0;d<a.length;d++){if(a[d].id===b)return{node:a[d],parent:c,index:d,array:a};if(a[d].children){const e=findNodeAndParent(a[d].children,b,a[d]);if(e)return e}}return null}
+
 function isDescendantConfig(a,b){if(!a.children)return false;for(let c of a.children){if(c.id===b||isDescendantConfig(c,b))return true}return false}
-function masterTambah(){const a=document.getElementById('mstId').value.trim().toLowerCase(),b=document.getElementById('mstName').value.trim(),c=document.getElementById('mstIcon').value.trim(),d=document.getElementById('mstParent').value;if(!a||!b||a.includes(" "))return alert("ID invalid!");if(flatConfig[a])return alert("ID terpakai!");const e={id:a,name:b,icon:c,children:[]},f='ROOT'===d?null:findNode(config,d);f?(f.children=f.children||[],f.children.push(e)):config.push(e),saveConfig(),masterResetForm()}
-function masterUpdate(){nodeToEdit&&(nodeToEdit.node.name=document.getElementById('mstName').value.trim(),nodeToEdit.node.icon=document.getElementById('mstIcon').value.trim(),saveConfig(),masterResetForm())}
-async function hapusNode(a){const catName=(flatConfig[a]||findNode(config,a))?.name||"ini";if(await customConfirm(`Yakin menghapus kategori: ${catName}?`)){const b=c=>{const d=c.findIndex(e=>e.id===a);if(d>-1)return c.splice(d,1),true;for(let e of c)if(e.children&&b(e.children))return true};b(config),saveConfig()}}
+
+function masterTambah(){
+    const a=document.getElementById('mstId').value.trim().toLowerCase(),
+          b=document.getElementById('mstName').value.trim(),
+          c=document.getElementById('mstIcon').value.trim(),
+          d=document.getElementById('mstParent').value;
+    if(!a||!b||a.includes(" "))return alert("ID invalid!");
+    if(findNode(tempMasterConfig, a))return alert("ID terpakai!");
+    const e={id:a,name:b,icon:c,children:[]},
+          f='ROOT'===d?null:findNode(tempMasterConfig,d);
+    f?(f.children=f.children||[],f.children.push(e)):tempMasterConfig.push(e);
+    initMasterTree();
+    masterResetForm();
+}
+
+function masterUpdate(){
+    if(!nodeToEdit) return;
+    const newName = document.getElementById('mstName').value.trim();
+    const newIcon = document.getElementById('mstIcon').value.trim();
+    const newParentId = document.getElementById('mstParent').value;
+    
+    nodeToEdit.node.name = newName;
+    nodeToEdit.node.icon = newIcon;
+    
+    // Logika pemindahan hierarki
+    const currentInfo = findNodeAndParent(tempMasterConfig, nodeToEdit.node.id, null);
+    const currentParentId = currentInfo.parent ? currentInfo.parent.id : 'ROOT';
+    
+    if (currentParentId !== newParentId) {
+        if (newParentId !== 'ROOT' && (nodeToEdit.node.id === newParentId || isDescendantConfig(nodeToEdit.node, newParentId))) {
+            alert("Tidak bisa memindahkan ke dalam sub-kategorinya sendiri!");
+            return;
+        }
+        currentInfo.array.splice(currentInfo.index, 1);
+        if (newParentId === 'ROOT') {
+            tempMasterConfig.push(nodeToEdit.node);
+        } else {
+            const targetParent = findNode(tempMasterConfig, newParentId);
+            if (targetParent) {
+                targetParent.children = targetParent.children || [];
+                targetParent.children.push(nodeToEdit.node);
+            }
+        }
+    }
+    initMasterTree();
+    masterResetForm();
+}
+
+async function hapusNode(a){
+    const node = findNode(tempMasterConfig, a);
+    const catName = node ? node.name : "Kategori Ini";
+    if(await customConfirm(`Yakin menghapus kategori: ${catName}?`)){
+        const b=c=>{
+            const d=c.findIndex(e=>e.id===a);
+            if(d>-1)return c.splice(d,1),true;
+            for(let e of c)if(e.children&&b(e.children))return true;
+        };
+        b(tempMasterConfig);
+        initMasterTree();
+        masterResetForm();
+    }
+}
 
 function findNode(a,b){for(let c of a){if(c.id===b)return c;if(c.children){const d=findNode(c.children,b);if(d)return d}}return null}
-function isiFormMaster(a){const b=flatConfig[a];nodeToEdit={node:findNode(config,a)},document.getElementById('mstId').value=b.id,document.getElementById('mstId').disabled=true,document.getElementById('mstName').value=b.name,document.getElementById('mstIcon').value=b.icon||'',document.getElementById('btnAddNode').classList.add('hidden'),document.getElementById('btnUpdateNode').classList.remove('hidden'),document.getElementById('btnCancelNode').classList.remove('hidden')}
-function masterResetForm(){nodeToEdit=null,document.getElementById('mstId').value='',document.getElementById('mstId').disabled=false,document.getElementById('mstName').value='',document.getElementById('mstIcon').value='',document.getElementById('btnAddNode').classList.remove('hidden'),document.getElementById('btnUpdateNode').classList.add('hidden'),document.getElementById('btnCancelNode').classList.add('hidden')}
-function saveConfig(){setLocal('config_v1',JSON.stringify(config)),flattenConfig(),renderNav(),renderChips(),initMasterTree()}
+
+function isiFormMaster(a){
+    const b=findNode(tempMasterConfig, a);
+    if(!b) return;
+    const parentInfo = findNodeAndParent(tempMasterConfig, a, null);
+    nodeToEdit={node:b};
+    document.getElementById('mstId').value=b.id;
+    document.getElementById('mstId').disabled=true;
+    document.getElementById('mstName').value=b.name;
+    document.getElementById('mstIcon').value=b.icon||'';
+    document.getElementById('mstParent').value = parentInfo.parent ? parentInfo.parent.id : 'ROOT';
+    document.getElementById('btnAddNode').classList.add('hidden');
+    document.getElementById('btnUpdateNode').classList.remove('hidden');
+    document.getElementById('btnCancelNode').classList.remove('hidden');
+}
+
+function masterResetForm(){
+    nodeToEdit=null;
+    document.getElementById('mstId').value='';
+    document.getElementById('mstId').disabled=false;
+    document.getElementById('mstName').value='';
+    document.getElementById('mstIcon').value='';
+    document.getElementById('mstParent').value='ROOT';
+    document.getElementById('btnAddNode').classList.remove('hidden');
+    document.getElementById('btnUpdateNode').classList.add('hidden');
+    document.getElementById('btnCancelNode').classList.add('hidden');
+}
+
+function saveConfig(){
+    setLocal('config_v1',JSON.stringify(config));
+    flattenConfig();
+    renderNav();
+    renderChips();
+}
 
 async function showFileViewer(a,b,c,d,origImg,fileId,hasCover){
     document.getElementById('fileTitleDisplay').innerHTML=`<div style="display:flex; align-items:center;">${getStorageIcon(origImg)}<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a}</span></div>`,document.getElementById('fileDesc').innerHTML=linkify(b)||"Tidak ada deskripsi.",document.getElementById('fileIconDisplay').innerHTML=getExtIcon(d,a);
