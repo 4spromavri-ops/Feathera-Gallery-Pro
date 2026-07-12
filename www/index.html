@@ -134,9 +134,11 @@
     </div>
             <div class="search-wrapper">
         <span>🔍</span>
-        <input type="text" id="searchName" class="search-input" placeholder="Cari global..." oninput="debounceSearch()">
-        <input type="number" id="searchYear" class="year-input" placeholder="Tahun" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4); debounceSearch();">
-
+        <input type="text" id="searchName" class="search-input" placeholder="Cari global..." oninput="toggleClearBtn('searchName'); debounceSearch()">
+        <span id="clearSearchName" class="clear-btn" onclick="clearInput('searchName')" title="Hapus teks">✕</span>
+        
+        <input type="number" id="searchYear" class="year-input" placeholder="Tahun" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4); toggleClearBtn('searchYear'); debounceSearch();">
+        <span id="clearSearchYear" class="clear-btn" onclick="clearInput('searchYear')" title="Hapus tahun">✕</span>
         <select id="sortOption" class="year-input" style="width: 36px; padding: -5px 4px; cursor: pointer; font-size: 16px; appearance: none; -webkit-appearance: none; text-align: center; text-align-last: center; line-height: 1.2; outline: none;" onchange="gantiUrutan(this.value)" title="Urutkan File">
             <option value="year_desc" title="Baru ke Lama">▼</option>
             <option value="year_asc" title="Lama ke Baru">▲</option>
@@ -404,7 +406,10 @@
                 </div>
             </div>
             <div class="master-tree" id="masterTreeList"></div>
-            <button class="btn-full btn-gray" onclick="toggleModal('modalMaster', false)">Tutup</button>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn-full btn-blue" style="margin-top: 0;" onclick="simpanMasterKeseluruhan()">Simpan Perubahan</button>
+                <button class="btn-full btn-gray" style="margin-top: 0;" onclick="batalMaster()">Batal</button>
+            </div>
         </div>
     </div>
 </div>
