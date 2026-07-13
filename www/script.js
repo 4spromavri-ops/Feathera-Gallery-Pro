@@ -162,6 +162,22 @@ async function loginDenganGoogle() {
     }
 }
 
+async function dapatkanTokenDriveAktif() {
+    let tokenActive = localStorage.getItem('feathera_gdrive_token');
+    const isNative = window.Capacitor && window.Capacitor.isNative;
+
+    if (isNative) {
+        try {
+            const refreshData = await window.Capacitor.Plugins.GoogleAuth.refresh();
+            tokenActive = refreshData.authentication.accessToken;
+            localStorage.setItem('feathera_gdrive_token', tokenActive);
+        } catch (err) {
+            console.warn("Gagal refresh token:", err);
+        }
+    } 
+    return tokenActive;
+}
+
 function prosesAuth(){
     // TAMPILKAN LOADING
     document.getElementById('loginLoading').classList.remove('hidden');
@@ -1329,7 +1345,7 @@ async function prosesSimpan(){
 
                 let linkAset = 'LOCAL_FILE';
                 let driveErrorMsg = null;
-                const gToken = localStorage.getItem('feathera_gdrive_token');
+                const gToken = await dapatkanTokenDriveAktif();
 
                 if (gToken && currentUser !== 'Guest') {
                     try {
@@ -1356,14 +1372,14 @@ async function prosesSimpan(){
 
                     await fetch(patchUrl, {
                         method: 'PATCH',
-                        headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' },
+                        headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name: finalNameCamera })
                     });
 
                             // 2. Set file menjadi Publik (Bisa dilihat siapa saja yang punya link) agar Thumbnail & Gambar bisa dirender di aplikasi
                             await fetch(`https://www.googleapis.com/drive/v3/files/${dataMedia.id}/permissions`, {
                                 method: 'POST',
-                                headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' },
+                                headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ role: 'reader', type: 'anyone' })
                             });
                             
@@ -3454,7 +3470,7 @@ async function eksporData() {
     }
 
     // JALUR CLOUD: Upload JSON ke Google Drive menggunakan token Capacitor/Firebase
-    const gToken = localStorage.getItem('feathera_gdrive_token');
+    const gToken = await dapatkanTokenDriveAktif();
     const driveJsonUrl = getLocal('drive_folder_json');
 
     if (gToken && currentUser !== 'Guest') {
@@ -3480,7 +3496,7 @@ async function eksporData() {
 
                 await fetch(patchUrl, {
                     method: 'PATCH',
-                    headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' },
+                    headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name: defaultFileName })
                 });
                 pesanSukses += "☁️ Salinan Backup berhasil diunggah ke Google Drive Anda!";
