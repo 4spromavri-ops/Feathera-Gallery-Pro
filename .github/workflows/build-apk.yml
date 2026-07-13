@@ -27,6 +27,11 @@ jobs:
     - name: Install Dependencies & Setup Capacitor
       run: |
         npm install
+        # === KODE BARU: PINDAHKAN ASET WEB KE FOLDER WWW ===
+        mkdir -p www
+        cp index.html style.css www/
+        cp -r js/ www/js/
+        # ===================================================
         npx cap add android
         
         # === KODE BARU: MENGUNCI KEYSTORE AGAR SHA-1 PERMANEN (DIPERBAIKI) ===
