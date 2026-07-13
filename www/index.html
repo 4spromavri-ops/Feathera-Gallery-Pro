@@ -610,7 +610,7 @@
     <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
         <div class="modal-header-fixed">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-               <h3 id="hubungTitle" style="margin: 0; display: flex; align-items: center; gap: 8px;">     <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> Kelola Hubungan </h3>
+               <h3 id="hubungTitle" style="margin: 0; display: flex; align-items: center; gap: 8px;"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> Kelola Hubungan </h3>
                 <button style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text); font-weight: bold;" onclick="toggleModal('modalHubung', false)">✕</button>
             </div>
         </div>
@@ -672,7 +672,20 @@
 
 <div id="toastContainer"></div>
 
-<script src="script.js"></script>
+<!-- 1. Variabel Global, Konstanta, dan SVG -->
+<script src="js/globals.js"></script>
+
+<!-- 2. Helper Utilities dan Fungsi UI Dasar -->
+<script src="js/utils.js"></script>
+
+<!-- 3. Inisialisasi dan Logika IndexedDB -->
+<script src="js/database.js"></script>
+
+<!-- 4. Konfigurasi Firebase, Autentikasi, dan Sistem PIN -->
+<script src="js/auth.js"></script>
+
+<!-- 5. Event Listeners dan Logika Utama Aplikasi (DOM) -->
+<script src="js/main.js"></script>
 
 </body>
 </html>
