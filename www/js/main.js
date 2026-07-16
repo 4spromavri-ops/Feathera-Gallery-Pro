@@ -1,7 +1,9 @@
+// =====================================================
+// SECTION 1: INISIALISASI DASAR & GESTUR GLOBAL
+// =====================================================
 document.addEventListener("DOMContentLoaded",()=>{
     initAuth();
 
-    // --- HANDLER TOMBOL KEMBALI (BACK BUTTON) HP ---
     window.history.pushState({ noBackExitsApp: true }, '');
     window.addEventListener('popstate', async function(event) {
         window.history.pushState({ noBackExitsApp: true }, '');
@@ -157,49 +159,217 @@ function tampilkanApp() {
     }).catch(err => console.error("Gagal inisialisasi database:", err));
 }
 
-function initDarkMode(){isDarkMode=('true'===localStorage.getItem('feathera_dark_mode')),applyDarkMode()}
-function toggleDarkMode(){isDarkMode=!isDarkMode,localStorage.setItem('feathera_dark_mode',isDarkMode),applyDarkMode()}
-function applyDarkMode(){const a=document.getElementById('darkModeIcon');isDarkMode?(document.body.classList.add('dark-mode'),a.innerText="☀️"):(document.body.classList.remove('dark-mode'),a.innerText="🌙")}
+function abaikanSwipe(target) {
+    return target.closest('.modal, #mainNav, .chip-container, .stats-bar, .mp-progress, .card.is-dragging') || 
+           ['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName) || 
+           document.body.classList.contains('no-scroll');
+}
 
+function geserHalaman(arah) {
+    let urutanTab = [];
+    if (isAddMediaMode) {
+        urutanTab = ['audiovideo'];
+        ['video', 'audio'].forEach(id => { if (config.find(c => c.id === id)) urutanTab.push(id); });
+    } else {
+        urutanTab = ['all', 'audiovideo', 'favorite', ...config.map(c => c.id)];
+    }
+
+    let indexSaatIni = urutanTab.indexOf(curFilter.l0);
+    if (indexSaatIni === -1) indexSaatIni = 0;
+
+    let indexBaru = indexSaatIni;
+    if (arah === 'next' && indexSaatIni < urutanTab.length - 1) { indexBaru++; } 
+    else if (arah === 'prev' && indexSaatIni > 0) { indexBaru--; }
+
+    if (indexBaru !== indexSaatIni) {
+        const grid = document.getElementById('fileGrid');
+        const emptyState = document.getElementById('emptyState');
+        const animOut = arah === 'next' ? 'slide-out-left' : 'slide-out-right';
+        const animIn = arah === 'next' ? 'slide-in-right' : 'slide-in-left';
+        
+        setFilter(0, urutanTab[indexBaru]);
+
+        grid.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+        emptyState.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+        
+        void grid.offsetWidth; 
+        
+        grid.classList.add(animIn);
+        emptyState.classList.add(animIn);
+        setTimeout(() => {
+            grid.classList.remove(animIn);
+            emptyState.classList.remove(animIn);
+        }, 250);
+    }
+}
+
+window.addEventListener('touchstart', e => {
+    if (abaikanSwipe(e.target)) return;
+    swipeStartX = e.changedTouches[0].screenX;
+    swipeStartY = e.changedTouches[0].screenY;
+}, {passive: true});
+
+window.addEventListener('touchend', e => {
+    if (swipeStartX === 0 && swipeStartY === 0) return; 
+    let swipeEndX = e.changedTouches[0].screenX;
+    let swipeEndY = e.changedTouches[0].screenY;
+    let diffX = swipeStartX - swipeEndX;
+    let diffY = Math.abs(swipeStartY - swipeEndY);
+
+    if (Math.abs(diffX) > 60 && diffY < 50) {
+        geserHalaman(diffX > 0 ? 'next' : 'prev');
+    }
+    swipeStartX = 0; swipeStartY = 0;
+}, {passive: true});
+
+window.addEventListener('scroll', () => {
+    if (!isTicking) {
+        window.requestAnimationFrame(() => {
+            if (btnTopCache) btnTopCache.classList.toggle('visible', window.scrollY > 300);
+            isTicking = false;
+        });
+        isTicking = true;
+    }
+}, {passive: true});
+
+const btnTopCache = document.getElementById('btnScrollTop');
+
+['touchstart','mousedown'].forEach(a=>window.addEventListener(a,b=>{
+    const target = b.target;
+    if(document.body.classList.contains('no-scroll') || ['INPUT','TEXTAREA','BUTTON','SELECT'].includes(target.tagName)) return;
+    const cardTarget = target.closest('.card');
+    if(cardTarget){
+        pressTimer=setTimeout(()=>{
+            if(currentRole !== 'none') {
+                isLongPressTriggered = true; 
+                cardHoldHandler(cardTarget);
+            }
+        }, 600);
+        return;
+    }
+    pressTimer=setTimeout(async ()=>{
+        try { navigator.vibrate&&navigator.vibrate(50); } catch(e){}
+        if (!isMovePending) return;
+        if(curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite') {
+            alert("Buka folder atau kategori spesifik terlebih dahulu untuk menempelkan (paste) item."); return;
+        }
+        if('user'===currentRole||'master'===currentRole){
+            toggleModal('pasteMenu', true);
+        } else if ('none' === currentRole) {
+            const isConfirmed = await customConfirm("Silakan buka kunci terlebih dahulu untuk menempelkan item. Masukkan PIN sekarang?");
+            if (isConfirmed) {
+                requestPin((role) => {
+                    setAppRole(role);
+                    toggleModal('pasteMenu', true);
+                }, "Unlock Akses");
+            }
+        }
+    }, 800)
+},{passive:true}));
+
+['touchend','touchmove','mouseup','touchcancel'].forEach(a=>window.addEventListener(a,(e)=>{
+    if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; }
+    if ((a === 'touchend' || a === 'mouseup') && isLongPressTriggered) {
+        setTimeout(() => { isLongPressTriggered = false; }, 300);
+    }
+}, {passive: true}));
+
+// =====================================================
+// SECTION 2: PENGATURAN APLIKASI, TEMA & LOG AKTIFITAS
+// =====================================================
 function loadConfig(){config=JSON.parse(getLocal('config_v1')||JSON.stringify(defaultConfig)),flattenConfig(),renderNav(),renderChips(),initMasterTree()}
+
 function flattenConfig(){flatConfig={};const a=(b,c=null)=>{b&&b.forEach(d=>{flatConfig[d.id]={...d,parentId:c},d.children&&a(d.children,d.id)})};a(config)}
 
-function getChildrenMap() {
-    if(_childrenCache) return _childrenCache;
-    _childrenCache = {};
-    document.querySelectorAll('.card').forEach(f => {
-        const p = f.getAttribute('data-folderId');
-        if(p && p !== 'none') {
-            if(!_childrenCache[p]) _childrenCache[p] = [];
-            _childrenCache[p].push({id: f.getAttribute('data-id'), type: f.getAttribute('data-itemType')});
-        }
-    });
-    clearTimeout(_childrenCacheTimer);
-    _childrenCacheTimer = setTimeout(() => _childrenCache = null, 50);
-    return _childrenCache;
-}
-function getAllDescendantIds(a){let b=[];const map=getChildrenMap();const d=e=>{if(map[e]){map[e].forEach(child=>{b.push(child.id);if(child.type==='folder')d(child.id)})}};return d(a),b}
-function getParentMap() {
-    if(_parentCache) return _parentCache;
-    _parentCache = {};
-    document.querySelectorAll('.card').forEach(c => _parentCache[c.getAttribute('data-id')] = c.getAttribute('data-folderId'));
-    clearTimeout(_parentCacheTimer);
-    _parentCacheTimer = setTimeout(() => _parentCache = null, 50); 
-    return _parentCache;
-}
-function isDescendant(a,b){
-    if(a===b) return true;
-    const pMap = getParentMap(); 
-    let currId=a;
-    while(currId && currId !== 'none'){
-        const parentId = pMap[currId];
-        if(!parentId) break;
-        if(parentId === b) return true;
-        currId = parentId;
-    }
-    return false;
+function saveConfig(){
+    setLocal('config_v1',JSON.stringify(config));
+    flattenConfig(); renderNav(); renderChips();
 }
 
+function updateStats() {
+    const a = document.querySelectorAll('.card[data-itemType="file"]');
+    const counts = { total: 0, img: 0, vid: 0, aud: 0, app: 0, doc: 0, txt: 0 };
+    
+    a.forEach(i => {
+        if ('true' === i.getAttribute('data-hidden') && 'master' !== currentRole) return;
+        counts.total++;
+        const j = i.getAttribute('data-cat'), k = i.getAttribute('data-mediatype');
+
+        if ('aplikasi' === j || 'app' === k || 'archive' === k) counts.app++;
+        else if ('dokumen' === j || 'doc' === k) counts.doc++;
+        else if ('catatan' === j || 'text' === k) counts.txt++;
+        else if ('image' === k) counts.img++;
+        else if ('video' === k) counts.vid++;
+        else if ('audio' === k) counts.aud++;
+    });
+
+    const map = { statTotal: counts.total, statGambar: counts.img, statVideo: counts.vid, statAudio: counts.aud, statApp: counts.app, statDokumen: counts.doc, statCatatan: counts.txt };
+    Object.entries(map).forEach(([id, val]) => document.getElementById(id).innerText = val);
+    const storageItemDOM = document.getElementById('statStorageItem');
+    if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(estimate => {
+            const usedMB = (estimate.usage / (1024 * 1024)).toFixed(1);
+            const totalGB = (estimate.quota / (1024 * 1024 * 1024)).toFixed(1);
+            document.getElementById('statStorage').innerText = `${usedMB}MB / ${totalGB}GB`;
+        }).catch(() => { storageItemDOM.style.display = 'none'; });
+    } else { storageItemDOM.style.display = 'none'; }
+}
+
+function initDarkMode(){isDarkMode=('true'===localStorage.getItem('feathera_dark_mode')),applyDarkMode()}
+
+function toggleDarkMode(){isDarkMode=!isDarkMode,localStorage.setItem('feathera_dark_mode',isDarkMode),applyDarkMode()}
+
+function applyDarkMode(){const a=document.getElementById('darkModeIcon');isDarkMode?(document.body.classList.add('dark-mode'),a.innerText="☀️"):(document.body.classList.remove('dark-mode'),a.innerText="🌙")}
+
+function loadDriveSettings() {
+    document.getElementById('driveIdFoto').value = getLocal('drive_folder_foto') || '';
+    document.getElementById('driveIdVideo').value = getLocal('drive_folder_video') || '';
+    document.getElementById('driveIdJson').value = getLocal('drive_folder_json') || '';
+}
+
+function saveDriveSettings() {
+    setLocal('drive_folder_foto', document.getElementById('driveIdFoto').value.trim());
+    setLocal('drive_folder_video', document.getElementById('driveIdVideo').value.trim());
+    setLocal('drive_folder_json', document.getElementById('driveIdJson').value.trim());
+    alert("Pengaturan ID Folder Drive berhasil disimpan!");
+    toggleModal('modalDriveSettings', false);
+}
+
+function bukaLogAktifitas(){
+    if('none' === currentRole) return alert("Silakan buka kunci terlebih dahulu.");
+    const a = JSON.parse(getLocal('activity_log') || '[]');
+    const b = document.getElementById('logList');
+    const c = a.filter(d => !('user' === currentRole && (d.action === 'Ganti PIN' && d.desc.includes('Master') || d.action === 'Visibility')));
+    
+    if(0 === c.length){
+        b.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Tidak ada aktifitas.</div>';
+    } else {
+        let htmlStr = '';
+        c.forEach(d => {
+            htmlStr += `<div class="log-item"><div class="log-content-wrapper"><div class="log-meta"><span>${d.date}</span><span class="log-action">${d.action}</span></div><div class="log-desc">${d.desc}</div></div>${'master' === currentRole ? `<button class="log-del-btn" onclick="hapusLogItem(${d.id})">${SVG_TRASH}</button>` : ''}</div>`
+        });
+        b.innerHTML = htmlStr;
+    }
+    toggleModal('modalSettings', false);
+    toggleModal('modalLog', true);
+}
+
+async function hapusLogItem(a){
+    if(await customConfirm("Hapus log ini?")){
+        let b = JSON.parse(getLocal('activity_log') || '[]');
+        b = b.filter(c => c.id !== a);
+        setLocal('activity_log', JSON.stringify(b));
+        bukaLogAktifitas();
+    }
+}
+
+async function hapusLogAktifitas(){
+    'master' === currentRole ? (await customConfirm("Bersihkan semua riwayat log?")) && (delLocal('activity_log'), bukaLogAktifitas()) : alert("Akses Ditolak. Hanya Master.");
+}
+
+// =====================================================
+// SECTION 3: UI RENDERING, NAVIGASI FOLDER & GLOBAL UI
+// =====================================================
 function renderNav() {
     const a = document.getElementById('mainNav');
     let navHtml = '';
@@ -289,6 +459,69 @@ function renderChips(){
     filterFiles();
 }
 
+function renderBreadcrumbs(){
+    const a=document.getElementById('folderBreadcrumbs'),b=document.getElementById('searchName').value||document.getElementById('searchYear').value;
+    let crumbHtml = '';
+    if(!b && currentFolderId && currentFolderId !== 'none') {
+        crumbHtml += `<span class="crumb-item" onclick="bukaFolder(null)">Home</span>`;
+        let c=currentFolderId,d=[];
+        while(c&&'none'!==c){
+            const f=document.querySelector(`.card[data-id="${c}"]`);
+            if(f){
+                d.unshift({id:c,name:f.querySelector('.file-info').innerText});
+                c=f.getAttribute('data-folderId');
+            } else {
+                if (c === 'not_found_dummy' && activeSearchFolderName) {
+                    const displayGhostName = activeSearchFolderName.replace(/\b\w/g, char => char.toUpperCase());
+                    d.unshift({id:c, name: displayGhostName}); 
+                }
+                break;
+            }
+        }
+        const svgSearchTiny = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9800" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:6px; vertical-align:middle; filter: drop-shadow(0 1px 2px rgba(255, 152, 0, 0.5));"><circle cx="10" cy="10" r="7"></circle><line x1="23" y1="23" x2="14.95" y2="14.95"></line></svg>`;
+        d.forEach((f,g) => {
+            let isLast = g === d.length - 1;
+            crumbHtml += `<span class="crumb-sep">></span><span class="${isLast?'':'crumb-item'}" ${!isLast?`onclick="bukaFolder('${f.id}')"`:''}>${f.name}${isLast ? svgSearchTiny : ''}</span>`;
+        });
+    } else { crumbHtml += `<span class="crumb-item" onclick="bukaFolder(null)">Home</span>`; }
+
+    const svgGrid = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm10 0h6v6h-6z"/></svg>`;
+    const svgList = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h2v2H4zm0 5h2v2H4zm0 5h2v2H4zm4-10h12v2H8zm0 5h12v2H8zm0 5h12v2H8z"/></svg>`;
+    const toggleHtml = `<button class="view-toggle-btn ${currentViewMode==='grid'?'active':''}" onclick="setViewMode('grid')" title="Grid View">${svgGrid}</button><button class="view-toggle-btn ${currentViewMode==='list'?'active':''}" onclick="setViewMode('list')" title="List View">${svgList}</button>`;
+    a.innerHTML = `<div class="crumb-left">${crumbHtml}</div><div class="crumb-right">${toggleHtml}</div>`;
+}
+
+function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem('feathera_view_mode', mode);
+    const gridEl = document.getElementById('fileGrid');
+    if(mode === 'list') gridEl.classList.add('list-view');
+    else gridEl.classList.remove('list-view');
+    renderBreadcrumbs();
+}
+
+function bukaFolder(a){
+    currentFolderId=a;
+    if (a && a !== 'none') {
+        const fld = document.querySelector(`.card[data-id="${a}"]`);
+        if (fld) activeSearchFolderName = fld.getAttribute('data-name');
+    } else { activeSearchFolderName = null; }
+    filterFiles(); updateSelectCount(); window.scrollTo(0, 0);
+}
+
+function goUpFolder() {
+    if(currentFolderId && currentFolderId !== 'none') {
+        const fld = document.querySelector(`.card[data-id="${currentFolderId}"]`);
+        const pId = fld ? fld.getAttribute('data-folderId') : null;
+        bukaFolder(!pId || pId === 'none' ? null : pId);
+    }
+}
+
+function tutupSemuaMenu(){document.querySelectorAll('.pl-ctx-menu').forEach(a=>a.classList.remove('show'))}
+
+// =====================================================
+// SECTION 4: MESIN PENCARI & FILTERING (CORE DISPLAY LOGIC)
+// =====================================================
 function setFilter(a, b) {
     if (b === 'all') {
         0 === a ? curFilter = { l0: 'all', l1: 'all', l2: 'all', l3: 'all' } : 
@@ -529,350 +762,9 @@ function toggleSourceFilter() {
     filterFiles(); 
 }
 
-function toggleFavoriteForm() {
-    const favInput = document.getElementById('fFavorite');
-    const favBtn = document.getElementById('btnFavoriteToggle');
-    if (favInput.value === 'false') {
-        favInput.value = 'true';
-        favBtn.innerHTML = '★';
-        favBtn.style.color = '#FFD700';
-        favBtn.style.textShadow = '0 1px 2px rgba(0,0,0,0.5)';
-    } else {
-        favInput.value = 'false';
-        favBtn.innerHTML = '☆';
-        favBtn.style.color = '#ccc';
-        favBtn.style.textShadow = 'none';
-    }
-}
-
-function toggleSourceType() {
-    const isNative = window.Capacitor && window.Capacitor.isNative;
-    const btnNative = document.getElementById('btnNativePicker');
-    const btnCamGroup = document.getElementById('cameraButtonGroup');
-    const btnFoto = document.getElementById('btnPhotoCaptureUI');
-    const btnVideo = document.getElementById('btnVideoCaptureUI');
-    const tipe = document.getElementById('fSourceType').value;
-
-    const setTampil = (urlDisp, locWebDisp, locNatDisp, camDisp) => {
-        document.getElementById('fImgUrl').style.display = urlDisp;
-        document.getElementById('fLocalFile').style.display = locWebDisp;
-        if (btnNative) btnNative.style.display = locNatDisp;
-        if (btnCamGroup) btnCamGroup.style.display = camDisp;
-    };
-
-    if (tipe === 'url') {
-        setTampil('block', 'none', 'none', 'none');
-    } else if (tipe === 'camera') {
-        setTampil('none', 'none', 'none', 'flex');
-        if (btnFoto && btnVideo) {
-            if (curFilter.l0 === 'foto') {
-                btnFoto.style.display = 'block';
-                btnVideo.style.display = 'none';
-            } else if (curFilter.l0 === 'video') {
-                btnFoto.style.display = 'none';
-                btnVideo.style.display = 'block';
-            } else {
-                btnFoto.style.display = 'block';
-                btnVideo.style.display = 'block';
-            }
-        }
-    } else { 
-        if (isNative) setTampil('none', 'none', 'block', 'none');
-        else setTampil('none', 'block', 'none', 'none');
-    }
-}
-
-async function pilihFileNative() {
-    try {
-        if (window.Capacitor && window.Capacitor.isNative && window.Capacitor.Plugins.Filesystem) {
-            await window.Capacitor.Plugins.Filesystem.requestPermissions().catch(()=>{});
-        }
-        const { PersistPermission } = window.Capacitor.Plugins;
-        const result = await PersistPermission.pickFile();
-        document.getElementById('fNativePath').value = result.uri;
-        document.getElementById('fName').value = result.name;
-        document.getElementById('btnNativePicker').innerHTML = `✅ ${result.name}`;
-        document.getElementById('btnNativePicker').style.background = '#e8f5e9';
-    } catch (e) {
-        alert("Batal / Error: " + (e.message || "Akses ditolak sistem."));
-    }
-}
-
-function tampungFileKamera(inputEl) {
-    fileKameraTertunda = inputEl.files[0];
-    if (!fileKameraTertunda) return;
-    const isVideo = fileKameraTertunda.type.startsWith('video/');
-    const trueExt = getExtFromMime(fileKameraTertunda.type) || (isVideo ? '.mp4' : '.jpg');
-    const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const judulOtomatis = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}${trueExt}`;
-    document.getElementById('fName').value = judulOtomatis;
-    document.getElementById('fYear').value = now.getFullYear();
-    document.getElementById('tabFolder').style.pointerEvents = 'none';
-    document.getElementById('tabFolder').style.opacity = '0.5';
-    const btnFoto = document.getElementById('btnPhotoCaptureUI');
-    const btnVideo = document.getElementById('btnVideoCaptureUI');
-    
-    if (isVideo) {
-        btnVideo.innerHTML = '✅ Video Siap (Klik Simpan)';
-        btnVideo.style.background = '#e8f5e9';
-        btnVideo.style.color = '#2e7d32';
-        btnVideo.style.borderColor = '#8bc34a';
-        btnFoto.style.display = 'none'; 
-    } else {
-        btnFoto.innerHTML = '✅ Foto Siap (Klik Simpan)';
-        btnFoto.style.background = '#e8f5e9';
-        btnFoto.style.color = '#2e7d32';
-        btnFoto.style.borderColor = '#8bc34a';
-        btnVideo.style.display = 'none';
-    }
-    window.alert(`✅ Media tertangkap!\nSilakan lengkapi catatan (opsional) lalu klik tombol "Simpan".`);
-}
-
-function gantiTabUpload(a, isCatatan = false){
-    uploadMode=a;
-    const b=isCatatan||(curFilter&&'catatan'===curFilter.l0),c=document.getElementById('tabFile'),d=document.getElementById('fImgUrl'),e=document.getElementById('fNote'),f=document.getElementById('inputForFile'),g=document.getElementById('fFontStyle'),h=document.getElementById('fSourceType'),aura=document.getElementById('descAuraToggleArea');
-    const tabText=document.getElementById('tabFileText'),tabIcon=document.getElementById('tabFileIcon');
-    if(tabText&&tabIcon){
-        if(b){ tabText.innerText="Buat Memori"; tabIcon.innerHTML=SVG_TAB_NOTE; }
-        else{ tabText.innerText="Memori"; tabIcon.innerHTML=SVG_TAB_MEMORI; }
-    }
-    c.classList.toggle('active','file'===a);
-    document.getElementById('tabFolder').classList.toggle('active','folder'===a);
-    if('folder'===a){
-        document.getElementById('fName').placeholder="Nama Folder Baru";
-        f.classList.add('hidden');
-        e.style.display='none';
-        g.style.display='none';
-        h.value='local';
-        aura.style.display='none';
-    }else{
-        document.getElementById('fName').placeholder=b?"Judul Catatan":"Judul Memori";
-        f.classList.remove('hidden');
-        const optCam = document.getElementById('optCameraSource');
-        if (optCam) {
-            if (curFilter.l0 === 'foto') {
-                optCam.style.display = 'block'; optCam.innerText = '📸 Ambil Langsung dari Kamera';
-            } else if (curFilter.l0 === 'video') {
-                optCam.style.display = 'block'; optCam.innerText = '🎥 Rekam Langsung dari Kamera';
-            } else { optCam.style.display = 'none'; }
-        }
-        h.value='url';
-        toggleSourceType();
-        if(b){
-            g.style.display='block'; h.style.display='none'; d.style.display='none';
-            document.getElementById('fLocalFile').style.display='none'; e.style.display='block'; aura.style.display='none';
-        }else{
-            g.style.display='none'; h.style.display='block'; e.style.display='block'; aura.style.display='flex';
-        }
-    }
-}
-
-function kompresiCoverToBlob(file, maxSize = 350) {
-    return new Promise((resolve) => {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.src = url;
-        img.onload = () => {
-            URL.revokeObjectURL(url);
-            const canvas = document.createElement('canvas');
-            let w = img.width, h = img.height;
-            if (w > h) { if (w > maxSize) { h *= maxSize / w; w = maxSize; } }
-            else { if (h > maxSize) { w *= maxSize / h; h = maxSize; } }
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            canvas.toBlob((blob) => resolve(blob), 'image/webp', 0.8);
-        };
-    });
-}
-function hapusCoverLokal(){document.getElementById('fCustomCover').value='';document.getElementById('fHapusCoverFlag').value='true';document.getElementById('btnHapusCover').style.display='none'}
-
-async function prosesSimpan(){
-    const btnSimpan = document.getElementById('btnSimpan');
-    if (btnSimpan.disabled) return; 
-    
-    btnSimpan.disabled = true;
-    btnSimpan.innerText = "⏳ Memproses...";
-    btnSimpan.classList.remove('btn-blue');
-    btnSimpan.classList.add('btn-gray');
-    btnSimpan.style.cursor = 'not-allowed';
-    
-    const gagalkanSimpan = (pesan) => {
-        btnSimpan.disabled = false;
-        btnSimpan.innerText = "Simpan";
-        btnSimpan.classList.remove('btn-gray');
-        btnSimpan.classList.add('btn-blue');
-        btnSimpan.style.cursor = 'pointer';
-        if (pesan) alert(pesan);
-    };
-
-    const a=document.getElementById('fName').value||('folder'===uploadMode?"Folder Baru":"Memori Baru"),b=document.getElementById('fSourceType').value,c=document.getElementById('fYear').value,d=document.getElementById('fFontStyle').value,e=document.getElementById('fNote').value;
-    
-    let tCat=curFilter.l0, tSub=curFilter.l1, tTyp=curFilter.l2, tDet=curFilter.l3;
-    if(currentFolderId && currentFolderId !== 'none'){
-        const pFld=document.querySelector(`.card[data-id="${currentFolderId}"]`);
-        if(pFld){
-            tCat=pFld.getAttribute('data-cat') || curFilter.l0;
-            tSub=pFld.getAttribute('data-sub') || curFilter.l1;
-            tTyp=pFld.getAttribute('data-type') || curFilter.l2;
-            tDet=pFld.getAttribute('data-detail') || curFilter.l3;
-        }
-    }
-    
-    const f={cat:tCat,sub:tSub,type:tTyp,detail:tDet,folderId:currentFolderId, descaura: document.getElementById('fDescAura').checked ? 'true' : 'false', favorite: document.getElementById('fFavorite').value};
-    const coverInput=document.getElementById('fCustomCover');
-
-    if(editingCard){
-        const g='folder'===editingCard.getAttribute('data-itemType');
-        editingCard.setAttribute('data-name',a.toLowerCase()),editingCard.setAttribute('data-year',c);
-        editingCard.setAttribute('data-descaura', document.getElementById('fDescAura').checked ? 'true' : 'false');
-        editingCard.setAttribute('data-favorite', document.getElementById('fFavorite').value);
-        
-        if(!g){
-            editingCard.setAttribute('data-note',e),editingCard.setAttribute('data-font',d);
-            if('url'===b){
-                const h=document.getElementById('fImgUrl').value;
-                h&&editingCard.setAttribute('data-img',h)
-            }
-        }
-        if(document.getElementById('fHapusCoverFlag').value==='true'){
-            dbHapusCover(editingCard.getAttribute('data-id'));
-            editingCard.setAttribute('data-customCover','false')
-        }
-        if(coverInput.files&&coverInput.files.length>0){
-            try{
-                const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
-                await dbSimpanCover(editingCard.getAttribute('data-id'), compressedCover);
-                editingCard.setAttribute('data-customCover','true');
-            }catch(err){console.error(err)}
-        }
-
-        editingCard.querySelector('.file-year').innerText=c,editingCard.querySelector('.file-info').innerText=a,refreshCardIcon(editingCard);
-        logActivity('Edit',`Mengedit ${g?'Folder':'Item'}: ${a}`);
-        tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
-        return;
-    }
-
-    let newItemId=('folder'===uploadMode?'fld_':'file_')+Date.now();
-    let hasCustomCover=false;
-    if(coverInput.files&&coverInput.files.length>0){
-        try{
-            const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
-            await dbSimpanCover(newItemId, compressedCover);
-            hasCustomCover=true;
-        }catch(err){ console.error("Gagal simpan cover: "+err); }
-    }
-
-    if('folder'===uploadMode){
-        buatKartu({id:newItemId,itemType:'folder',name:a,img:'none',year:c,customCover:hasCustomCover?'true':'false',...f},!0);
-        logActivity('Upload',`Membuat Folder: ${a}`);
-        tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
-    } else {
-        if ('camera' === b) {
-            if (!fileKameraTertunda) return gagalkanSimpan("Silakan ambil foto/video terlebih dahulu menggunakan tombol kamera!");
-            const isVideo = fileKameraTertunda.type.startsWith('video/');
-            let finalNameCamera = a;
-            const trueExt = getExtFromMime(fileKameraTertunda.type);
-
-            if (trueExt && !finalNameCamera.toLowerCase().endsWith(trueExt)) {
-                finalNameCamera = finalNameCamera.replace(/\.[^/.]+$/, "") + trueExt;
-            }
-
-            try {
-                let safeBlob = fileKameraTertunda;
-                if (!safeBlob.type || safeBlob.type === 'application/octet-stream' || safeBlob.type === '') {
-                    const correctMime = isVideo ? 'video/mp4' : 'image/jpeg';
-                    safeBlob = new Blob([fileKameraTertunda], { type: correctMime });
-                }
-                
-                await dbSimpanFile(newItemId, safeBlob);
-                let linkAset = 'LOCAL_FILE';
-                let driveErrorMsg = null;
-                const gToken = await dapatkanTokenDriveAktif();
-
-                if (gToken && currentUser !== 'Guest') {
-                    try {
-                        const bufferData = await fileKameraTertunda.arrayBuffer();
-                        const resMedia = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', {
-                            method: 'POST',
-                            headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': fileKameraTertunda.type || (isVideo ? 'video/mp4' : 'image/jpeg'), 'Content-Length': bufferData.byteLength },
-                            body: bufferData
-                        });
-                        
-                        const dataMedia = await resMedia.json();
-                        if (resMedia.ok && dataMedia.id) {
-                            let patchUrl = `https://www.googleapis.com/drive/v3/files/${dataMedia.id}`;
-                            const inputFolder = isVideo ? (getLocal('drive_folder_video') || '') : (getLocal('drive_folder_foto') || '');
-                            if (inputFolder) {
-                                const folderId = inputFolder.includes('folders/') ? inputFolder.split('folders/')[1].split(/[?&/]/)[0] : inputFolder;
-                                patchUrl += `?addParents=${folderId}&removeParents=root`;
-                            }
-                            await fetch(patchUrl, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' }, body: JSON.stringify({ name: finalNameCamera }) });
-                            await fetch(`https://www.googleapis.com/drive/v3/files/${dataMedia.id}/permissions`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'reader', type: 'anyone' }) });
-                            linkAset = `https://drive.google.com/file/d/${dataMedia.id}/view`;
-                        } else { driveErrorMsg = dataMedia.error ? `${dataMedia.error.code}: ${dataMedia.error.message}` : `HTTP Status ${resMedia.status}`; }
-                    } catch (errDrive) { driveErrorMsg = errDrive.message || "Koneksi terputus saat mengirim binary"; }
-                }
-
-                let tCatFinal = (curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo') ? (isVideo ? 'video' : 'foto') : curFilter.l0;
-                if (isVideo) tCatFinal = 'video';
-                buatKartu({ id: newItemId, itemType: 'file', name: finalNameCamera, year: c, note: e, img: linkAset, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f, cat: tCatFinal }, true);
-                logActivity('Kamera', `Menambah ${isVideo ? 'video' : 'foto'}: ${finalNameCamera}`);
-                fileKameraTertunda = null;
-                tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
-                if (linkAset === 'LOCAL_FILE' && currentUser !== 'Guest') { window.alert(`⚠️ Tersimpan di Aplikasi saja. Gagal ke Drive:\n"${driveErrorMsg || 'Akses ditolak Google'}"`); } 
-            } catch (error) { return gagalkanSimpan(`❌ Gagal memproses: ${error.message}`); }
-        } else if ('catatan' !== curFilter.l0 && 'local' === b) {
-            const isNative = window.Capacitor && window.Capacitor.isNative;
-            
-            if (isNative) {
-                const nativePath = document.getElementById('fNativePath').value;
-                if (!nativePath) return gagalkanSimpan("Pilih file dari HP Anda!");
-                buatKartu({id: newItemId, itemType: 'file', name: a, year: c, note: e, img: 'NATIVE:' + nativePath, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
-                document.getElementById('fNativePath').value = '';
-                document.getElementById('btnNativePicker').innerHTML = '📁 Pilih File dari HP (Native)';
-                document.getElementById('btnNativePicker').style.background = 'var(--btn-bg)';
-                logActivity('Upload', `Menambah Item Native: ${a}`);
-                tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
-            } else {
-                const i = document.getElementById('fLocalFile');
-                if (0 === i.files.length) return gagalkanSimpan("Pilih file lokal!");
-                let successCount = 0;
-                for (let idx = 0; idx < i.files.length; idx++) {
-                    let currentFile = i.files[idx];
-                    let loopItemId = 'file_' + Date.now() + '_' + idx;
-                    let loopItemName = a ? (i.files.length > 1 ? a + " (" + (idx + 1) + ")" : a) : currentFile.name;
-                    try {
-                        await dbSimpanFile(loopItemId, currentFile);
-                        buatKartu({id: loopItemId, itemType: 'file', name: loopItemName, year: c, note: e, img: 'LOCAL_FILE', font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
-                        successCount++;
-                    } catch (j) { console.error("Gagal menyimpan file lokal: " + j); }
-                }
-                if(successCount > 0) { logActivity('Upload', `Menambah ${successCount} Item`); tutupModal(); simpanKeLokal(); updateStats(); filterFiles(); } 
-                else { return gagalkanSimpan("Gagal mengupload file lokal."); }
-            }
-        } else {
-            let g = 'none';
-            let finalName = a; 
-            if ('catatan' !== curFilter.l0) {
-                g = document.getElementById('fImgUrl').value;
-                if (g.includes('drive.google.com')) {
-                    const validExts = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.mp3', '.wav', '.ogg', '.m4a', '.aac'];
-                    const hasExtension = validExts.some(ext => finalName.toLowerCase().endsWith(ext));
-                    if (!hasExtension) {
-                        if (tCat === 'audio' || curFilter.l0 === 'audio') finalName += '.mp3';
-                        else if (tCat === 'video' || curFilter.l0 === 'video' || curFilter.l0 === 'audiovideo') finalName += '.mp4';
-                    }
-                }
-            }
-            buatKartu({ id: newItemId, itemType: 'file', name: finalName, year: c, note: e, img: g, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f }, true);
-            logActivity('Upload', `Menambah Item: ${finalName}`);
-            tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
-        }
-    }
-}
-
+// =====================================================
+// SECTION 5: MANAJEMEN KARTU & INTERAKSI (DOM)
+// =====================================================
 function buatKartu(a, b = !1, wadahFragment = null) {
     const c = document.createElement('div');
     c.className = 'card';
@@ -900,6 +792,16 @@ function buatKartu(a, b = !1, wadahFragment = null) {
     b ? d.prepend(c) : d.appendChild(c);
     lazyLoadObserver.observe(c);
 }
+
+const lazyLoadObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const card = entry.target;
+            if (typeof refreshCardIcon === 'function') refreshCardIcon(card);
+            observer.unobserve(card); 
+        }
+    });
+}, { rootMargin: '300px 0px', threshold: 0.01 });
 
 async function refreshCardIcon(a){
     const b=a.getAttribute('data-img'),c=a.getAttribute('data-id'),d=a.getAttribute('data-name'),e='folder'===a.getAttribute('data-itemType'),f=a.querySelector('.thumb-container');
@@ -1082,6 +984,9 @@ function cardHoldHandler(a){
     }
 }
 
+// =====================================================
+// SECTION 6: MODE MULTI-SELEKSI & AKSI BATCH
+// =====================================================
 function toggleSelectionMode(force){
     isSelectionMode = typeof force === 'boolean' ? force : !isSelectionMode;
     if (!isSelectionMode) { isSelectingForGroup = false; targetGroupForSelection = null; }
@@ -1349,6 +1254,15 @@ function eksekusiTempel(){
     simpanKeLokal(); filterFiles(); updateStats(); batalBatchAksi();
 }
 
+function updateCategoryRecursive(a,b,c,d,e,allCards){
+    a.setAttribute('data-cat',b),a.setAttribute('data-sub',c),a.setAttribute('data-type',d),a.setAttribute('data-detail',e),refreshCardIcon(a);
+    if('folder'===a.getAttribute('data-itemType')){
+        if(!allCards)allCards=document.querySelectorAll('.card');
+        const targetId=a.getAttribute('data-id');
+        allCards.forEach(f=>{if(f.getAttribute('data-folderId')===targetId)updateCategoryRecursive(f,b,c,d,e,allCards)});
+    }
+}
+
 function batalBatchAksi() {
     document.querySelectorAll('.card.move-pending').forEach(b => {
         b.classList.remove('move-pending');
@@ -1382,15 +1296,6 @@ function bersihkanSeleksiAnak(folderId) {
     document.querySelectorAll('.card.selected').forEach(childCard => {
         if (isDescendant(childCard.getAttribute('data-id'), folderId)) { childCard.classList.remove('selected'); }
     });
-}
-
-function updateCategoryRecursive(a,b,c,d,e,allCards){
-    a.setAttribute('data-cat',b),a.setAttribute('data-sub',c),a.setAttribute('data-type',d),a.setAttribute('data-detail',e),refreshCardIcon(a);
-    if('folder'===a.getAttribute('data-itemType')){
-        if(!allCards)allCards=document.querySelectorAll('.card');
-        const targetId=a.getAttribute('data-id');
-        allCards.forEach(f=>{if(f.getAttribute('data-folderId')===targetId)updateCategoryRecursive(f,b,c,d,e,allCards)});
-    }
 }
 
 async function tambahKePlaylistBatch(){
@@ -1457,228 +1362,439 @@ async function tambahKePlaylistBatch(){
     window.targetPlaylistIndexForAdd = null;
 }
 
-function bukaFolder(a){
-    currentFolderId=a;
-    if (a && a !== 'none') {
-        const fld = document.querySelector(`.card[data-id="${a}"]`);
-        if (fld) activeSearchFolderName = fld.getAttribute('data-name');
-    } else { activeSearchFolderName = null; }
-    filterFiles(); updateSelectCount(); window.scrollTo(0, 0);
-}
-
-function goUpFolder() {
-    if(currentFolderId && currentFolderId !== 'none') {
-        const fld = document.querySelector(`.card[data-id="${currentFolderId}"]`);
-        const pId = fld ? fld.getAttribute('data-folderId') : null;
-        bukaFolder(!pId || pId === 'none' ? null : pId);
-    }
-}
-
-function setViewMode(mode) {
-    currentViewMode = mode;
-    localStorage.setItem('feathera_view_mode', mode);
-    const gridEl = document.getElementById('fileGrid');
-    if(mode === 'list') gridEl.classList.add('list-view');
-    else gridEl.classList.remove('list-view');
-    renderBreadcrumbs();
-}
-
-function renderBreadcrumbs(){
-    const a=document.getElementById('folderBreadcrumbs'),b=document.getElementById('searchName').value||document.getElementById('searchYear').value;
-    let crumbHtml = '';
-    if(!b && currentFolderId && currentFolderId !== 'none') {
-        crumbHtml += `<span class="crumb-item" onclick="bukaFolder(null)">Home</span>`;
-        let c=currentFolderId,d=[];
-        while(c&&'none'!==c){
-            const f=document.querySelector(`.card[data-id="${c}"]`);
-            if(f){
-                d.unshift({id:c,name:f.querySelector('.file-info').innerText});
-                c=f.getAttribute('data-folderId');
-            } else {
-                if (c === 'not_found_dummy' && activeSearchFolderName) {
-                    const displayGhostName = activeSearchFolderName.replace(/\b\w/g, char => char.toUpperCase());
-                    d.unshift({id:c, name: displayGhostName}); 
-                }
-                break;
-            }
-        }
-        const svgSearchTiny = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF9800" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:6px; vertical-align:middle; filter: drop-shadow(0 1px 2px rgba(255, 152, 0, 0.5));"><circle cx="10" cy="10" r="7"></circle><line x1="23" y1="23" x2="14.95" y2="14.95"></line></svg>`;
-        d.forEach((f,g) => {
-            let isLast = g === d.length - 1;
-            crumbHtml += `<span class="crumb-sep">></span><span class="${isLast?'':'crumb-item'}" ${!isLast?`onclick="bukaFolder('${f.id}')"`:''}>${f.name}${isLast ? svgSearchTiny : ''}</span>`;
-        });
-    } else { crumbHtml += `<span class="crumb-item" onclick="bukaFolder(null)">Home</span>`; }
-
-    const svgGrid = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm10 0h6v6h-6z"/></svg>`;
-    const svgList = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h2v2H4zm0 5h2v2H4zm0 5h2v2H4zm4-10h12v2H8zm0 5h12v2H8zm0 5h12v2H8z"/></svg>`;
-    const toggleHtml = `<button class="view-toggle-btn ${currentViewMode==='grid'?'active':''}" onclick="setViewMode('grid')" title="Grid View">${svgGrid}</button><button class="view-toggle-btn ${currentViewMode==='list'?'active':''}" onclick="setViewMode('list')" title="List View">${svgList}</button>`;
-    a.innerHTML = `<div class="crumb-left">${crumbHtml}</div><div class="crumb-right">${toggleHtml}</div>`;
+// =====================================================
+// SECTION 7: MODAL FORMULIR & PROSES UPLOAD
+// =====================================================
+function bukaModalBaru(){
+    if(curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite') return alert("Buka folder atau kategori spesifik terlebih dahulu untuk membuat item baru."); 
+    editingCard=null,fileKameraTertunda=null,document.getElementById('formTitle').innerText="Tambah Baru",gantiTabUpload('file');
+    ['fName','fImgUrl','fNote','fYear','fLocalFile','fCustomCover'].forEach(a=>document.getElementById(a).value='');
+    document.getElementById('btnHapusCover').style.display='none',document.getElementById('fHapusCoverFlag').value='false',document.getElementById('fDescAura').checked=false,document.getElementById('fFavorite').value='false',document.getElementById('btnFavoriteToggle').innerHTML='☆',document.getElementById('btnFavoriteToggle').style.color='#ccc',document.getElementById('btnFavoriteToggle').style.textShadow='none',document.getElementById('fFontStyle').value="'Segoe UI', sans-serif",toggleModal('modalForm', true);
 }
 
 function wrapBukaEdit(a,b){a.stopPropagation(),'none'===currentRole?requestPin(c=>{setAppRole(c),bukaEdit(b.parentElement)}):bukaEdit(b.parentElement)}
 
-function bukaMaster() {
-    tempMasterConfig = JSON.parse(JSON.stringify(config));
-    toggleModal('modalMaster', true);
-    initMasterTree();
-    masterResetForm();
-}
-
-function simpanMasterKeseluruhan() {
-    config = JSON.parse(JSON.stringify(tempMasterConfig));
-    saveConfig();
-    toggleModal('modalMaster', false);
-    alert("Perubahan kategori berhasil disimpan!");
-}
-
-function batalMaster() {
-    tempMasterConfig = [];
-    toggleModal('modalMaster', false);
-}
-
-function initMasterTree(){
-    const a=document.getElementById('masterTreeList'),b=document.getElementById('mstParent');
-    a.innerHTML='';
-    b.innerHTML='<option value="ROOT">Sebagai Kategori Utama</option>';
-    const c=(d,e)=>{
-        d&&d.forEach(f=>{
-            const g=document.createElement('option');
-            g.value=f.id;
-            g.innerHTML="  ".repeat(e)+(f.icon||'')+" "+f.name;
-            b.appendChild(g);
-            const h=document.createElement('div');
-            h.className='tree-item';
-            h.setAttribute('draggable','true');
-            h.setAttribute('data-id',f.id);
-            h.setAttribute('ondragstart','masterDragStart(event)');
-            h.setAttribute('ondragover','masterDragOver(event)');
-            h.setAttribute('ondrop','masterDrop(event)');
-            h.setAttribute('ondragleave','masterDragLeave(event)');
-            h.innerHTML=`<div class="tree-label level-${e}" onclick="isiFormMaster('${f.id}')">${f.icon||'📄'} ${f.name}</div><div class="tree-actions"><button onclick="hapusNode('${f.id}')" style="color:red; display:inline-flex; align-items:center;">${SVG_TRASH}</button></div>`;
-            a.appendChild(h);
-            f.children&&c(f.children,e+1);
-        });
-    };
-    c(tempMasterConfig,0);
-}
-
-function masterDragStart(a){
-    dragSrcId=a.currentTarget.getAttribute('data-id');
-    a.currentTarget.classList.add('dragging');
-    a.dataTransfer.effectAllowed='move';
-}
-
-function masterDragOver(a){
-    a.preventDefault();
-    if(a.currentTarget.getAttribute('data-id') !== dragSrcId) {
-        a.currentTarget.classList.add('drag-over');
-    }
-    a.dataTransfer.dropEffect='move';
-    return false;
-}
-
-function masterDragLeave(a){
-    a.currentTarget.classList.remove('drag-over');
-}
-
-function masterDrop(a){
-    a.stopPropagation();
-    a.currentTarget.classList.remove('drag-over');
-    const b=a.currentTarget.getAttribute('data-id');
-    document.querySelectorAll('.tree-item').forEach(c=>c.classList.remove('dragging'));
-    if(dragSrcId && b && dragSrcId !== b) reorderNodes(dragSrcId, b);
-    return false;
-}
-
-function reorderNodes(a,b){
-    const c=findNodeAndParent(tempMasterConfig,a,null), d=findNodeAndParent(tempMasterConfig,b,null);
-    if(c&&d){
-        if(isDescendantConfig(c.node,b)) return alert("Tidak bisa memindahkan folder induk ke dalam sub-folder sendiri!");
-        c.array.splice(c.index,1);
-        const e=findNodeAndParent(tempMasterConfig,b,null);
-        e.array.splice(e.index,0,c.node);
-        initMasterTree();
-    }
-}
-
-function findNodeAndParent(a,b,c){for(let d=0;d<a.length;d++){if(a[d].id===b)return{node:a[d],parent:c,index:d,array:a};if(a[d].children){const e=findNodeAndParent(a[d].children,b,a[d]);if(e)return e}}return null}
-function isDescendantConfig(a,b){if(!a.children)return false;for(let c of a.children){if(c.id===b||isDescendantConfig(c,b))return true}return false}
-
-function masterTambah(){
-    const a=document.getElementById('mstId').value.trim().toLowerCase(), b=document.getElementById('mstName').value.trim(), c=document.getElementById('mstIcon').value.trim(), d=document.getElementById('mstParent').value;
-    if(!a||!b||a.includes(" "))return alert("ID invalid!");
-    if(findNode(tempMasterConfig, a))return alert("ID terpakai!");
-    const e={id:a,name:b,icon:c,children:[]}, f='ROOT'===d?null:findNode(tempMasterConfig,d);
-    f?(f.children=f.children||[],f.children.push(e)):tempMasterConfig.push(e);
-    initMasterTree(); masterResetForm();
-}
-
-function masterUpdate(){
-    if(!nodeToEdit) return;
-    const newName = document.getElementById('mstName').value.trim();
-    const newIcon = document.getElementById('mstIcon').value.trim();
-    const newParentId = document.getElementById('mstParent').value;
-    nodeToEdit.node.name = newName; nodeToEdit.node.icon = newIcon;
-    const currentInfo = findNodeAndParent(tempMasterConfig, nodeToEdit.node.id, null);
-    const currentParentId = currentInfo.parent ? currentInfo.parent.id : 'ROOT';
+function bukaEdit(a){
+    tutupSemuaMenu();
+    editingCard=a;
+    const b='folder'===a.getAttribute('data-itemType');
+    const cImg=a.getAttribute('data-img');
+    const fName=a.querySelector('.file-info').innerText;
+    const mediaType=getMediaType(cImg, fName);
+    const isCat=a.getAttribute('data-cat')==='catatan' || mediaType==='text';
     
-    if (currentParentId !== newParentId) {
-        if (newParentId !== 'ROOT' && (nodeToEdit.node.id === newParentId || isDescendantConfig(nodeToEdit.node, newParentId))) {
-            alert("Tidak bisa memindahkan ke dalam sub-kategorinya sendiri!"); return;
+    document.getElementById('formTitle').innerText=b?"Edit Folder":"Edit Memori";
+    gantiTabUpload(b?'folder':'file', isCat);
+    
+    document.getElementById('fName').value=fName;
+    document.getElementById('fCustomCover').value='';
+    const hasCover=a.getAttribute('data-customCover')==='true';
+    document.getElementById('btnHapusCover').style.display=hasCover?'block':'none';
+    document.getElementById('fHapusCoverFlag').value='false';
+    document.getElementById('fDescAura').checked = a.getAttribute('data-descaura') === 'true';
+    
+    const isFav = a.getAttribute('data-favorite') === 'true';
+    document.getElementById('fFavorite').value = isFav ? 'true' : 'false';
+    const favBtn = document.getElementById('btnFavoriteToggle');
+    favBtn.innerHTML = isFav ? '★' : '☆';
+    favBtn.style.color = isFav ? '#FFD700' : '#ccc';
+    favBtn.style.textShadow = isFav ? '0 1px 2px rgba(0,0,0,0.5)' : 'none';
+
+    if('LOCAL_FILE'===cImg){ document.getElementById('fSourceType').value='local'; }
+    else{ document.getElementById('fSourceType').value='url'; document.getElementById('fImgUrl').value=cImg; }
+    
+    if(!isCat && !b){ toggleSourceType(); }
+    
+    document.getElementById('fYear').value=a.getAttribute('data-year');
+    if(!b){
+        document.getElementById('fNote').value=a.getAttribute('data-note')||"";
+        document.getElementById('fFontStyle').value=a.getAttribute('data-font')||"'Segoe UI', sans-serif";
+    }
+    toggleModal('modalForm', true);
+}
+
+function gantiTabUpload(a, isCatatan = false){
+    uploadMode=a;
+    const b=isCatatan||(curFilter&&'catatan'===curFilter.l0),c=document.getElementById('tabFile'),d=document.getElementById('fImgUrl'),e=document.getElementById('fNote'),f=document.getElementById('inputForFile'),g=document.getElementById('fFontStyle'),h=document.getElementById('fSourceType'),aura=document.getElementById('descAuraToggleArea');
+    const tabText=document.getElementById('tabFileText'),tabIcon=document.getElementById('tabFileIcon');
+    if(tabText&&tabIcon){
+        if(b){ tabText.innerText="Buat Memori"; tabIcon.innerHTML=SVG_TAB_NOTE; }
+        else{ tabText.innerText="Memori"; tabIcon.innerHTML=SVG_TAB_MEMORI; }
+    }
+    c.classList.toggle('active','file'===a);
+    document.getElementById('tabFolder').classList.toggle('active','folder'===a);
+    if('folder'===a){
+        document.getElementById('fName').placeholder="Nama Folder Baru";
+        f.classList.add('hidden');
+        e.style.display='none';
+        g.style.display='none';
+        h.value='local';
+        aura.style.display='none';
+    }else{
+        document.getElementById('fName').placeholder=b?"Judul Catatan":"Judul Memori";
+        f.classList.remove('hidden');
+        const optCam = document.getElementById('optCameraSource');
+        if (optCam) {
+            if (curFilter.l0 === 'foto') {
+                optCam.style.display = 'block'; optCam.innerText = '📸 Ambil Langsung dari Kamera';
+            } else if (curFilter.l0 === 'video') {
+                optCam.style.display = 'block'; optCam.innerText = '🎥 Rekam Langsung dari Kamera';
+            } else { optCam.style.display = 'none'; }
         }
-        currentInfo.array.splice(currentInfo.index, 1);
-        if (newParentId === 'ROOT') { tempMasterConfig.push(nodeToEdit.node); } 
-        else { const targetParent = findNode(tempMasterConfig, newParentId); if (targetParent) { targetParent.children = targetParent.children || []; targetParent.children.push(nodeToEdit.node); } }
-    }
-    initMasterTree(); masterResetForm();
-}
-
-async function hapusNode(a){
-    const node = findNode(tempMasterConfig, a);
-    const catName = node ? node.name : "Kategori Ini";
-    if(await customConfirm(`Yakin menghapus kategori: ${catName}?`)){
-        const b=c=>{
-            const d=c.findIndex(e=>e.id===a);
-            if(d>-1)return c.splice(d,1),true;
-            for(let e of c)if(e.children&&b(e.children))return true;
-        };
-        b(tempMasterConfig);
-        initMasterTree(); masterResetForm();
+        h.value='url';
+        toggleSourceType();
+        if(b){
+            g.style.display='block'; h.style.display='none'; d.style.display='none';
+            document.getElementById('fLocalFile').style.display='none'; e.style.display='block'; aura.style.display='none';
+        }else{
+            g.style.display='none'; h.style.display='block'; e.style.display='block'; aura.style.display='flex';
+        }
     }
 }
 
-function findNode(a,b){for(let c of a){if(c.id===b)return c;if(c.children){const d=findNode(c.children,b);if(d)return d}}return null}
+function toggleSourceType() {
+    const isNative = window.Capacitor && window.Capacitor.isNative;
+    const btnNative = document.getElementById('btnNativePicker');
+    const btnCamGroup = document.getElementById('cameraButtonGroup');
+    const btnFoto = document.getElementById('btnPhotoCaptureUI');
+    const btnVideo = document.getElementById('btnVideoCaptureUI');
+    const tipe = document.getElementById('fSourceType').value;
 
-function isiFormMaster(a){
-    const b=findNode(tempMasterConfig, a);
-    if(!b) return;
-    const parentInfo = findNodeAndParent(tempMasterConfig, a, null);
-    nodeToEdit={node:b};
-    document.getElementById('mstId').value=b.id;
-    document.getElementById('mstId').disabled=true;
-    document.getElementById('mstName').value=b.name;
-    document.getElementById('mstIcon').value=b.icon||'';
-    document.getElementById('mstParent').value = parentInfo.parent ? parentInfo.parent.id : 'ROOT';
-    document.getElementById('btnAddNode').classList.add('hidden');
-    document.getElementById('btnUpdateNode').classList.remove('hidden');
-    document.getElementById('btnCancelNode').classList.remove('hidden');
+    const setTampil = (urlDisp, locWebDisp, locNatDisp, camDisp) => {
+        document.getElementById('fImgUrl').style.display = urlDisp;
+        document.getElementById('fLocalFile').style.display = locWebDisp;
+        if (btnNative) btnNative.style.display = locNatDisp;
+        if (btnCamGroup) btnCamGroup.style.display = camDisp;
+    };
+
+    if (tipe === 'url') {
+        setTampil('block', 'none', 'none', 'none');
+    } else if (tipe === 'camera') {
+        setTampil('none', 'none', 'none', 'flex');
+        if (btnFoto && btnVideo) {
+            if (curFilter.l0 === 'foto') {
+                btnFoto.style.display = 'block';
+                btnVideo.style.display = 'none';
+            } else if (curFilter.l0 === 'video') {
+                btnFoto.style.display = 'none';
+                btnVideo.style.display = 'block';
+            } else {
+                btnFoto.style.display = 'block';
+                btnVideo.style.display = 'block';
+            }
+        }
+    } else { 
+        if (isNative) setTampil('none', 'none', 'block', 'none');
+        else setTampil('none', 'block', 'none', 'none');
+    }
 }
 
-function masterResetForm(){
-    nodeToEdit=null;
-    document.getElementById('mstId').value='';
-    document.getElementById('mstId').disabled=false;
-    document.getElementById('mstName').value='';
-    document.getElementById('mstIcon').value='';
-    document.getElementById('mstParent').value='ROOT';
-    document.getElementById('btnAddNode').classList.remove('hidden');
-    document.getElementById('btnUpdateNode').classList.add('hidden');
-    document.getElementById('btnCancelNode').classList.add('hidden');
+function toggleFavoriteForm() {
+    const favInput = document.getElementById('fFavorite');
+    const favBtn = document.getElementById('btnFavoriteToggle');
+    if (favInput.value === 'false') {
+        favInput.value = 'true';
+        favBtn.innerHTML = '★';
+        favBtn.style.color = '#FFD700';
+        favBtn.style.textShadow = '0 1px 2px rgba(0,0,0,0.5)';
+    } else {
+        favInput.value = 'false';
+        favBtn.innerHTML = '☆';
+        favBtn.style.color = '#ccc';
+        favBtn.style.textShadow = 'none';
+    }
 }
 
-function saveConfig(){
-    setLocal('config_v1',JSON.stringify(config));
-    flattenConfig(); renderNav(); renderChips();
+async function pilihFileNative() {
+    try {
+        if (window.Capacitor && window.Capacitor.isNative && window.Capacitor.Plugins.Filesystem) {
+            await window.Capacitor.Plugins.Filesystem.requestPermissions().catch(()=>{});
+        }
+        const { PersistPermission } = window.Capacitor.Plugins;
+        const result = await PersistPermission.pickFile();
+        document.getElementById('fNativePath').value = result.uri;
+        document.getElementById('fName').value = result.name;
+        document.getElementById('btnNativePicker').innerHTML = `✅ ${result.name}`;
+        document.getElementById('btnNativePicker').style.background = '#e8f5e9';
+    } catch (e) {
+        alert("Batal / Error: " + (e.message || "Akses ditolak sistem."));
+    }
+}
+
+function tampungFileKamera(inputEl) {
+    fileKameraTertunda = inputEl.files[0];
+    if (!fileKameraTertunda) return;
+    const isVideo = fileKameraTertunda.type.startsWith('video/');
+    const trueExt = getExtFromMime(fileKameraTertunda.type) || (isVideo ? '.mp4' : '.jpg');
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const judulOtomatis = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}${trueExt}`;
+    document.getElementById('fName').value = judulOtomatis;
+    document.getElementById('fYear').value = now.getFullYear();
+    document.getElementById('tabFolder').style.pointerEvents = 'none';
+    document.getElementById('tabFolder').style.opacity = '0.5';
+    const btnFoto = document.getElementById('btnPhotoCaptureUI');
+    const btnVideo = document.getElementById('btnVideoCaptureUI');
+    
+    if (isVideo) {
+        btnVideo.innerHTML = '✅ Video Siap (Klik Simpan)';
+        btnVideo.style.background = '#e8f5e9';
+        btnVideo.style.color = '#2e7d32';
+        btnVideo.style.borderColor = '#8bc34a';
+        btnFoto.style.display = 'none'; 
+    } else {
+        btnFoto.innerHTML = '✅ Foto Siap (Klik Simpan)';
+        btnFoto.style.background = '#e8f5e9';
+        btnFoto.style.color = '#2e7d32';
+        btnFoto.style.borderColor = '#8bc34a';
+        btnVideo.style.display = 'none';
+    }
+    window.alert(`✅ Media tertangkap!\nSilakan lengkapi catatan (opsional) lalu klik tombol "Simpan".`);
+}
+
+function hapusCoverLokal(){document.getElementById('fCustomCover').value='';document.getElementById('fHapusCoverFlag').value='true';document.getElementById('btnHapusCover').style.display='none'}
+
+async function prosesSimpan(){
+    const btnSimpan = document.getElementById('btnSimpan');
+    if (btnSimpan.disabled) return; 
+    
+    btnSimpan.disabled = true;
+    btnSimpan.innerText = "⏳ Memproses...";
+    btnSimpan.classList.remove('btn-blue');
+    btnSimpan.classList.add('btn-gray');
+    btnSimpan.style.cursor = 'not-allowed';
+    
+    const gagalkanSimpan = (pesan) => {
+        btnSimpan.disabled = false;
+        btnSimpan.innerText = "Simpan";
+        btnSimpan.classList.remove('btn-gray');
+        btnSimpan.classList.add('btn-blue');
+        btnSimpan.style.cursor = 'pointer';
+        if (pesan) alert(pesan);
+    };
+
+    const a=document.getElementById('fName').value||('folder'===uploadMode?"Folder Baru":"Memori Baru"),b=document.getElementById('fSourceType').value,c=document.getElementById('fYear').value,d=document.getElementById('fFontStyle').value,e=document.getElementById('fNote').value;
+    
+    let tCat=curFilter.l0, tSub=curFilter.l1, tTyp=curFilter.l2, tDet=curFilter.l3;
+    if(currentFolderId && currentFolderId !== 'none'){
+        const pFld=document.querySelector(`.card[data-id="${currentFolderId}"]`);
+        if(pFld){
+            tCat=pFld.getAttribute('data-cat') || curFilter.l0;
+            tSub=pFld.getAttribute('data-sub') || curFilter.l1;
+            tTyp=pFld.getAttribute('data-type') || curFilter.l2;
+            tDet=pFld.getAttribute('data-detail') || curFilter.l3;
+        }
+    }
+    
+    const f={cat:tCat,sub:tSub,type:tTyp,detail:tDet,folderId:currentFolderId, descaura: document.getElementById('fDescAura').checked ? 'true' : 'false', favorite: document.getElementById('fFavorite').value};
+    const coverInput=document.getElementById('fCustomCover');
+
+    if(editingCard){
+        const g='folder'===editingCard.getAttribute('data-itemType');
+        editingCard.setAttribute('data-name',a.toLowerCase()),editingCard.setAttribute('data-year',c);
+        editingCard.setAttribute('data-descaura', document.getElementById('fDescAura').checked ? 'true' : 'false');
+        editingCard.setAttribute('data-favorite', document.getElementById('fFavorite').value);
+        
+        if(!g){
+            editingCard.setAttribute('data-note',e),editingCard.setAttribute('data-font',d);
+            if('url'===b){
+                const h=document.getElementById('fImgUrl').value;
+                h&&editingCard.setAttribute('data-img',h)
+            }
+        }
+        if(document.getElementById('fHapusCoverFlag').value==='true'){
+            dbHapusCover(editingCard.getAttribute('data-id'));
+            editingCard.setAttribute('data-customCover','false')
+        }
+        if(coverInput.files&&coverInput.files.length>0){
+            try{
+                const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
+                await dbSimpanCover(editingCard.getAttribute('data-id'), compressedCover);
+                editingCard.setAttribute('data-customCover','true');
+            }catch(err){console.error(err)}
+        }
+
+        editingCard.querySelector('.file-year').innerText=c,editingCard.querySelector('.file-info').innerText=a,refreshCardIcon(editingCard);
+        logActivity('Edit',`Mengedit ${g?'Folder':'Item'}: ${a}`);
+        tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+        return;
+    }
+
+    let newItemId=('folder'===uploadMode?'fld_':'file_')+Date.now();
+    let hasCustomCover=false;
+    if(coverInput.files&&coverInput.files.length>0){
+        try{
+            const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
+            await dbSimpanCover(newItemId, compressedCover);
+            hasCustomCover=true;
+        }catch(err){ console.error("Gagal simpan cover: "+err); }
+    }
+
+    if('folder'===uploadMode){
+        buatKartu({id:newItemId,itemType:'folder',name:a,img:'none',year:c,customCover:hasCustomCover?'true':'false',...f},!0);
+        logActivity('Upload',`Membuat Folder: ${a}`);
+        tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+    } else {
+        if ('camera' === b) {
+            if (!fileKameraTertunda) return gagalkanSimpan("Silakan ambil foto/video terlebih dahulu menggunakan tombol kamera!");
+            const isVideo = fileKameraTertunda.type.startsWith('video/');
+            let finalNameCamera = a;
+            const trueExt = getExtFromMime(fileKameraTertunda.type);
+
+            if (trueExt && !finalNameCamera.toLowerCase().endsWith(trueExt)) {
+                finalNameCamera = finalNameCamera.replace(/\.[^/.]+$/, "") + trueExt;
+            }
+
+            try {
+                let safeBlob = fileKameraTertunda;
+                if (!safeBlob.type || safeBlob.type === 'application/octet-stream' || safeBlob.type === '') {
+                    const correctMime = isVideo ? 'video/mp4' : 'image/jpeg';
+                    safeBlob = new Blob([fileKameraTertunda], { type: correctMime });
+                }
+                
+                await dbSimpanFile(newItemId, safeBlob);
+                let linkAset = 'LOCAL_FILE';
+                let driveErrorMsg = null;
+                const gToken = await dapatkanTokenDriveAktif();
+
+                if (gToken && currentUser !== 'Guest') {
+                    try {
+                        const bufferData = await fileKameraTertunda.arrayBuffer();
+                        const resMedia = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': fileKameraTertunda.type || (isVideo ? 'video/mp4' : 'image/jpeg'), 'Content-Length': bufferData.byteLength },
+                            body: bufferData
+                        });
+                        
+                        const dataMedia = await resMedia.json();
+                        if (resMedia.ok && dataMedia.id) {
+                            let patchUrl = `https://www.googleapis.com/drive/v3/files/${dataMedia.id}`;
+                            const inputFolder = isVideo ? (getLocal('drive_folder_video') || '') : (getLocal('drive_folder_foto') || '');
+                            if (inputFolder) {
+                                const folderId = inputFolder.includes('folders/') ? inputFolder.split('folders/')[1].split(/[?&/]/)[0] : inputFolder;
+                                patchUrl += `?addParents=${folderId}&removeParents=root`;
+                            }
+                            await fetch(patchUrl, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' }, body: JSON.stringify({ name: finalNameCamera }) });
+                            await fetch(`https://www.googleapis.com/drive/v3/files/${dataMedia.id}/permissions`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'reader', type: 'anyone' }) });
+                            linkAset = `https://drive.google.com/file/d/${dataMedia.id}/view`;
+                        } else { driveErrorMsg = dataMedia.error ? `${dataMedia.error.code}: ${dataMedia.error.message}` : `HTTP Status ${resMedia.status}`; }
+                    } catch (errDrive) { driveErrorMsg = errDrive.message || "Koneksi terputus saat mengirim binary"; }
+                }
+
+                let tCatFinal = (curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo') ? (isVideo ? 'video' : 'foto') : curFilter.l0;
+                if (isVideo) tCatFinal = 'video';
+                buatKartu({ id: newItemId, itemType: 'file', name: finalNameCamera, year: c, note: e, img: linkAset, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f, cat: tCatFinal }, true);
+                logActivity('Kamera', `Menambah ${isVideo ? 'video' : 'foto'}: ${finalNameCamera}`);
+                fileKameraTertunda = null;
+                tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+                if (linkAset === 'LOCAL_FILE' && currentUser !== 'Guest') { window.alert(`⚠️ Tersimpan di Aplikasi saja. Gagal ke Drive:\n"${driveErrorMsg || 'Akses ditolak Google'}"`); } 
+            } catch (error) { return gagalkanSimpan(`❌ Gagal memproses: ${error.message}`); }
+        } else if ('catatan' !== curFilter.l0 && 'local' === b) {
+            const isNative = window.Capacitor && window.Capacitor.isNative;
+            
+            if (isNative) {
+                const nativePath = document.getElementById('fNativePath').value;
+                if (!nativePath) return gagalkanSimpan("Pilih file dari HP Anda!");
+                buatKartu({id: newItemId, itemType: 'file', name: a, year: c, note: e, img: 'NATIVE:' + nativePath, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
+                document.getElementById('fNativePath').value = '';
+                document.getElementById('btnNativePicker').innerHTML = '📁 Pilih File dari HP (Native)';
+                document.getElementById('btnNativePicker').style.background = 'var(--btn-bg)';
+                logActivity('Upload', `Menambah Item Native: ${a}`);
+                tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+            } else {
+                const i = document.getElementById('fLocalFile');
+                if (0 === i.files.length) return gagalkanSimpan("Pilih file lokal!");
+                let successCount = 0;
+                for (let idx = 0; idx < i.files.length; idx++) {
+                    let currentFile = i.files[idx];
+                    let loopItemId = 'file_' + Date.now() + '_' + idx;
+                    let loopItemName = a ? (i.files.length > 1 ? a + " (" + (idx + 1) + ")" : a) : currentFile.name;
+                    try {
+                        await dbSimpanFile(loopItemId, currentFile);
+                        buatKartu({id: loopItemId, itemType: 'file', name: loopItemName, year: c, note: e, img: 'LOCAL_FILE', font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
+                        successCount++;
+                    } catch (j) { console.error("Gagal menyimpan file lokal: " + j); }
+                }
+                if(successCount > 0) { logActivity('Upload', `Menambah ${successCount} Item`); tutupModal(); simpanKeLokal(); updateStats(); filterFiles(); } 
+                else { return gagalkanSimpan("Gagal mengupload file lokal."); }
+            }
+        } else {
+            let g = 'none';
+            let finalName = a; 
+            if ('catatan' !== curFilter.l0) {
+                g = document.getElementById('fImgUrl').value;
+                if (g.includes('drive.google.com')) {
+                    const validExts = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.mp3', '.wav', '.ogg', '.m4a', '.aac'];
+                    const hasExtension = validExts.some(ext => finalName.toLowerCase().endsWith(ext));
+                    if (!hasExtension) {
+                        if (tCat === 'audio' || curFilter.l0 === 'audio') finalName += '.mp3';
+                        else if (tCat === 'video' || curFilter.l0 === 'video' || curFilter.l0 === 'audiovideo') finalName += '.mp4';
+                    }
+                }
+            }
+            buatKartu({ id: newItemId, itemType: 'file', name: finalName, year: c, note: e, img: g, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f }, true);
+            logActivity('Upload', `Menambah Item: ${finalName}`);
+            tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+        }
+    }
+}
+
+function tutupModal() {
+    toggleModal('modalForm', false);
+    editingCard = null;
+    document.getElementById('fPhotoCapture').value = '';
+    document.getElementById('fVideoCapture').value = '';
+    document.getElementById('tabFolder').style.pointerEvents = 'auto';
+    document.getElementById('tabFolder').style.opacity = '1';
+
+    const btnSimpan = document.getElementById('btnSimpan');
+    btnSimpan.disabled = false;
+    btnSimpan.innerText = "Simpan";
+    btnSimpan.classList.remove('btn-gray');
+    btnSimpan.classList.add('btn-blue');
+    btnSimpan.style.cursor = 'pointer';
+
+    const btnFoto = document.getElementById('btnPhotoCaptureUI');
+    const btnVideo = document.getElementById('btnVideoCaptureUI');
+    if (btnFoto && btnVideo) {
+        btnFoto.innerHTML = '📸 Ambil Foto';
+        btnFoto.style.background = '';
+        btnFoto.style.color = '';
+        btnFoto.style.borderColor = '';
+        
+        btnVideo.innerHTML = '🎥 Rekam Video';
+        btnVideo.style.background = 'linear-gradient(to bottom, #ffbcaf, #ff9800)';
+        btnVideo.style.color = '#8d6206';
+        btnVideo.style.borderColor = '#c68e17';
+    }
+}
+
+// ==============≈=================≈==============≈=====
+// SECTION 8: PEMUTAR MEDIA & PENAMPIL FILE (VIEWERS)
+// =====================================================
+function cekScrollLayar() {
+    const anyModalOpen = Array.from(document.querySelectorAll('.modal')).some(m => m.style.display === 'flex' || m.style.display === 'block');
+    const isPlayerMaximized = (typeof MediaPlayer !== 'undefined' && MediaPlayer.ui) && !MediaPlayer.ui.classList.contains('hidden') && !MediaPlayer.minimized;
+    const shouldLock = anyModalOpen || isPlayerMaximized;
+    
+    if (shouldLock) {
+        if (!document.body.classList.contains('no-scroll')) {
+            savedScrollY = window.scrollY;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${savedScrollY}px`;
+            document.body.style.width = '100%';
+            document.body.classList.add('no-scroll');
+        }
+    } else {
+        if (document.body.classList.contains('no-scroll')) {
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            document.body.classList.remove('no-scroll');
+            window.scrollTo(0, savedScrollY);
+        }
+    }
+    document.body.classList.toggle('player-maximized', isPlayerMaximized);
 }
 
 async function showFileViewer(a,b,c,d,origImg,fileId,hasCover){
@@ -1719,12 +1835,8 @@ async function showFileViewer(a,b,c,d,origImg,fileId,hasCover){
 }
 
 function downloadText(){if(!currentTextContent)return alert("Kosong!");const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([currentTextContent],{type:'text/plain'})),a.download=(document.getElementById('textTitleDisplay').innerText||'Catatan')+'.txt',a.click()}
-function shareText(){currentTextContent?navigator.share?navigator.share({title:document.getElementById('textTitleDisplay').innerText,text:currentTextContent}):alert("Browser tidak mendukung share."):alert("Kosong!")}
 
-function stopRelatedAnimations() {
-    const wrapper = document.getElementById('relatedAnimWrapper');
-    if (wrapper) wrapper.remove();
-}
+function shareText(){currentTextContent?navigator.share?navigator.share({title:document.getElementById('textTitleDisplay').innerText,text:currentTextContent}):alert("Browser tidak mendukung share."):alert("Kosong!")}
 
 const ImgViewer={
     list:[],index:0,timer:null,zoom:1,lastDist:0,
@@ -1995,270 +2107,9 @@ d.innerHTML=`<div class="pl-info" onclick="MediaPlayer.playFromView('${listIndex
             if(!this.minimized){b.clearRect(0,0,a.width,a.height);const gradient=b.createLinearGradient(0,a.height,0,0);gradient.addColorStop(0,'#ffff00');gradient.addColorStop(1,'#ff0000');b.fillStyle=gradient;const barWidth=(a.width/c)*2.5;let x=0;for(let i=0;i<c;i++){let barHeight=(d[i]/255)*a.height;b.fillRect(x,a.height-barHeight,barWidth,barHeight);x+=barWidth+1}}if(this.minimized&&'block'===miniA.style.display){miniB.clearRect(0,0,miniA.width,miniA.height);miniB.fillStyle='#ff4500';const step=4;const barWidthMini=(miniA.width/(c/step))*1.5;let x=0;for(let i=0;i<c;i+=step){let val=d[i];let h=(val/255)*miniA.height;let y=(miniA.height-h)/2;miniB.fillRect(x,y,barWidthMini,h);x+=barWidthMini+1}}};e()},dragSrcEl:null,itemDragStart:function(a){MediaPlayer.dragSrcEl=this;a.dataTransfer.effectAllowed='move';a.dataTransfer.setData('text/html',this.getAttribute('data-index'));this.classList.add('dragging')},itemDragOver:function(a){return a.preventDefault(),a.dataTransfer.dropEffect='move',false},itemDrop:function(a){a.stopPropagation();const srcEl=MediaPlayer.dragSrcEl;if(srcEl)srcEl.classList.remove('dragging');if(srcEl===this)return;const b=parseInt(srcEl.getAttribute('data-index'));const c=parseInt(this.getAttribute('data-index'));const listIndex=this.getAttribute('data-list-index');if(listIndex==='queue'){const d=MediaPlayer.queue.splice(b,1)[0];MediaPlayer.queue.splice(c,0,d);if(MediaPlayer.currentIndex===b)MediaPlayer.currentIndex=c;else if(MediaPlayer.currentIndex>b&&MediaPlayer.currentIndex<=c)MediaPlayer.currentIndex--;else if(MediaPlayer.currentIndex<b&&MediaPlayer.currentIndex>=c)MediaPlayer.currentIndex++;MediaPlayer.renderViewingPlaylist(MediaPlayer.queue,'queue')}else{const playlists=JSON.parse(getLocal('playlists')||'[]');const playlist=playlists[listIndex];if(!playlist)return;const d=playlist.items.splice(b,1)[0];playlist.items.splice(c,0,d);setLocal('playlists',JSON.stringify(playlists));MediaPlayer.renderViewingPlaylist(playlist.items,listIndex)}return false}
 };
 
-function simpanKeLokal(){
-    const a=[];
-    document.querySelectorAll('.card').forEach(b=>a.push({id:b.getAttribute('data-id'),itemType:b.getAttribute('data-itemType'),folderId:b.getAttribute('data-folderId'),name:b.querySelector('.file-info').textContent,year:b.getAttribute('data-year'),note:b.getAttribute('data-note'),img:b.getAttribute('data-img'),cat:b.getAttribute('data-cat'),sub:b.getAttribute('data-sub'),type:b.getAttribute('data-type'),detail:b.getAttribute('data-detail'),hidden:b.getAttribute('data-hidden'),font:b.getAttribute('data-font'),customCover:b.getAttribute('data-customCover'),related:b.getAttribute('data-related'),descaura:b.getAttribute('data-descaura'),favorite:b.getAttribute('data-favorite')||'false'}));
-    setLocal('files_db',JSON.stringify(a));
-}
-
-function muatDariLokal(){
-    const a=getLocal('files_db');
-    if(a){
-        const grid=document.getElementById('fileGrid');
-        grid.innerHTML='';
-        const frag=document.createDocumentFragment();
-        JSON.parse(a).reverse().forEach(b=>buatKartu(b,!1,frag));
-        grid.appendChild(frag);
-        updateStats(); filterFiles();
-    }
-}
-
-function updateStats() {
-    const a = document.querySelectorAll('.card[data-itemType="file"]');
-    const counts = { total: 0, img: 0, vid: 0, aud: 0, app: 0, doc: 0, txt: 0 };
-    
-    a.forEach(i => {
-        if ('true' === i.getAttribute('data-hidden') && 'master' !== currentRole) return;
-        counts.total++;
-        const j = i.getAttribute('data-cat'), k = i.getAttribute('data-mediatype');
-
-        if ('aplikasi' === j || 'app' === k || 'archive' === k) counts.app++;
-        else if ('dokumen' === j || 'doc' === k) counts.doc++;
-        else if ('catatan' === j || 'text' === k) counts.txt++;
-        else if ('image' === k) counts.img++;
-        else if ('video' === k) counts.vid++;
-        else if ('audio' === k) counts.aud++;
-    });
-
-    const map = { statTotal: counts.total, statGambar: counts.img, statVideo: counts.vid, statAudio: counts.aud, statApp: counts.app, statDokumen: counts.doc, statCatatan: counts.txt };
-    Object.entries(map).forEach(([id, val]) => document.getElementById(id).innerText = val);
-    const storageItemDOM = document.getElementById('statStorageItem');
-    if (navigator.storage && navigator.storage.estimate) {
-        navigator.storage.estimate().then(estimate => {
-            const usedMB = (estimate.usage / (1024 * 1024)).toFixed(1);
-            const totalGB = (estimate.quota / (1024 * 1024 * 1024)).toFixed(1);
-            document.getElementById('statStorage').innerText = `${usedMB}MB / ${totalGB}GB`;
-        }).catch(() => { storageItemDOM.style.display = 'none'; });
-    } else { storageItemDOM.style.display = 'none'; }
-}
-
-function bukaModalBaru(){
-    if(curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite') return alert("Buka folder atau kategori spesifik terlebih dahulu untuk membuat item baru."); 
-    editingCard=null,fileKameraTertunda=null,document.getElementById('formTitle').innerText="Tambah Baru",gantiTabUpload('file');
-    ['fName','fImgUrl','fNote','fYear','fLocalFile','fCustomCover'].forEach(a=>document.getElementById(a).value='');
-    document.getElementById('btnHapusCover').style.display='none',document.getElementById('fHapusCoverFlag').value='false',document.getElementById('fDescAura').checked=false,document.getElementById('fFavorite').value='false',document.getElementById('btnFavoriteToggle').innerHTML='☆',document.getElementById('btnFavoriteToggle').style.color='#ccc',document.getElementById('btnFavoriteToggle').style.textShadow='none',document.getElementById('fFontStyle').value="'Segoe UI', sans-serif",toggleModal('modalForm', true);
-}
-
-function tutupModal() {
-    toggleModal('modalForm', false);
-    editingCard = null;
-    document.getElementById('fPhotoCapture').value = '';
-    document.getElementById('fVideoCapture').value = '';
-    document.getElementById('tabFolder').style.pointerEvents = 'auto';
-    document.getElementById('tabFolder').style.opacity = '1';
-
-    const btnSimpan = document.getElementById('btnSimpan');
-    btnSimpan.disabled = false;
-    btnSimpan.innerText = "Simpan";
-    btnSimpan.classList.remove('btn-gray');
-    btnSimpan.classList.add('btn-blue');
-    btnSimpan.style.cursor = 'pointer';
-
-    const btnFoto = document.getElementById('btnPhotoCaptureUI');
-    const btnVideo = document.getElementById('btnVideoCaptureUI');
-    if (btnFoto && btnVideo) {
-        btnFoto.innerHTML = '📸 Ambil Foto';
-        btnFoto.style.background = '';
-        btnFoto.style.color = '';
-        btnFoto.style.borderColor = '';
-        
-        btnVideo.innerHTML = '🎥 Rekam Video';
-        btnVideo.style.background = 'linear-gradient(to bottom, #ffbcaf, #ff9800)';
-        btnVideo.style.color = '#8d6206';
-        btnVideo.style.borderColor = '#c68e17';
-    }
-}
-
-function tutupSemuaMenu(){document.querySelectorAll('.pl-ctx-menu').forEach(a=>a.classList.remove('show'))}
-
-function bukaEdit(a){
-    tutupSemuaMenu();
-    editingCard=a;
-    const b='folder'===a.getAttribute('data-itemType');
-    const cImg=a.getAttribute('data-img');
-    const fName=a.querySelector('.file-info').innerText;
-    const mediaType=getMediaType(cImg, fName);
-    const isCat=a.getAttribute('data-cat')==='catatan' || mediaType==='text';
-    
-    document.getElementById('formTitle').innerText=b?"Edit Folder":"Edit Memori";
-    gantiTabUpload(b?'folder':'file', isCat);
-    
-    document.getElementById('fName').value=fName;
-    document.getElementById('fCustomCover').value='';
-    const hasCover=a.getAttribute('data-customCover')==='true';
-    document.getElementById('btnHapusCover').style.display=hasCover?'block':'none';
-    document.getElementById('fHapusCoverFlag').value='false';
-    document.getElementById('fDescAura').checked = a.getAttribute('data-descaura') === 'true';
-    
-    const isFav = a.getAttribute('data-favorite') === 'true';
-    document.getElementById('fFavorite').value = isFav ? 'true' : 'false';
-    const favBtn = document.getElementById('btnFavoriteToggle');
-    favBtn.innerHTML = isFav ? '★' : '☆';
-    favBtn.style.color = isFav ? '#FFD700' : '#ccc';
-    favBtn.style.textShadow = isFav ? '0 1px 2px rgba(0,0,0,0.5)' : 'none';
-
-    if('LOCAL_FILE'===cImg){ document.getElementById('fSourceType').value='local'; }
-    else{ document.getElementById('fSourceType').value='url'; document.getElementById('fImgUrl').value=cImg; }
-    
-    if(!isCat && !b){ toggleSourceType(); }
-    
-    document.getElementById('fYear').value=a.getAttribute('data-year');
-    if(!b){
-        document.getElementById('fNote').value=a.getAttribute('data-note')||"";
-        document.getElementById('fFontStyle').value=a.getAttribute('data-font')||"'Segoe UI', sans-serif";
-    }
-    toggleModal('modalForm', true);
-}
-
-async function eksporData() {
-    if (!await customConfirm("Export data?")) return;
-    
-    let filesData = [];
-    try { filesData = JSON.parse(getLocal('files_db') || '[]'); } 
-    catch (err) { alert("Peringatan: Ada data lokal yang korup. Melanjutkan ekspor data yang utuh..."); }
-
-    let coversData = {};
-    try {
-        if (dbInstance) {
-            const tx = dbInstance.transaction('covers', 'readonly');
-            const store = tx.objectStore('covers');
-            const reqKeys = store.getAllKeys();
-            const reqVals = store.getAll();
-            
-            await new Promise((resolve) => {
-                reqKeys.onsuccess = () => {
-                    reqVals.onsuccess = async () => {
-                        const keys = reqKeys.result;
-                        const vals = reqVals.result;
-                        for (let i = 0; i < keys.length; i++) {
-                            coversData[keys[i]] = await new Promise(res => {
-                                const reader = new FileReader();
-                                reader.onloadend = () => res(reader.result);
-                                reader.readAsDataURL(vals[i]); 
-                            });
-                        }
-                        resolve();
-                    };
-                };
-            });
-        }
-    } catch(e) { console.warn("Gagal mengekstrak cover", e); }
-
-    const backupData = JSON.stringify({ files: filesData, config: config, covers: coversData }, null, 2);
-    const dateStr = new Date().toISOString().split('T')[0];
-    const timeStr = new Date().getHours() + "-" + new Date().getMinutes() + "-" + new Date().getSeconds();
-    const defaultFileName = `Feathera_Backup_${dateStr}_${timeStr}.json`;
-    const isNative = window.Capacitor && window.Capacitor.isNative;
-    let pesanSukses = "";
-
-    if (isNative) {
-        try {
-            await window.Capacitor.Plugins.Filesystem.writeFile({ path: defaultFileName, data: backupData, directory: 'DOCUMENTS', encoding: 'utf8' });
-            pesanSukses += "Data berhasil diekspor ke folder 'Documents' memori internal.\n";
-        } catch (err) {
-            console.error("Gagal export native:", err);
-            pesanSukses += "Gagal menyimpan file ke perangkat lokal: " + err.message + "\n";
-        }
-    } else {
-        const blob = new Blob([backupData], { type: 'application/json' });
-        const a = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        a.href = url; a.download = defaultFileName; document.body.appendChild(a); a.click(); document.body.removeChild(a); 
-        requestAnimationFrame(() => { setTimeout(() => URL.revokeObjectURL(url), 30000); });
-        pesanSukses += "Data lokal diekspor (Periksa folder Download).\n";
-    }
-
-    const gToken = await dapatkanTokenDriveAktif();
-    const driveJsonUrl = getLocal('drive_folder_json');
-
-    if (gToken && currentUser !== 'Guest') {
-        try {
-            const jsonBlob = new Blob([backupData], { type: 'application/json' });
-            const resMedia = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json', 'Content-Length': jsonBlob.size },
-                body: jsonBlob
-            });
-
-            const dataMedia = await resMedia.json();
-            if (resMedia.ok && dataMedia.id) {
-                let patchUrl = `https://www.googleapis.com/drive/v3/files/${dataMedia.id}`;
-                if (driveJsonUrl) {
-                    const folderId = driveJsonUrl.includes('folders/') ? driveJsonUrl.split('folders/')[1].split(/[?&/]/)[0] : driveJsonUrl;
-                    patchUrl += `?addParents=${folderId}&removeParents=root`;
-                }
-                await fetch(patchUrl, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' }, body: JSON.stringify({ name: defaultFileName }) });
-                pesanSukses += "☁️ Salinan Backup berhasil diunggah ke Google Drive Anda!";
-            } else { pesanSukses += "☁️ Gagal upload ke Drive (API Ditolak)."; }
-        } catch (errDrive) {
-            console.warn("Koneksi gagal ke Drive", errDrive);
-            pesanSukses += "☁️ Gagal upload ke Drive (Jaringan/Timeout).";
-        }
-    }
-    alert(pesanSukses);
-}
-
-function imporData(a) {
-    if (window.Capacitor && window.Capacitor.isNative && window.Capacitor.Plugins.Filesystem) {
-        window.Capacitor.Plugins.Filesystem.requestPermissions().catch(()=>{});
-    }
-
-    const b = a.files[0];
-    if (!b) return;
-
-    if (!b.name.toLowerCase().endsWith('.json')) {
-        alert("Gagal: Format file tidak didukung. Harap masukkan file .json!");
-        a.value = ''; return;
-    }
-    if (b.size === 0) {
-        alert("Gagal: File kosong (0 bytes)! Ekspor sebelumnya gagal tersimpan sempurna di memori HP.");
-        a.value = ''; return;
-    }
-
-    const c = new FileReader();
-    c.onerror = () => { alert("Terjadi kesalahan saat membaca file dari penyimpanan perangkat."); a.value = ''; };
-
-    c.onload = async (d) => { 
-        try {
-            const e = JSON.parse(d.target.result);
-            if (e && Array.isArray(e.files) && Array.isArray(e.config)) {
-                const isFromLogin = !document.getElementById('authPage').classList.contains('hidden');
-                if (isFromLogin) { currentUser = 'RestoredUser'; localStorage.setItem('feathera_session', currentUser); }
-                setLocal('files_db', JSON.stringify(e.files));
-                setLocal('config_v1', JSON.stringify(e.config));
-
-                if (e.covers && dbInstance) {
-                    for (const [key, base64Str] of Object.entries(e.covers)) {
-                        try {
-                            const res = await fetch(base64Str);
-                            const blob = await res.blob();
-                            await dbSimpanCover(key, blob);
-                        } catch(err) { console.warn("Gagal memulihkan cover:", key); }
-                    }
-                }
-                if (isFromLogin) { tampilkanApp(); } 
-                else { loadConfig(); muatDariLokal(); }
-                alert("Backup & Cover Dipulihkan Secara Penuh! (File lokal DB tidak termasuk)");
-            } else { alert("Struktur data backup tidak dikenali oleh Feathera Gallery!"); }
-        } catch (f) { alert("Format JSON tidak valid! Detail: " + f.message); } 
-        finally { a.value = ''; }
-    };
-    c.readAsText(b);
-}
-
-function getLinkGroups() { return JSON.parse(getLocal('link_groups') || '[]'); }
-function setLinkGroups(groups) { setLocal('link_groups', JSON.stringify(groups)); }
-
+// =====================================================
+// SECTION 9: HUBUNGAN MEMORI & ANIMASI (RELATIONS)
+// =====================================================
 function bukaModalHubung() {
     if ('master' !== currentRole && 'user' !== currentRole) return alert("Hanya Master & Admin yang bisa mengatur relasi.");
 
@@ -2508,6 +2359,14 @@ async function spawnRelatedAnimations(triggerId) {
     setTimeout(() => { stopRelatedAnimations(); }, ((animIndex * 10000) + 1000));
 }
 
+function stopRelatedAnimations() {
+    const wrapper = document.getElementById('relatedAnimWrapper');
+    if (wrapper) wrapper.remove();
+}
+
+// =====================================================
+// SECTION 10: RECYCLE BIN (TONG SAMPAH)
+// =====================================================
 function bukaRecycleBin() {
     if ('master' !== currentRole) return alert("Hanya Master Admin.");
     renderRecycleBinList();
@@ -2606,117 +2465,159 @@ async function hapusRbSelected() {
     }
 }
 
-// --- LOGIKA GESTURE & TOUCH EVENT ---
-function abaikanSwipe(target) {
-    return target.closest('.modal, #mainNav, .chip-container, .stats-bar, .mp-progress, .card.is-dragging') || 
-           ['INPUT', 'TEXTAREA', 'BUTTON'].includes(target.tagName) || 
-           document.body.classList.contains('no-scroll');
+// =====================================================
+// SECTION 11: PANEL MASTER ADMIN (MANAJEMEN KATEGORI TREE)
+// =====================================================
+function bukaMaster() {
+    tempMasterConfig = JSON.parse(JSON.stringify(config));
+    toggleModal('modalMaster', true);
+    initMasterTree();
+    masterResetForm();
 }
 
-window.addEventListener('touchstart', e => {
-    if (abaikanSwipe(e.target)) return;
-    swipeStartX = e.changedTouches[0].screenX;
-    swipeStartY = e.changedTouches[0].screenY;
-}, {passive: true});
-
-window.addEventListener('touchend', e => {
-    if (swipeStartX === 0 && swipeStartY === 0) return; 
-    let swipeEndX = e.changedTouches[0].screenX;
-    let swipeEndY = e.changedTouches[0].screenY;
-    let diffX = swipeStartX - swipeEndX;
-    let diffY = Math.abs(swipeStartY - swipeEndY);
-
-    if (Math.abs(diffX) > 60 && diffY < 50) {
-        geserHalaman(diffX > 0 ? 'next' : 'prev');
-    }
-    swipeStartX = 0; swipeStartY = 0;
-}, {passive: true});
-
-function geserHalaman(arah) {
-    let urutanTab = [];
-    if (isAddMediaMode) {
-        urutanTab = ['audiovideo'];
-        ['video', 'audio'].forEach(id => { if (config.find(c => c.id === id)) urutanTab.push(id); });
-    } else {
-        urutanTab = ['all', 'audiovideo', 'favorite', ...config.map(c => c.id)];
-    }
-
-    let indexSaatIni = urutanTab.indexOf(curFilter.l0);
-    if (indexSaatIni === -1) indexSaatIni = 0;
-
-    let indexBaru = indexSaatIni;
-    if (arah === 'next' && indexSaatIni < urutanTab.length - 1) { indexBaru++; } 
-    else if (arah === 'prev' && indexSaatIni > 0) { indexBaru--; }
-
-    if (indexBaru !== indexSaatIni) {
-        const grid = document.getElementById('fileGrid');
-        const emptyState = document.getElementById('emptyState');
-        const animOut = arah === 'next' ? 'slide-out-left' : 'slide-out-right';
-        const animIn = arah === 'next' ? 'slide-in-right' : 'slide-in-left';
-        
-        setFilter(0, urutanTab[indexBaru]);
-
-        grid.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
-        emptyState.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
-        
-        void grid.offsetWidth; 
-        
-        grid.classList.add(animIn);
-        emptyState.classList.add(animIn);
-        setTimeout(() => {
-            grid.classList.remove(animIn);
-            emptyState.classList.remove(animIn);
-        }, 250);
-    }
+function simpanMasterKeseluruhan() {
+    config = JSON.parse(JSON.stringify(tempMasterConfig));
+    saveConfig();
+    toggleModal('modalMaster', false);
+    alert("Perubahan kategori berhasil disimpan!");
 }
 
-const btnTopCache = document.getElementById('btnScrollTop');
-window.addEventListener('scroll', () => {
-    if (!isTicking) {
-        window.requestAnimationFrame(() => {
-            if (btnTopCache) btnTopCache.classList.toggle('visible', window.scrollY > 300);
-            isTicking = false;
+function batalMaster() {
+    tempMasterConfig = [];
+    toggleModal('modalMaster', false);
+}
+
+function initMasterTree(){
+    const a=document.getElementById('masterTreeList'),b=document.getElementById('mstParent');
+    a.innerHTML='';
+    b.innerHTML='<option value="ROOT">Sebagai Kategori Utama</option>';
+    const c=(d,e)=>{
+        d&&d.forEach(f=>{
+            const g=document.createElement('option');
+            g.value=f.id;
+            g.innerHTML="  ".repeat(e)+(f.icon||'')+" "+f.name;
+            b.appendChild(g);
+            const h=document.createElement('div');
+            h.className='tree-item';
+            h.setAttribute('draggable','true');
+            h.setAttribute('data-id',f.id);
+            h.setAttribute('ondragstart','masterDragStart(event)');
+            h.setAttribute('ondragover','masterDragOver(event)');
+            h.setAttribute('ondrop','masterDrop(event)');
+            h.setAttribute('ondragleave','masterDragLeave(event)');
+            h.innerHTML=`<div class="tree-label level-${e}" onclick="isiFormMaster('${f.id}')">${f.icon||'📄'} ${f.name}</div><div class="tree-actions"><button onclick="hapusNode('${f.id}')" style="color:red; display:inline-flex; align-items:center;">${SVG_TRASH}</button></div>`;
+            a.appendChild(h);
+            f.children&&c(f.children,e+1);
         });
-        isTicking = true;
-    }
-}, {passive: true});
+    };
+    c(tempMasterConfig,0);
+}
 
-['touchstart','mousedown'].forEach(a=>window.addEventListener(a,b=>{
-    const target = b.target;
-    if(document.body.classList.contains('no-scroll') || ['INPUT','TEXTAREA','BUTTON','SELECT'].includes(target.tagName)) return;
-    const cardTarget = target.closest('.card');
-    if(cardTarget){
-        pressTimer=setTimeout(()=>{
-            if(currentRole !== 'none') {
-                isLongPressTriggered = true; 
-                cardHoldHandler(cardTarget);
-            }
-        }, 600);
-        return;
-    }
-    pressTimer=setTimeout(async ()=>{
-        try { navigator.vibrate&&navigator.vibrate(50); } catch(e){}
-        if (!isMovePending) return;
-        if(curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite') {
-            alert("Buka folder atau kategori spesifik terlebih dahulu untuk menempelkan (paste) item."); return;
-        }
-        if('user'===currentRole||'master'===currentRole){
-            toggleModal('pasteMenu', true);
-        } else if ('none' === currentRole) {
-            const isConfirmed = await customConfirm("Silakan buka kunci terlebih dahulu untuk menempelkan item. Masukkan PIN sekarang?");
-            if (isConfirmed) {
-                requestPin((role) => {
-                    setAppRole(role);
-                    toggleModal('pasteMenu', true);
-                }, "Unlock Akses");
-            }
-        }
-    }, 800)
-},{passive:true}));
+function masterDragStart(a){
+    dragSrcId=a.currentTarget.getAttribute('data-id');
+    a.currentTarget.classList.add('dragging');
+    a.dataTransfer.effectAllowed='move';
+}
 
-['touchend','touchmove','mouseup','touchcancel'].forEach(a=>window.addEventListener(a,(e)=>{
-    if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; }
-    if ((a === 'touchend' || a === 'mouseup') && isLongPressTriggered) {
-        setTimeout(() => { isLongPressTriggered = false; }, 300);
+function masterDragOver(a){
+    a.preventDefault();
+    if(a.currentTarget.getAttribute('data-id') !== dragSrcId) {
+        a.currentTarget.classList.add('drag-over');
     }
-}, {passive: true}));
+    a.dataTransfer.dropEffect='move';
+    return false;
+}
+
+function masterDragLeave(a){
+    a.currentTarget.classList.remove('drag-over');
+}
+
+function masterDrop(a){
+    a.stopPropagation();
+    a.currentTarget.classList.remove('drag-over');
+    const b=a.currentTarget.getAttribute('data-id');
+    document.querySelectorAll('.tree-item').forEach(c=>c.classList.remove('dragging'));
+    if(dragSrcId && b && dragSrcId !== b) reorderNodes(dragSrcId, b);
+    return false;
+}
+
+function reorderNodes(a,b){
+    const c=findNodeAndParent(tempMasterConfig,a,null), d=findNodeAndParent(tempMasterConfig,b,null);
+    if(c&&d){
+        if(isDescendantConfig(c.node,b)) return alert("Tidak bisa memindahkan folder induk ke dalam sub-folder sendiri!");
+        c.array.splice(c.index,1);
+        const e=findNodeAndParent(tempMasterConfig,b,null);
+        e.array.splice(e.index,0,c.node);
+        initMasterTree();
+    }
+}
+
+function masterTambah(){
+    const a=document.getElementById('mstId').value.trim().toLowerCase(), b=document.getElementById('mstName').value.trim(), c=document.getElementById('mstIcon').value.trim(), d=document.getElementById('mstParent').value;
+    if(!a||!b||a.includes(" "))return alert("ID invalid!");
+    if(findNode(tempMasterConfig, a))return alert("ID terpakai!");
+    const e={id:a,name:b,icon:c,children:[]}, f='ROOT'===d?null:findNode(tempMasterConfig,d);
+    f?(f.children=f.children||[],f.children.push(e)):tempMasterConfig.push(e);
+    initMasterTree(); masterResetForm();
+}
+
+function masterUpdate(){
+    if(!nodeToEdit) return;
+    const newName = document.getElementById('mstName').value.trim();
+    const newIcon = document.getElementById('mstIcon').value.trim();
+    const newParentId = document.getElementById('mstParent').value;
+    nodeToEdit.node.name = newName; nodeToEdit.node.icon = newIcon;
+    const currentInfo = findNodeAndParent(tempMasterConfig, nodeToEdit.node.id, null);
+    const currentParentId = currentInfo.parent ? currentInfo.parent.id : 'ROOT';
+    
+    if (currentParentId !== newParentId) {
+        if (newParentId !== 'ROOT' && (nodeToEdit.node.id === newParentId || isDescendantConfig(nodeToEdit.node, newParentId))) {
+            alert("Tidak bisa memindahkan ke dalam sub-kategorinya sendiri!"); return;
+        }
+        currentInfo.array.splice(currentInfo.index, 1);
+        if (newParentId === 'ROOT') { tempMasterConfig.push(nodeToEdit.node); } 
+        else { const targetParent = findNode(tempMasterConfig, newParentId); if (targetParent) { targetParent.children = targetParent.children || []; targetParent.children.push(nodeToEdit.node); } }
+    }
+    initMasterTree(); masterResetForm();
+}
+
+async function hapusNode(a){
+    const node = findNode(tempMasterConfig, a);
+    const catName = node ? node.name : "Kategori Ini";
+    if(await customConfirm(`Yakin menghapus kategori: ${catName}?`)){
+        const b=c=>{
+            const d=c.findIndex(e=>e.id===a);
+            if(d>-1)return c.splice(d,1),true;
+            for(let e of c)if(e.children&&b(e.children))return true;
+        };
+        b(tempMasterConfig);
+        initMasterTree(); masterResetForm();
+    }
+}
+
+function isiFormMaster(a){
+    const b=findNode(tempMasterConfig, a);
+    if(!b) return;
+    const parentInfo = findNodeAndParent(tempMasterConfig, a, null);
+    nodeToEdit={node:b};
+    document.getElementById('mstId').value=b.id;
+    document.getElementById('mstId').disabled=true;
+    document.getElementById('mstName').value=b.name;
+    document.getElementById('mstIcon').value=b.icon||'';
+    document.getElementById('mstParent').value = parentInfo.parent ? parentInfo.parent.id : 'ROOT';
+    document.getElementById('btnAddNode').classList.add('hidden');
+    document.getElementById('btnUpdateNode').classList.remove('hidden');
+    document.getElementById('btnCancelNode').classList.remove('hidden');
+}
+
+function masterResetForm(){
+    nodeToEdit=null;
+    document.getElementById('mstId').value='';
+    document.getElementById('mstId').disabled=false;
+    document.getElementById('mstName').value='';
+    document.getElementById('mstIcon').value='';
+    document.getElementById('mstParent').value='ROOT';
+    document.getElementById('btnAddNode').classList.remove('hidden');
+    document.getElementById('btnUpdateNode').classList.add('hidden');
+    document.getElementById('btnCancelNode').classList.add('hidden');
+}
