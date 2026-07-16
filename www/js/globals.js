@@ -1,4 +1,7 @@
-// --- FIREBASE CONFIG ---
+// ======================================================
+// SECTION 1: SYSTEM CONFIGURATIONS & CONSTANTS
+// ======================================================
+// [Konfigurasi utama dan konstanta statis aplikasi]
 const firebaseConfig = {
   apiKey: "AIzaSyDO_AmQ3EHZX-1td2SBcXl9xZKXQ7WgwXM",
   authDomain: "feathera-pro.firebaseapp.com",
@@ -8,54 +11,6 @@ const firebaseConfig = {
   appId: "1:324693466741:web:b44d677c3af3967effe23c"
 };
 
-// --- GLOBAL VARIABLES ---
-let googleUserName = null; 
-let currentSourceFilter = 'all';
-let isLongPressTriggered = false,
-    currentUser = null,
-    config = [],
-    flatConfig = {},
-    curFilter = {l0:'all', l1:'all', l2:'all', l3:'all'},
-    currentFolderId = null,
-    activeSearchFolderName = null,
-    editingCard = null,
-    nodeToEdit = null,
-    uploadMode = 'file',
-    isSelectionMode = false,
-    isAddMediaMode = false,
-    isDarkMode = false,
-    currentRole = 'none',
-    pinActionCallback = null,
-    isChangingPin = false,
-    pinChangeTarget = 'master',
-    isForgotPinReset = false,
-    isVerifyingOldPin = false,
-    dbInstance = null,
-    pressTimer,
-    ytPlayer = null,
-    ytInterval = null,
-    currentTextContent = "",
-    currentSortOpt = localStorage.getItem('feathera_sort_opt') || 'year_desc',
-    currentViewMode = localStorage.getItem('feathera_view_mode') || 'grid';
-
-let movePendingIds = [], isMovePending = false;
-let _childrenCache = null, _childrenCacheTimer = null;
-let _parentCache = null, _parentCacheTimer = null;
-let tempMasterConfig = [];
-let dragSrcId = null;
-let searchTimeout;
-let fileKameraTertunda = null;
-let activeHubungGroupId = null;
-let isSelectingForGroup = false;
-let targetGroupForSelection = null;
-let swipeStartX = 0;
-let swipeStartY = 0;
-let isTicking = false;
-let savedScrollY = 0;
-
-window.targetPlaylistIndexForAdd = null;
-
-// --- CONSTANTS ---
 const DB_NAME = 'FeatheraDB', 
       DB_VERSION = 2, 
       defaultConfig = [
@@ -77,7 +32,47 @@ const MEDIA_EXTS = {
     doc: ['pdf','doc','docx','xls','xlsx','ppt','pptx']
 };
 
-// --- SVG ICONS ---
+// ======================================================
+// SECTION 2: GLOBAL STATE & SESSION VARIABLES
+// ======================================================
+
+// --- 2A. Auth & Security State ---
+let googleUserName = null; 
+let currentUser = null;
+let currentRole = 'none';
+let pinActionCallback = null, isChangingPin = false, pinChangeTarget = 'master', isForgotPinReset = false, isVerifyingOldPin = false;
+
+// --- 2B. UI, Filter & View State ---
+let isDarkMode = false;
+let currentViewMode = localStorage.getItem('feathera_view_mode') || 'grid';
+let currentSortOpt = localStorage.getItem('feathera_sort_opt') || 'year_desc';
+let currentSourceFilter = 'all';
+let curFilter = {l0:'all', l1:'all', l2:'all', l3:'all'};
+let savedScrollY = 0;
+
+// --- 2C. File, Folder & Editor State ---
+let config = [], flatConfig = {}, tempMasterConfig = [];
+let currentFolderId = null, activeSearchFolderName = null;
+let editingCard = null, nodeToEdit = null, currentTextContent = "";
+let uploadMode = 'file', isAddMediaMode = false, fileKameraTertunda = null;
+window.targetPlaylistIndexForAdd = null;
+
+// --- 2D. Interaction, Drag & Selection State ---
+let isSelectionMode = false, isSelectingForGroup = false, targetGroupForSelection = null, activeHubungGroupId = null;
+let dragSrcId = null;
+let movePendingIds = [], isMovePending = false;
+let isLongPressTriggered = false, pressTimer, swipeStartX = 0, swipeStartY = 0, isTicking = false;
+
+// --- 2E. System Services & Caching ---
+let dbInstance = null;
+let ytPlayer = null, ytInterval = null;
+let searchTimeout;
+let _childrenCache = null, _childrenCacheTimer = null;
+let _parentCache = null, _parentCacheTimer = null;
+
+// ======================================================
+// SECTION 3: STATIC UI ASSETS (SVG ICONS)
+// ======================================================
 const SVG_PLAY_CIRCLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`,
       SVG_PAUSE_CIRCLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
       SVG_TRASH = `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
