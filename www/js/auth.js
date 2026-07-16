@@ -1,42 +1,26 @@
-// --- FIREBASE INITIALIZATION ---
+// ======================================================
+// SECTION 1: FIREBASE & ENVIRONMENT INITIALIZATION
+// ======================================================
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
 
-// --- PENGATURAN GOOGLE DRIVE ---
-function loadDriveSettings() {
-    document.getElementById('driveIdFoto').value = getLocal('drive_folder_foto') || '';
-    document.getElementById('driveIdVideo').value = getLocal('drive_folder_video') || '';
-    document.getElementById('driveIdJson').value = getLocal('drive_folder_json') || '';
-}
-
-function saveDriveSettings() {
-    setLocal('drive_folder_foto', document.getElementById('driveIdFoto').value.trim());
-    setLocal('drive_folder_video', document.getElementById('driveIdVideo').value.trim());
-    setLocal('drive_folder_json', document.getElementById('driveIdJson').value.trim());
-    alert("Pengaturan ID Folder Drive berhasil disimpan!");
-    toggleModal('modalDriveSettings', false);
-}
-
-// --- LOGIKA AUTENTIKASI ---
+// ======================================================
+// SECTION 2: CORE AUTHENTICATION LIFECYCLE (GOOGLE & GUEST)
+// ======================================================
 function initAuth(){
     const a = localStorage.getItem('feathera_session');
     a ? (currentUser = a, tampilkanApp()) : (document.getElementById('authPage').classList.remove('hidden'), document.body.classList.remove('app-ready'));
 }
 
-function prosesLoginBerhasil(result) {
-    const user = result.user || result; 
-    currentUser = user.email;
-    googleUserName = user.displayName;
-    
-    localStorage.setItem('feathera_session', currentUser);
-    localStorage.setItem('feathera_google_name', googleUserName);
-    
-    if (user.photoURL) {
-        localStorage.setItem('feathera_google_photo', user.photoURL);
-    }
-    
-    tampilkanApp();
+function prosesAuth(){
+    document.getElementById('loginLoading').classList.remove('hidden');
+    localStorage.setItem('feathera_session', 'Guest');
+    currentUser = 'Guest';
+
+    setTimeout(() => {
+        tampilkanApp();
+    }, 800);
 }
 
 async function loginDenganGoogle() {
@@ -71,6 +55,21 @@ async function loginDenganGoogle() {
     }
 }
 
+function prosesLoginBerhasil(result) {
+    const user = result.user || result; 
+    currentUser = user.email;
+    googleUserName = user.displayName;
+    
+    localStorage.setItem('feathera_session', currentUser);
+    localStorage.setItem('feathera_google_name', googleUserName);
+    
+    if (user.photoURL) {
+        localStorage.setItem('feathera_google_photo', user.photoURL);
+    }
+    
+    tampilkanApp();
+}
+
 async function dapatkanTokenDriveAktif() {
     let tokenActive = localStorage.getItem('feathera_gdrive_token');
     const isNative = window.Capacitor && window.Capacitor.isNative;
@@ -85,16 +84,6 @@ async function dapatkanTokenDriveAktif() {
         }
     } 
     return tokenActive;
-}
-
-function prosesAuth(){
-    document.getElementById('loginLoading').classList.remove('hidden');
-    localStorage.setItem('feathera_session', 'Guest');
-    currentUser = 'Guest';
-
-    setTimeout(() => {
-        tampilkanApp();
-    }, 800);
 }
 
 async function logoutApp() {
@@ -188,7 +177,9 @@ async function hapusAkun(){
     }
 }
 
-// --- LOGIKA SISTEM PIN ---
+// ======================================================
+// SECTION 3: SECURITY & PIN MANAGEMENT SYSTEM
+// ======================================================
 function requestPin(a,b="Masukkan PIN"){
     pinActionCallback=a;
     document.getElementById('pinTitle').innerText=b;
@@ -198,45 +189,6 @@ function requestPin(a,b="Masukkan PIN"){
     document.getElementById('forgotPin').style.display='block';
     document.getElementById('inputPin').focus();
     isChangingPin=false;
-}
-
-async function handleForgotPin() {
-    const isGoogleUser = localStorage.getItem('feathera_google_name');
-    if (!isGoogleUser) {
-        return alert("Fitur lupa PIN hanya tersedia untuk pengguna yang login menggunakan Google. Akun Guest tidak didukung.");
-    }
-
-    if (await customConfirm("Untuk memulihkan PIN, Anda harus memverifikasi identitas dengan login ulang menggunakan akun Google Anda. Lanjutkan?")) {
-        const isNative = window.Capacitor && window.Capacitor.isNative;
-        
-        try {
-            let verifiedEmail = null;
-
-            if (isNative) {
-                const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
-                verifiedEmail = googleUser.email;
-            } else {
-                const result = await auth.signInWithPopup(provider);
-                verifiedEmail = result.user.email;
-            }
-
-            if (verifiedEmail === currentUser) {
-                alert("Verifikasi Google berhasil! Silakan buat PIN baru Anda.");
-                isChangingPin = true;
-                pinChangeTarget = 'user';
-                isForgotPinReset = true;
-                document.getElementById('inputPin').value = '';
-                document.getElementById('pinTitle').innerText = "Buat PIN Baru";
-                document.getElementById('forgotPin').style.display = 'none';
-                document.getElementById('pinTypeSelect').style.display = 'none';
-            } else {
-                if (isNative) await window.Capacitor.Plugins.GoogleAuth.signOut();
-                alert("Gagal. Email Google yang Anda gunakan untuk verifikasi tidak sama dengan akun yang sedang aktif.");
-            }
-        } catch (error) {
-            alert("Verifikasi dibatalkan atau gagal: " + error.message);
-        }
-    }
 }
 
 function submitPin(){
@@ -314,47 +266,48 @@ function menuGantiPin(){
     }
 }
 
-// --- LOGIKA AKTIVITAS (ACTIVITY LOG) ---
-function logActivity(a, b){
-    const c = JSON.parse(getLocal('activity_log') || '[]');
-    c.unshift({ id: Date.now(), date: new Date().toLocaleString('id-ID'), action: a, desc: b });
-    c.length > 50 && c.pop();
-    setLocal('activity_log', JSON.stringify(c));
-}
-
-function bukaLogAktifitas(){
-    if('none' === currentRole) return alert("Silakan buka kunci terlebih dahulu.");
-    const a = JSON.parse(getLocal('activity_log') || '[]');
-    const b = document.getElementById('logList');
-    const c = a.filter(d => !('user' === currentRole && (d.action === 'Ganti PIN' && d.desc.includes('Master') || d.action === 'Visibility')));
-    
-    if(0 === c.length){
-        b.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Tidak ada aktifitas.</div>';
-    } else {
-        let htmlStr = '';
-        c.forEach(d => {
-            htmlStr += `<div class="log-item"><div class="log-content-wrapper"><div class="log-meta"><span>${d.date}</span><span class="log-action">${d.action}</span></div><div class="log-desc">${d.desc}</div></div>${'master' === currentRole ? `<button class="log-del-btn" onclick="hapusLogItem(${d.id})">${SVG_TRASH}</button>` : ''}</div>`
-        });
-        b.innerHTML = htmlStr;
+async function handleForgotPin() {
+    const isGoogleUser = localStorage.getItem('feathera_google_name');
+    if (!isGoogleUser) {
+        return alert("Fitur lupa PIN hanya tersedia untuk pengguna yang login menggunakan Google. Akun Guest tidak didukung.");
     }
-    toggleModal('modalSettings', false);
-    toggleModal('modalLog', true);
-}
 
-async function hapusLogItem(a){
-    if(await customConfirm("Hapus log ini?")){
-        let b = JSON.parse(getLocal('activity_log') || '[]');
-        b = b.filter(c => c.id !== a);
-        setLocal('activity_log', JSON.stringify(b));
-        bukaLogAktifitas();
+    if (await customConfirm("Untuk memulihkan PIN, Anda harus memverifikasi identitas dengan login ulang menggunakan akun Google Anda. Lanjutkan?")) {
+        const isNative = window.Capacitor && window.Capacitor.isNative;
+        
+        try {
+            let verifiedEmail = null;
+
+            if (isNative) {
+                const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
+                verifiedEmail = googleUser.email;
+            } else {
+                const result = await auth.signInWithPopup(provider);
+                verifiedEmail = result.user.email;
+            }
+
+            if (verifiedEmail === currentUser) {
+                alert("Verifikasi Google berhasil! Silakan buat PIN baru Anda.");
+                isChangingPin = true;
+                pinChangeTarget = 'user';
+                isForgotPinReset = true;
+                document.getElementById('inputPin').value = '';
+                document.getElementById('pinTitle').innerText = "Buat PIN Baru";
+                document.getElementById('forgotPin').style.display = 'none';
+                document.getElementById('pinTypeSelect').style.display = 'none';
+            } else {
+                if (isNative) await window.Capacitor.Plugins.GoogleAuth.signOut();
+                alert("Gagal. Email Google yang Anda gunakan untuk verifikasi tidak sama dengan akun yang sedang aktif.");
+            }
+        } catch (error) {
+            alert("Verifikasi dibatalkan atau gagal: " + error.message);
+        }
     }
 }
 
-async function hapusLogAktifitas(){
-    'master' === currentRole ? (await customConfirm("Bersihkan semua riwayat log?")) && (delLocal('activity_log'), bukaLogAktifitas()) : alert("Akses Ditolak. Hanya Master.");
-}
-
-// --- LOGIKA KUNCI / ROLE UI ---
+// ======================================================
+// SECTION 4: ACCESS CONTROL & LOCK MODE UI MANAGEMENT
+// ======================================================
 function initLockState(){
     currentRole = 'none';
     updateLockUI();
