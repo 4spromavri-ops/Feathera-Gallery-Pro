@@ -193,7 +193,7 @@ function requestPin(a,b="Masukkan PIN"){
 
 function submitPin(){
     const a = document.getElementById('inputPin').value.trim(),
-          b = getLocal('pin_master') || '876543',
+          b = getLocal('pin_master') || '220526',
           c = getLocal('pin_user') || '111111';
 
     if(a.length < 6) return alert("PIN minimal 6 angka!");
@@ -201,7 +201,7 @@ function submitPin(){
     if(isChangingPin){
         if(isForgotPinReset){
             setLocal('pin_user', a);
-            setLocal('pin_master', '876543');
+            setLocal('pin_master', '220526');
             alert("PIN Baru Berhasil Dibuat!");
             logActivity('Reset PIN', 'PIN diubah via Lupa PIN');
             return cancelPin();
