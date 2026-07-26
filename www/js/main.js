@@ -1992,85 +1992,94 @@ const ImgViewer={
 
 // --- KODE PENANGANAN SHARE INTENT CAPACITOR -->
 document.addEventListener('DOMContentLoaded', () => {
-    // Memastikan Capacitor dan plugin tersedia
-    if (window.Capacitor && window.Capacitor.Plugins) {
-        const { App, SendIntent } = window.Capacitor.Plugins;
+    // Memberikan jeda 1 detik agar DOM, UI MediaPlayer, dan Native Bridge benar-benar siap
+    setTimeout(() => {
+        if (window.Capacitor && window.Capacitor.Plugins) {
+            const { App, SendIntent } = window.Capacitor.Plugins;
 
-        // Fungsi pembungkus untuk mengecek intent (teks/link) yang masuk
-        const cekShareIntent = async () => {
-            if (SendIntent) {
+            const cekShareIntent = async (sumberKondisi) => {
+                if (!SendIntent) {
+                    alert("Gagal: Plugin SendIntent tidak terdeteksi oleh JavaScript.");
+                    return;
+                }
+                
                 try {
                     const result = await SendIntent.checkSendIntentReceived();
-                    // Aplikasi YouTube biasanya mengirimkan URL ke dalam result.value
+                    
+                    // Hapus tanda komentar (//) di bawah ini jika ingin melihat isi data mentah dari Android
+                    // alert(`Data masuk via (${sumberKondisi}): ` + JSON.stringify(result));
+                    
                     if (result && result.value) {
                         prosesLinkYouTubeMasuk(result.value);
                     } else if (result && result.title) {
-                        // Fallback jika berada di title
                         prosesLinkYouTubeMasuk(result.title);
                     }
                 } catch (error) {
-                    console.error("Gagal mendeteksi share intent:", error);
+                    alert("Error saat membaca intent: " + error.message);
                 }
-            } else {
-                console.warn("Plugin SendIntent belum terinstal atau belum di-sync.");
-            }
-        };
-
-        // 1. Cek intent saat aplikasi pertama kali dibuka (Cold Start)
-        cekShareIntent();
-
-        // 2. Cek intent saat aplikasi sudah terbuka (Background), lalu user kembali melakukan Share
-        if (App) {
-            App.addListener('appStateChange', (state) => {
-                if (state.isActive) {
-                    cekShareIntent();
-                }
-            });
-        }
-    }
-});
-
-    // Fungsi untuk mendeteksi dan memutar link YouTube/Shorts
-    function prosesLinkYouTubeMasuk(url) {
-        // Regex untuk mendeteksi link YouTube biasa, YouTu.be, dan Shorts
-        const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
-        const match = url.match(ytRegex);
-
-        if (match && match[1]) {
-            const videoId = match[1];
-            const cleanUrl = `https://www.youtube.com/watch?v=${videoId}`;
-            
-            // Membuat objek memori simulasi untuk antrian
-            const fileItem = {
-                id: 'yt_' + Date.now(),
-                name: 'YouTube Shared Video',
-                format: 'video',
-                source: 'url',
-                url: cleanUrl,
-                year: new Date().getFullYear()
             };
 
-            // PERHATIAN: Sesuaikan fungsi di bawah dengan fungsi asli penambah antrian di MediaPlayer Anda
-            if (typeof MediaPlayer !== 'undefined') {
-                // Tampilkan UI Player (mengacu pada tombol Anda yang membuka player)
+            // 1. Eksekusi saat aplikasi pertama kali dibuka (Cold Start)
+            cekShareIntent('Cold Start');
+
+            // 2. Eksekusi saat aplikasi di-resume dari background
+            if (App) {
+                App.addListener('appStateChange', (state) => {
+                    if (state.isActive) {
+                        // Beri sedikit jeda saat resume agar intent baru dari sistem operasi sempat masuk
+                        setTimeout(() => cekShareIntent('Resume Background'), 500);
+                    }
+                });
+            }
+        } else {
+            alert("Gagal: Capacitor tidak berjalan.");
+        }
+    }, 1000); 
+});
+
+// Fungsi untuk mendeteksi dan memutar link YouTube/Shorts
+function prosesLinkYouTubeMasuk(url) {
+    alert("Berhasil menerima teks dari YouTube:\n" + url); // <--- PELACAK 1
+    
+    const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+    const match = url.match(ytRegex);
+
+    if (match && match[1]) {
+        const videoId = match[1];
+        const cleanUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        
+        alert("ID Video Valid: " + videoId + "\nMenyiapkan pemutar..."); // <--- PELACAK 2
+        
+        const fileItem = {
+            id: 'yt_' + Date.now(),
+            name: 'YouTube Shared Video',
+            format: 'video',
+            source: 'url',
+            url: cleanUrl,
+            year: new Date().getFullYear()
+        };
+
+        if (typeof MediaPlayer !== 'undefined') {
+            if (MediaPlayer.ui && MediaPlayer.ui.classList) {
                 if (MediaPlayer.ui.classList.contains('minimized')) {
                     MediaPlayer.maximize();
                 } else {
                     MediaPlayer.show();
                 }
-                
-                // Asumsi fungsi untuk menambah ke antrian dan langsung memutar
-                // Ganti 'addToQueueAndPlay' dengan nama fungsi asli yang Anda miliki di js Anda
-                if(typeof MediaPlayer.addToQueueAndPlay === 'function') {
-                    MediaPlayer.addToQueueAndPlay(fileItem);
-                } else {
-                    console.warn("Fungsi penambah antrian MediaPlayer tidak ditemukan.");
-                }
+            }
+            
+            if(typeof MediaPlayer.addToQueueAndPlay === 'function') {
+                MediaPlayer.addToQueueAndPlay(fileItem);
+            } else {
+                alert("Gagal: Fungsi addToQueueAndPlay tidak ditemukan di MediaPlayer.");
             }
         } else {
-            console.log("URL yang dibagikan bukan link YouTube yang valid.");
+            alert("Gagal: Komponen MediaPlayer belum siap atau undefined.");
         }
+    } else {
+        alert("URL tidak valid atau bukan dari YouTube.");
     }
+}
 
 const MediaPlayer={
     queue:[],currentIndex:0,isPlaying:false,mode:0,audioCtx:null,analyser:null,source:null,minimized:false,driveFrame:null,ui:null,aEl:null,vEl:null,progBar:null,currTimeEl:null,durTimeEl:null,lyricsData:[],currentLyricIndex:-1,isShowingLyrics:false,isLyricsSynced:false,sleepMode:false,wakeLockSentinel:null,activeViewIndex:null,currentLocalBlobUrl:null,currentSpeed:1.0,pressTimer:null,
