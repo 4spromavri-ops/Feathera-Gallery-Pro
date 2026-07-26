@@ -1991,20 +1991,44 @@ const ImgViewer={
 };
 
 // --- KODE PENANGANAN SHARE INTENT CAPACITOR -->
-    // Memastikan Capacitor App plugin tersedia
-    document.addEventListener('DOMContentLoaded', () => {
-        if (window.Capacitor && window.Capacitor.Plugins.App) {
-            const { App } = window.Capacitor.Plugins;
+document.addEventListener('DOMContentLoaded', () => {
+    // Memastikan Capacitor dan plugin tersedia
+    if (window.Capacitor && window.Capacitor.Plugins) {
+        const { App, SendIntent } = window.Capacitor.Plugins;
 
-            // Mendengarkan URL atau teks yang dibagikan ke aplikasi
-            App.addListener('appUrlOpen', (data) => {
-                const sharedUrl = data.url;
-                if (sharedUrl) {
-                    prosesLinkYouTubeMasuk(sharedUrl);
+        // Fungsi pembungkus untuk mengecek intent (teks/link) yang masuk
+        const cekShareIntent = async () => {
+            if (SendIntent) {
+                try {
+                    const result = await SendIntent.checkSendIntentReceived();
+                    // Aplikasi YouTube biasanya mengirimkan URL ke dalam result.value
+                    if (result && result.value) {
+                        prosesLinkYouTubeMasuk(result.value);
+                    } else if (result && result.title) {
+                        // Fallback jika berada di title
+                        prosesLinkYouTubeMasuk(result.title);
+                    }
+                } catch (error) {
+                    console.error("Gagal mendeteksi share intent:", error);
+                }
+            } else {
+                console.warn("Plugin SendIntent belum terinstal atau belum di-sync.");
+            }
+        };
+
+        // 1. Cek intent saat aplikasi pertama kali dibuka (Cold Start)
+        cekShareIntent();
+
+        // 2. Cek intent saat aplikasi sudah terbuka (Background), lalu user kembali melakukan Share
+        if (App) {
+            App.addListener('appStateChange', (state) => {
+                if (state.isActive) {
+                    cekShareIntent();
                 }
             });
         }
-    });
+    }
+});
 
     // Fungsi untuk mendeteksi dan memutar link YouTube/Shorts
     function prosesLinkYouTubeMasuk(url) {
