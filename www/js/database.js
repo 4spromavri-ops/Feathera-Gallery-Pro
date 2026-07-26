@@ -102,7 +102,7 @@ function dbHapusCover(key) {
 // Logika untuk menyimpan/memuat daftar file ke struktur kartu HTML (UI/UX).
 function simpanKeLokal(){
     const a=[];
-    document.querySelectorAll('.card').forEach(b=>a.push({id:b.getAttribute('data-id'),itemType:b.getAttribute('data-itemType'),folderId:b.getAttribute('data-folderId'),name:b.querySelector('.file-info').textContent,year:b.getAttribute('data-year'),note:b.getAttribute('data-note'),img:b.getAttribute('data-img'),cat:b.getAttribute('data-cat'),sub:b.getAttribute('data-sub'),type:b.getAttribute('data-type'),detail:b.getAttribute('data-detail'),hidden:b.getAttribute('data-hidden'),font:b.getAttribute('data-font'),customCover:b.getAttribute('data-customCover'),related:b.getAttribute('data-related'),descaura:b.getAttribute('data-descaura'),favorite:b.getAttribute('data-favorite')||'false'}));
+    document.querySelectorAll('.card').forEach(b=>a.push({id:b.getAttribute('data-id'),itemType:b.getAttribute('data-itemType'),folderId:b.getAttribute('data-folderId'),name:b.querySelector('.file-info').textContent,year:b.getAttribute('data-year'),note:b.getAttribute('data-note'),img:b.getAttribute('data-img'),cat:b.getAttribute('data-cat'),sub:b.getAttribute('data-sub'),type:b.getAttribute('data-type'),detail:b.getAttribute('data-detail'),hidden:b.getAttribute('data-hidden'),font:b.getAttribute('data-font'),customCover:b.getAttribute('data-customCover'),related:b.getAttribute('data-related'),descaura:b.getAttribute('data-descaura'),favorite:b.getAttribute('data-favorite')||'false',android:b.getAttribute('data-android')||'none',format:b.getAttribute('data-format')||'auto'}));
     setLocal('files_db',JSON.stringify(a));
 }
 
