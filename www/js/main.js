@@ -1992,63 +1992,56 @@ const ImgViewer={
 
 // --- KODE PENANGANAN SHARE INTENT CAPACITOR -->
 document.addEventListener('DOMContentLoaded', () => {
-    // Memberikan jeda 1 detik agar DOM, UI MediaPlayer, dan Native Bridge benar-benar siap
+    // Memberikan jeda 1 detik agar DOM dan UI pemutar (MediaPlayer) benar-benar siap
     setTimeout(() => {
-        if (window.Capacitor && window.Capacitor.Plugins) {
-            const { App, SendIntent } = window.Capacitor.Plugins;
+        if (window.Capacitor) {
+            // Mengambil plugin bawaan
+            const App = window.Capacitor.Plugins.App;
+            
+            // KODE BARU: Meregistrasikan plugin secara eksplisit untuk file Vanilla JS
+            const SendIntent = window.Capacitor.registerPlugin('SendIntent');
 
-            const cekShareIntent = async (sumberKondisi) => {
-                if (!SendIntent) {
-                    alert("Gagal: Plugin SendIntent tidak terdeteksi oleh JavaScript.");
-                    return;
-                }
+            const cekShareIntent = async () => {
+                if (!SendIntent) return;
                 
                 try {
                     const result = await SendIntent.checkSendIntentReceived();
                     
-                    // Hapus tanda komentar (//) di bawah ini jika ingin melihat isi data mentah dari Android
-                    // alert(`Data masuk via (${sumberKondisi}): ` + JSON.stringify(result));
+                    // Menangkap teks dari intent Android dari berbagai kemungkinan kunci (key)
+                    const teksDariYouTube = result.value || result.url || result.title || result.description;
                     
-                    if (result && result.value) {
-                        prosesLinkYouTubeMasuk(result.value);
-                    } else if (result && result.title) {
-                        prosesLinkYouTubeMasuk(result.title);
+                    if (teksDariYouTube) {
+                        prosesLinkYouTubeMasuk(teksDariYouTube);
                     }
                 } catch (error) {
-                    alert("Error saat membaca intent: " + error.message);
+                    // Log silent di background untuk mengabaikan error saat buka aplikasi normal (tanpa lewat Share)
+                    console.log("Pengecekan Share Intent: " + error.message);
                 }
             };
 
-            // 1. Eksekusi saat aplikasi pertama kali dibuka (Cold Start)
-            cekShareIntent('Cold Start');
+            // 1. Cek intent saat aplikasi pertama kali dibuka (Cold Start)
+            cekShareIntent();
 
-            // 2. Eksekusi saat aplikasi di-resume dari background
+            // 2. Cek intent saat aplikasi sudah berada di background (Resume)
             if (App) {
                 App.addListener('appStateChange', (state) => {
                     if (state.isActive) {
-                        // Beri sedikit jeda saat resume agar intent baru dari sistem operasi sempat masuk
-                        setTimeout(() => cekShareIntent('Resume Background'), 500);
+                        setTimeout(cekShareIntent, 500);
                     }
                 });
             }
-        } else {
-            alert("Gagal: Capacitor tidak berjalan.");
         }
     }, 1000); 
 });
 
 // Fungsi untuk mendeteksi dan memutar link YouTube/Shorts
 function prosesLinkYouTubeMasuk(url) {
-    alert("Berhasil menerima teks dari YouTube:\n" + url); // <--- PELACAK 1
-    
     const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
     const match = url.match(ytRegex);
 
     if (match && match[1]) {
         const videoId = match[1];
         const cleanUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        
-        alert("ID Video Valid: " + videoId + "\nMenyiapkan pemutar..."); // <--- PELACAK 2
         
         const fileItem = {
             id: 'yt_' + Date.now(),
@@ -2060,6 +2053,7 @@ function prosesLinkYouTubeMasuk(url) {
         };
 
         if (typeof MediaPlayer !== 'undefined') {
+            // Memastikan UI tersedia sebelum manipulasi view
             if (MediaPlayer.ui && MediaPlayer.ui.classList) {
                 if (MediaPlayer.ui.classList.contains('minimized')) {
                     MediaPlayer.maximize();
@@ -2068,16 +2062,11 @@ function prosesLinkYouTubeMasuk(url) {
                 }
             }
             
+            // Mengeksekusi penambahan antrian 
             if(typeof MediaPlayer.addToQueueAndPlay === 'function') {
                 MediaPlayer.addToQueueAndPlay(fileItem);
-            } else {
-                alert("Gagal: Fungsi addToQueueAndPlay tidak ditemukan di MediaPlayer.");
             }
-        } else {
-            alert("Gagal: Komponen MediaPlayer belum siap atau undefined.");
         }
-    } else {
-        alert("URL tidak valid atau bukan dari YouTube.");
     }
 }
 
