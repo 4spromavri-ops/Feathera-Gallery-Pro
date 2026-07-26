@@ -27,6 +27,7 @@ jobs:
     - name: Install Dependencies & Setup Capacitor
       run: |
         npm install
+        npm install capacitor-plugin-send-intent # <--- KODE BARU DITAMBAHKAN DI SINI
         npx cap add android
         
         # === KODE BARU: MENGUNCI KEYSTORE AGAR SHA-1 PERMANEN (DIPERBAIKI) ===
@@ -260,7 +261,7 @@ jobs:
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Feathera-Gallery-Pro-APK
+        name: Feathera-Gallery-APK
         path: |
           android/app/build/outputs/apk/debug/app-debug.apk
           ./my-debug.keystore
