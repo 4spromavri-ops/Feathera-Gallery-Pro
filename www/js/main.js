@@ -1994,11 +1994,8 @@ const ImgViewer={
 document.addEventListener('DOMContentLoaded', () => {
     // Memberikan jeda 1 detik agar DOM dan UI pemutar (MediaPlayer) benar-benar siap
     setTimeout(() => {
-        if (window.Capacitor) {
-            // Mengambil plugin bawaan
+        if (window.Capacitor && window.Capacitor.Plugins) {
             const App = window.Capacitor.Plugins.App;
-            
-            // KODE BARU: Meregistrasikan plugin secara eksplisit untuk file Vanilla JS
             const SendIntent = window.Capacitor.registerPlugin('SendIntent');
 
             const cekShareIntent = async () => {
@@ -2006,15 +2003,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 try {
                     const result = await SendIntent.checkSendIntentReceived();
-                    
-                    // Menangkap teks dari intent Android dari berbagai kemungkinan kunci (key)
+                    // Menangkap teks dari intent Android 
                     const teksDariYouTube = result.value || result.url || result.title || result.description;
                     
                     if (teksDariYouTube) {
                         prosesLinkYouTubeMasuk(teksDariYouTube);
                     }
                 } catch (error) {
-                    // Log silent di background untuk mengabaikan error saat buka aplikasi normal (tanpa lewat Share)
                     console.log("Pengecekan Share Intent: " + error.message);
                 }
             };
@@ -2043,29 +2038,23 @@ function prosesLinkYouTubeMasuk(url) {
         const videoId = match[1];
         const cleanUrl = `https://www.youtube.com/watch?v=${videoId}`;
         
+        // Membentuk objek file sesuai dengan format yang diminta oleh MediaPlayer Anda
         const fileItem = {
             id: 'yt_' + Date.now(),
-            name: 'YouTube Shared Video',
+            name: 'Shared dari YouTube',
             format: 'video',
-            source: 'url',
-            url: cleanUrl,
+            img: cleanUrl, // <-- SANGAT PENTING: Pemutar Anda membaca URL YouTube dari properti 'img'
             year: new Date().getFullYear()
         };
 
         if (typeof MediaPlayer !== 'undefined') {
-            // Memastikan UI tersedia sebelum manipulasi view
-            if (MediaPlayer.ui && MediaPlayer.ui.classList) {
-                if (MediaPlayer.ui.classList.contains('minimized')) {
-                    MediaPlayer.maximize();
-                } else {
-                    MediaPlayer.show();
-                }
+            // Jika Mini Player sedang aktif, buka kembali ke ukuran penuh (Maximize)
+            if (MediaPlayer.minimized) {
+                MediaPlayer.maximize();
             }
             
-            // Mengeksekusi penambahan antrian 
-            if(typeof MediaPlayer.addToQueueAndPlay === 'function') {
-                MediaPlayer.addToQueueAndPlay(fileItem);
-            }
+            // Masukkan ke antrian dan langsung putar (parameter kedua = true)
+            MediaPlayer.addToPlaylist(fileItem, true);
         }
     }
 }
