@@ -3,7 +3,7 @@ name: Build Android APK
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: 
+  workflow_dispatch: # Mengizinkan Anda menekan tombol 'Run workflow' secara manual
 
 jobs:
   build:
@@ -27,6 +27,7 @@ jobs:
     - name: Install Dependencies & Setup Capacitor
       run: |
         npm install
+        npm install capacitor-plugin-send-intent # <--- KODE BARU DITAMBAHKAN DI SINI
         npx cap add android
         
         # === KODE BARU: MENGUNCI KEYSTORE AGAR SHA-1 PERMANEN (DIPERBAIKI) ===
@@ -41,11 +42,14 @@ jobs:
         fi
         # ====================================================================
         
+        # Menyalin file konfigurasi Firebase ke direktori app Android agar ikut terbungkus saat kompilasi APK
         cp google-services.json android/app/google-services.json
 
+        
+        # --- PROSES OTOMATIS INJECT KODE NATIVE OLEH ROBOT GITHUB ---
         mkdir -p android/app/src/main/java/com/oxid/feathera
         
-        # --- MODIFIKASI: PERSIST PERMISSION PLUGIN DENGAN FITUR SHARE INTENT NATIVE ---
+        # --- KODE BARU: PLUGIN JAVA RESOLVER ABSOLUTE PATH ---
         cat << 'EOF' > android/app/src/main/java/com/oxid/feathera/PersistPermissionPlugin.java
         package com.oxid.feathera;
 
@@ -70,19 +74,6 @@ jobs:
 
         @CapacitorPlugin(name = "PersistPermission")
         public class PersistPermissionPlugin extends Plugin {
-
-            // FUNGSI BARU: Mengirim teks YouTube dari Java ke JavaScript
-            @PluginMethod
-            public void getSharedText(PluginCall call) {
-                JSObject ret = new JSObject();
-                if (MainActivity.pendingShareText != null) {
-                    ret.put("value", MainActivity.pendingShareText);
-                    MainActivity.pendingShareText = null; // Kosongkan memori setelah dibaca
-                } else {
-                    ret.put("value", "");
-                }
-                call.resolve(ret);
-            }
 
             @PluginMethod
             public void pickFile(PluginCall call) {
@@ -111,13 +102,14 @@ jobs:
                             cursor.close();
                         }
 
+                        // INTI SOLUSI: Mengonversi URI ke Absolute Path agar bertahan dari Uninstall
                         String absolutePath = getPathFromUri(getContext(), uri);
 
                         JSObject ret = new JSObject();
                         if (absolutePath != null) {
-                            ret.put("uri", absolutePath);
+                            ret.put("uri", absolutePath); // Simpan path mutlak
                         } else {
-                            ret.put("uri", uri.toString());
+                            ret.put("uri", uri.toString()); // Fallback jika resolver gagal
                         }
                         ret.put("name", fileName);
                         call.resolve(ret);
@@ -177,6 +169,7 @@ jobs:
         }
         EOF
 
+        # --- MENAMBAHKAN IZIN BACA PENYIMPANAN DI ANDROIDMANIFEST.XML SECARA OTOMATIS ---
         sed -i '/<application/i \
         <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n\
         <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>\n\
@@ -185,16 +178,7 @@ jobs:
         <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" \/>\n\
         <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" \/>' android/app/src/main/AndroidManifest.xml
 
-        # === INJEKSI SHARE INTENT FILTER TETAP SAMA ===
-        sed -i '/<\/activity>/i \
-        <intent-filter>\n\
-            <action android:name="android.intent.action.SEND" \/>\n\
-            <category android:name="android.intent.category.DEFAULT" \/>\n\
-            <data android:mimeType="text/plain" \/>\n\
-        <\/intent-filter>' android/app/src/main/AndroidManifest.xml
-        # ===================================================================
-
-        # --- MODIFIKASI: PENANGKAP INTENT LANGSUNG DI MAINACTIVITY.JAVA ---
+        # --- KODE BARU: MENDAFTARKAN PLUGIN & MEMINTA IZIN ALL FILES DI MAINACTIVITY.JAVA ---
         cat << 'EOF' > android/app/src/main/java/com/oxid/feathera/MainActivity.java
         package com.oxid.feathera;
 
@@ -208,18 +192,13 @@ jobs:
         import com.oxid.feathera.PersistPermissionPlugin;
 
         public class MainActivity extends BridgeActivity {
-            
-            // FUNGSI BARU: Variabel statis untuk menahan teks dari YouTube
-            public static String pendingShareText = null;
-
             @Override
             public void onCreate(Bundle savedInstanceState) {
+                // SANGAT KRUSIAL: Plugin HARUS didaftarkan SEBELUM super.onCreate dipanggil
                 registerPlugin(PersistPermissionPlugin.class);
                 super.onCreate(savedInstanceState);
-                
-                // Menangkap intent saat aplikasi terbuka pertama kali dari YouTube
-                tangkapShareIntent(getIntent());
 
+                // Meminta akses penuh ke penyimpanan untuk Android 11+ agar path absolut tetap valid setelah reinstall
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     if (!Environment.isExternalStorageManager()) {
                         try {
@@ -235,45 +214,45 @@ jobs:
                     }
                 }
             }
-
-            // FUNGSI BARU: Menangkap intent saat aplikasi sudah berada di background (Resume)
-            @Override
-            public void onNewIntent(Intent intent) {
-                super.onNewIntent(intent);
-                tangkapShareIntent(intent);
-            }
-
-            // FUNGSI BARU: Menyimpan teks intent ke memori
-            private void tangkapShareIntent(Intent intent) {
-                if (intent != null && Intent.ACTION_SEND.equals(intent.getAction()) && "text/plain".equals(intent.getType())) {
-                    String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
-                    if (sharedText != null) {
-                        pendingShareText = sharedText;
-                    }
-                }
-            }
         }
         EOF
 
-        # Tweak gradlew
-        echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" >> android/gradle.properties
-        cd android
-        chmod +x gradlew
+        # === KODE BARU: INJEKSI STRINGS.XML UNTUK GOOGLE AUTH NATIVE ===
+        mkdir -p android/app/src/main/res/values
+        cat << 'EOF' > android/app/src/main/res/values/strings.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <string name="app_name">Feathera Gallery</string>
+            <string name="title_activity_main">Feathera Gallery</string>
+            <string name="package_name">com.oxid.feathera</string>
+            <string name="custom_url_scheme">com.oxid.feathera</string>
+            <string name="server_client_id">324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com</string>
+        </resources>
+        EOF
+        # ===============================================================
+        # ------------------------------------------------------------
 
-    - name: Build APK Debug
+        npx @capacitor/assets generate --android
+
+        npx cap sync android
+
+    - name: Build APK
       run: |
         cd android
-        ./gradlew assembleDebug --stacktrace
+        chmod +x gradlew
+        ./gradlew assembleDebug
+    # --- KODE BARU DIMULAI DI SINI ---
+    - name: Bongkar SHA-1 Mutlak dari APK Final
+      run: |
+        echo "=== SHA-1 MUTLAK DARI APK FINAL ==="
+        keytool -printcert -jarfile android/app/build/outputs/apk/debug/app-debug.apk | grep SHA1:
+        echo "==================================="
+    # --- KODE BARU BERAKHIR DI SINI ---
 
-    - name: Upload APK
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: feathera-debug-apk
-        path: android/app/build/outputs/apk/debug/app-debug.apk
-
-    - name: Cache/Save Keystore
-      uses: actions/cache/save@v3
-      with:
-        path: my-debug.keystore
-        key: debug-keystore-v2
-
+        name: Feathera-Gallery-APK
+        path: |
+          android/app/build/outputs/apk/debug/app-debug.apk
+          ./my-debug.keystore
