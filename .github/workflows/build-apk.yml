@@ -29,7 +29,7 @@ jobs:
         npm install
         npx cap add android
         
-        # === MENGUNCI KEYSTORE AGAR SHA-1 PERMANEN ===
+        # === KODE: MENGUNCI KEYSTORE AGAR SHA-1 PERMANEN ===
         mkdir -p ~/.android
         if [ -f "my-debug.keystore" ]; then
           echo "Keystore permanen ditemukan! Menimpa keystore default sistem..."
@@ -39,13 +39,13 @@ jobs:
           keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           cp ~/.android/debug.keystore ./my-debug.keystore
         fi
-        # =============================================
+        # ===================================================
         
         cp google-services.json android/app/google-services.json
 
         mkdir -p android/app/src/main/java/com/oxid/feathera
         
-        # --- PERSIST PERMISSION PLUGIN DENGAN EVENT EMITTER REALTIME ---
+        # --- MODIFIKASI: PERSIST PERMISSION PLUGIN ---
         cat << 'EOF' > android/app/src/main/java/com/oxid/feathera/PersistPermissionPlugin.java
         package com.oxid.feathera;
 
@@ -81,12 +81,6 @@ jobs:
                     ret.put("value", "");
                 }
                 call.resolve(ret);
-            }
-
-            public void notifyShareIntent(String text) {
-                JSObject ret = new JSObject();
-                ret.put("value", text);
-                notifyListeners("onShareIntent", ret, true);
             }
 
             @PluginMethod
@@ -190,8 +184,6 @@ jobs:
         <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" \/>\n\
         <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" \/>' android/app/src/main/AndroidManifest.xml
 
-        # Injeksi SingleTask & Share Intent Filter
-        sed -i 's/<activity/<activity android:launchMode="singleTask" /g' android/app/src/main/AndroidManifest.xml
         sed -i '/<\/activity>/i \
         <intent-filter>\n\
             <action android:name="android.intent.action.SEND" \/>\n\
@@ -199,7 +191,7 @@ jobs:
             <data android:mimeType="text/plain" \/>\n\
         <\/intent-filter>' android/app/src/main/AndroidManifest.xml
 
-        # --- MAINACTIVITY (AUTOPLAY PERMISSION + INSTANT INTENT DISPATCH) ---
+        # --- MODIFIKASI FINAL: MAINACTIVITY (MEMPERBAIKI AUTOPLAY & BACKGROUND INTENT) ---
         cat << 'EOF' > android/app/src/main/java/com/oxid/feathera/MainActivity.java
         package com.oxid.feathera;
 
@@ -210,7 +202,6 @@ jobs:
         import android.os.Environment;
         import android.provider.Settings;
         import com.getcapacitor.BridgeActivity;
-        import com.getcapacitor.PluginHandle;
         import com.oxid.feathera.PersistPermissionPlugin;
 
         public class MainActivity extends BridgeActivity {
@@ -222,7 +213,7 @@ jobs:
                 registerPlugin(PersistPermissionPlugin.class);
                 super.onCreate(savedInstanceState);
                 
-                // SOLUSI LAYAR HITAM: Izinkan WebView Autoplay tanpa sentuhan fisik user
+                // SOLUSI BUG LAYAR HITAM: Izinkan pemutaran otomatis tanpa klik manual
                 if (getBridge() != null && getBridge().getWebView() != null) {
                     getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
                 }
@@ -248,7 +239,10 @@ jobs:
             @Override
             public void onNewIntent(Intent intent) {
                 super.onNewIntent(intent);
-                setIntent(intent);
+                
+                // SOLUSI BUG TIDAK MERESPON: Wajib di-set agar Capacitor tahu ada intent masuk saat di background
+                setIntent(intent); 
+                
                 tangkapShareIntent(intent);
             }
 
@@ -257,21 +251,13 @@ jobs:
                     String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
                     if (sharedText != null) {
                         pendingShareText = sharedText;
-                        
-                        // SOLUSI RESUME/BACKGROUND: Kirim sinyal instan ke JS jika bridge sudah siap
-                        if (getBridge() != null) {
-                            PluginHandle handle = getBridge().getPlugin("PersistPermission");
-                            if (handle != null && handle.getInstance() != null) {
-                                ((PersistPermissionPlugin) handle.getInstance()).notifyShareIntent(sharedText);
-                            }
-                        }
                     }
                 }
             }
         }
         EOF
 
-        # === INJEKSI STRINGS.XML UNTUK GOOGLE AUTH ===
+        # === DIRESTORASI: INJEKSI STRINGS.XML UNTUK GOOGLE AUTH NATIVE ===
         mkdir -p android/app/src/main/res/values
         cat << 'EOF' > android/app/src/main/res/values/strings.xml
         <?xml version="1.0" encoding="utf-8"?>
@@ -283,10 +269,12 @@ jobs:
             <string name="server_client_id">324693466741-e69a1abhatnn8mtolggrltn4ttu1ls56.apps.googleusercontent.com</string>
         </resources>
         EOF
+        # ===============================================================
 
-        # === RENDER ICON & SINKRONISASI ASET ===
+        # === DIRESTORASI: RENDER ICON & SINKRONISASI ASET ===
         npx @capacitor/assets generate --android
         npx cap sync android
+        # ====================================================
 
     - name: Build APK
       run: |
