@@ -1990,38 +1990,38 @@ const ImgViewer={
     if(this._activeBlob){ URL.revokeObjectURL(this._activeBlob); this._activeBlob=null; } this.list = [];}
 };
 
-// --- KODE PENANGANAN SHARE INTENT CAPACITOR -->
+// --- KODE PENANGANAN SHARE INTENT NATIVE CAPACITOR -->
 document.addEventListener('DOMContentLoaded', () => {
-    // Memberikan jeda 1 detik agar DOM dan UI pemutar (MediaPlayer) benar-benar siap
+    // Memberikan jeda agar DOM dan UI MediaPlayer siap sepenuhnya
     setTimeout(() => {
-        if (window.Capacitor && window.Capacitor.Plugins) {
+        if (window.Capacitor) {
             const App = window.Capacitor.Plugins.App;
-            const SendIntent = window.Capacitor.registerPlugin('SendIntent');
+            // Kita menumpang pada plugin native Anda yang sudah eksis!
+            const PersistPlugin = window.Capacitor.Plugins.PersistPermission || window.Capacitor.registerPlugin('PersistPermission');
 
-            const cekShareIntent = async () => {
-                if (!SendIntent) return;
+            const cekShareIntentNative = async () => {
+                if (!PersistPlugin) return;
                 
                 try {
-                    const result = await SendIntent.checkSendIntentReceived();
-                    // Menangkap teks dari intent Android 
-                    const teksDariYouTube = result.value || result.url || result.title || result.description;
+                    // Memanggil fungsi baru buatan kita di Java
+                    const result = await PersistPlugin.getSharedText();
                     
-                    if (teksDariYouTube) {
-                        prosesLinkYouTubeMasuk(teksDariYouTube);
+                    if (result && result.value && result.value !== "") {
+                        prosesLinkYouTubeMasuk(result.value);
                     }
                 } catch (error) {
-                    console.log("Pengecekan Share Intent: " + error.message);
+                    console.log("Pengecekan Share Intent Native: " + error.message);
                 }
             };
 
-            // 1. Cek intent saat aplikasi pertama kali dibuka (Cold Start)
-            cekShareIntent();
+            // 1. Eksekusi saat aplikasi dibuka dari keadaan tertutup (Cold Start)
+            cekShareIntentNative();
 
-            // 2. Cek intent saat aplikasi sudah berada di background (Resume)
+            // 2. Eksekusi saat aplikasi dipanggil kembali dari background (Resume)
             if (App) {
                 App.addListener('appStateChange', (state) => {
                     if (state.isActive) {
-                        setTimeout(cekShareIntent, 500);
+                        setTimeout(cekShareIntentNative, 500);
                     }
                 });
             }
@@ -2029,7 +2029,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000); 
 });
 
-// Fungsi untuk mendeteksi dan memutar link YouTube/Shorts
+// Fungsi pemroses link YouTube 
 function prosesLinkYouTubeMasuk(url) {
     const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
     const match = url.match(ytRegex);
@@ -2038,22 +2038,18 @@ function prosesLinkYouTubeMasuk(url) {
         const videoId = match[1];
         const cleanUrl = `https://www.youtube.com/watch?v=${videoId}`;
         
-        // Membentuk objek file sesuai dengan format yang diminta oleh MediaPlayer Anda
         const fileItem = {
             id: 'yt_' + Date.now(),
             name: 'Shared dari YouTube',
             format: 'video',
-            img: cleanUrl, // <-- SANGAT PENTING: Pemutar Anda membaca URL YouTube dari properti 'img'
+            img: cleanUrl, 
             year: new Date().getFullYear()
         };
 
         if (typeof MediaPlayer !== 'undefined') {
-            // Jika Mini Player sedang aktif, buka kembali ke ukuran penuh (Maximize)
             if (MediaPlayer.minimized) {
                 MediaPlayer.maximize();
             }
-            
-            // Masukkan ke antrian dan langsung putar (parameter kedua = true)
             MediaPlayer.addToPlaylist(fileItem, true);
         }
     }
