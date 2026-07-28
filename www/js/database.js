@@ -156,7 +156,9 @@ async function eksporData() {
         }
     } catch(e) { console.warn("Gagal mengekstrak cover", e); }
 
-    const backupData = JSON.stringify({ files: filesData, config: config, covers: coversData }, null, 2);
+    let playlistsData = [];
+    try { playlistsData = JSON.parse(getLocal('playlists') || '[]'); } catch (err) {}
+    const backupData = JSON.stringify({ files: filesData, config: config, covers: coversData, playlists: playlistsData }, null, 2);
     const dateStr = new Date().toISOString().split('T')[0];
     const timeStr = new Date().getHours() + "-" + new Date().getMinutes() + "-" + new Date().getSeconds();
     const defaultFileName = `Feathera_Backup_${dateStr}_${timeStr}.json`;
@@ -238,6 +240,9 @@ function imporData(a) {
                 if (isFromLogin) { currentUser = 'RestoredUser'; localStorage.setItem('feathera_session', currentUser); }
                 setLocal('files_db', JSON.stringify(e.files));
                 setLocal('config_v1', JSON.stringify(e.config));
+                if (e.playlists && Array.isArray(e.playlists)) {
+                    setLocal('playlists', JSON.stringify(e.playlists));
+                }
 
                 if (e.covers && dbInstance) {
                     for (const [key, base64Str] of Object.entries(e.covers)) {
