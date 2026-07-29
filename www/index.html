@@ -346,20 +346,7 @@
                 </div>
                 
                 <div id="formatDropdownContainer" style="display: block;">
-                    <select id="fFormatType" style="width: 115px; padding: 8px 10px; border-radius: 5px; border: 1px solid rgba(0,0,0,0.15); outline: none; margin: 0; font-size: 13px; font-weight: bold; cursor: pointer; background-color: var(--input-bg); color: var(--text);" title="Pilih Format Kartu">
-                        <option value="auto">🤖 Auto</option>
-                        <option value="app">📦 App</option>
-                        <option value="apk">📱 APK</option>
-                        <option value="zip">🗜️ ZIP</option>
-                        <option value="rar">📚 RAR</option>
-                        <option value="7z">📦 7Z</option>
-                        <option value="audio">🎧 Audio</option>
-                        <option value="video">🎬 Video</option>
-                        <option value="image">🖼️ Gambar</option>
-                        <option value="pdf">📕 PDF</option>
-                        <option value="doc">📄 Word</option>
-                        <option value="xls">📊 Excel</option>
-                        <option value="ppt">📽️ PPT</option>
+                    <select id="fFormatType" onchange="toggleSourceType()" style="width: 115px; padding: 8px 10px; border-radius: 5px; border: 1px solid rgba(0,0,0,0.15); outline: none; margin: 0; font-size: 13px; font-weight: bold; cursor: pointer; background-color: var(--input-bg); color: var(--text);" title="Pilih Format Kartu">
                     </select>
                 </div>
             </div>
