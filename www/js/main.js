@@ -1485,8 +1485,9 @@ function bukaModalBaru(){
     toggleModal('modalForm', true);
 }
 
+// --- 1. FUNGSI BUKA EDIT (SUDAH ANTI-ERROR) ---
 function bukaEdit(a){
-    if (!a) return;
+    if(!a) return;
     tutupSemuaMenu();
     editingCard = a;
     
@@ -1495,77 +1496,79 @@ function bukaEdit(a){
     const fNameEl = a.querySelector('.file-info');
     const fName = fNameEl ? fNameEl.innerText : '';
     const tCat = a.getAttribute('data-cat') || '';
-    const isCat = tCat === 'catatan';
     
-    // Regenerasi dropdown berdasarkan kategori sebelum mengisi data
-    updateFormatDropdown(); 
+    // HAPUS PENGGUNAAN getMediaType. Langsung deteksi dari data-cat.
+    const isCat = (tCat === 'catatan'); 
+    
+    const dropdownContainer = document.getElementById('formatDropdownContainer');
+    if (dropdownContainer) {
+        dropdownContainer.style.display = isCat ? 'none' : 'block';
+    }
     
     const fFormatDropdown = document.getElementById('fFormatType');
-    let currentFormat = 'auto';
     if (fFormatDropdown) {
         const savedFormat = editingCard.getAttribute('data-format');
-        if (savedFormat && savedFormat !== 'null' && savedFormat !== 'none') {
-            currentFormat = savedFormat;
-            fFormatDropdown.value = savedFormat;
-        } else if (tCat === 'aplikasi' && a.getAttribute('data-android') && a.getAttribute('data-android') !== 'none') {
-            currentFormat = 'exe';
-            fFormatDropdown.value = 'exe';
-        } else {
-            fFormatDropdown.value = 'auto';
-        }
+        fFormatDropdown.value = (savedFormat && savedFormat !== 'null' && savedFormat !== 'none') ? savedFormat : 'auto';
     }
     
     const formTitle = document.getElementById('formTitle');
-    if (formTitle) formTitle.innerText = b ? "Edit Folder" : "Edit Memori";
+    if(formTitle) formTitle.innerText = b ? "Edit Folder" : "Edit Memori";
     
     gantiTabUpload(b ? 'folder' : 'file', isCat);
     
-    safeSetVal('fName', fName);
-    safeSetVal('fCustomCover', '');
+    // Helper untuk set value agar tidak error jika elemen tidak ada di HTML
+    const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+    
+    setVal('fName', fName);
+    setVal('fCustomCover', '');
     
     const hasCover = a.getAttribute('data-customCover') === 'true';
     const btnHapusCover = document.getElementById('btnHapusCover');
     if (btnHapusCover) btnHapusCover.style.display = hasCover ? 'block' : 'none';
-    safeSetVal('fHapusCoverFlag', 'false');
+    
+    setVal('fHapusCoverFlag', 'false');
     
     const fDescAura = document.getElementById('fDescAura');
-    if (fDescAura) fDescAura.checked = a.getAttribute('data-descaura') === 'true';
+    if (fDescAura) fDescAura.checked = (a.getAttribute('data-descaura') === 'true');
     
     const isFav = a.getAttribute('data-favorite') === 'true';
-    safeSetVal('fFavorite', isFav ? 'true' : 'false');
-    
+    setVal('fFavorite', isFav ? 'true' : 'false');
     const favBtn = document.getElementById('btnFavoriteToggle');
-    if (favBtn) {
+    if(favBtn){
         favBtn.innerHTML = isFav ? '★' : '☆';
         favBtn.style.color = isFav ? '#FFD700' : '#ccc';
         favBtn.style.textShadow = isFav ? '0 1px 2px rgba(0,0,0,0.5)' : 'none';
     }
 
-    if ('LOCAL_FILE' === cImg) { 
-        safeSetVal('fSourceType', 'local'); 
+    if('LOCAL_FILE' === cImg){ 
+        setVal('fSourceType', 'local'); 
     } else { 
-        safeSetVal('fSourceType', 'url'); 
-        if (currentFormat === 'exe') {
-            safeSetVal('fImgUrlWin', cImg !== 'none' ? cImg : ''); 
-            safeSetVal('fImgUrlAnd', a.getAttribute('data-android') !== 'none' ? a.getAttribute('data-android') : ''); 
+        setVal('fSourceType', 'url'); 
+        if (tCat === 'aplikasi') {
+            setVal('fImgUrlWin', cImg !== 'none' ? cImg : ''); 
+            setVal('fImgUrlAnd', a.getAttribute('data-android') !== 'none' ? a.getAttribute('data-android') : ''); 
         } else {
-            safeSetVal('fImgUrl', cImg !== 'none' ? cImg : ''); 
+            setVal('fImgUrl', cImg !== 'none' ? cImg : ''); 
         }
     }
 
-    if (!isCat && !b) { toggleSourceType(); }
+    if(!isCat && !b){ toggleSourceType(); }
     
-    safeSetVal('fYear', a.getAttribute('data-year') || '');
-    if (!b) {
-        safeSetVal('fNote', a.getAttribute('data-note') || "");
-        safeSetVal('fFontStyle', a.getAttribute('data-font') || "'Segoe UI', sans-serif");
+    setVal('fYear', a.getAttribute('data-year') || '');
+    if(!b){
+        setVal('fNote', a.getAttribute('data-note') || "");
+        setVal('fFontStyle', a.getAttribute('data-font') || "'Segoe UI', sans-serif");
     }
     toggleModal('modalForm', true);
 }
 
+
+// --- 2. FUNGSI GANTI TAB UPLOAD (PENGAMANAN ELEMEN HTML) ---
 function gantiTabUpload(a, isCatatan = false){
     uploadMode=a;
     const b = isCatatan || (curFilter && 'catatan' === curFilter.l0);
+    const isAplikasi = (curFilter && 'aplikasi' === curFilter.l0);
+    
     const c = document.getElementById('tabFile');
     const dUrl = document.getElementById('fImgUrl');
     const dApp = document.getElementById('urlInputGroupApp');
@@ -1574,78 +1577,95 @@ function gantiTabUpload(a, isCatatan = false){
     const g = document.getElementById('fFontStyle');
     const h = document.getElementById('fSourceType');
     const aura = document.getElementById('descAuraToggleArea');
-    const dropdownContainer = document.getElementById('formatDropdownContainer');
+    const tabText = document.getElementById('tabFileText');
+    const tabIcon = document.getElementById('tabFileIcon');
     
-    const tabText=document.getElementById('tabFileText');
-    const tabIcon=document.getElementById('tabFileIcon');
-    
-    if(tabText&&tabIcon){
+    if(tabText && tabIcon){
         if(b){ tabText.innerText="Buat Memori"; tabIcon.innerHTML=SVG_TAB_NOTE; }
         else{ tabText.innerText="Memori"; tabIcon.innerHTML=SVG_TAB_MEMORI; }
     }
+    if(c) c.classList.toggle('active','file'===a);
     
-    c.classList.toggle('active','file'===a);
-    document.getElementById('tabFolder').classList.toggle('active','folder'===a);
+    const tabFld = document.getElementById('tabFolder');
+    if(tabFld) tabFld.classList.toggle('active','folder'===a);
     
-    if('folder'===a){
-        document.getElementById('fName').placeholder="Nama Folder Baru";
-        f.classList.add('hidden');
-        e.style.display='none';
-        g.style.display='none';
-        h.value='local';
-        aura.style.display='none';
-        if(dropdownContainer) dropdownContainer.style.display = 'none'; // Sembunyikan dropdown format di Folder
+    const fName = document.getElementById('fName');
+    
+    if('folder' === a){
+        if(fName) fName.placeholder="Nama Folder Baru";
+        if(f) f.classList.add('hidden');
+        if(e) e.style.display='none';
+        if(g) g.style.display='none';
+        if(h) h.value='local';
+        if(aura) aura.style.display='none';
     } else {
-        document.getElementById('fName').placeholder=b?"Judul Catatan":"Judul Memori";
-        f.classList.remove('hidden');
-        if(dropdownContainer) dropdownContainer.style.display = b ? 'none' : 'block';
+        if(fName) fName.placeholder=b?"Judul Catatan":"Judul Memori";
+        if(f) f.classList.remove('hidden');
         
         const optCam = document.getElementById('optCameraSource');
-        if (optCam) {
+        if (optCam && typeof curFilter !== 'undefined') {
             if (curFilter.l0 === 'foto') {
                 optCam.style.display = 'block'; optCam.innerText = '📸 Ambil Langsung dari Kamera';
             } else if (curFilter.l0 === 'video') {
                 optCam.style.display = 'block'; optCam.innerText = '🎥 Rekam Langsung dari Kamera';
             } else { optCam.style.display = 'none'; }
         }
+        if(h) h.value='url';
+        toggleSourceType();
         
-        h.value='url';
-        
-        if(b){ // Jika Catatan
-            g.style.display='block'; h.style.display='none'; 
-            dUrl.style.display='none'; if(dApp) dApp.style.display='none';
-            document.getElementById('fLocalFile').style.display='none'; 
-            e.style.display='block'; aura.style.display='none';
-            if(document.getElementById('btnNativePicker')) document.getElementById('btnNativePicker').style.display = 'none';
-            if(document.getElementById('cameraButtonGroup')) document.getElementById('cameraButtonGroup').style.display = 'none';
+        if(b){
+            if(g) g.style.display='block'; 
+            if(h) h.style.display='none'; 
+            if(dUrl) dUrl.style.display='none'; 
+            if(dApp) dApp.style.display='none';
+            const locFile = document.getElementById('fLocalFile');
+            if(locFile) locFile.style.display='none'; 
+            if(e) e.style.display='block'; 
+            if(aura) aura.style.display='none';
+        } else if(isAplikasi){
+            if(g) g.style.display='none'; 
+            if(h) h.style.display='none'; 
+            if(e) e.style.display='block'; 
+            if(aura) aura.style.display='flex';
+            if(dUrl) dUrl.style.display='none'; 
+            if(dApp) dApp.style.display='flex';
         } else {
-            g.style.display='none'; 
-            h.style.display='block'; // Tampilkan dropdown via lokal/url/kamera
-            e.style.display='block'; aura.style.display='flex';
-            toggleSourceType(); // Biarkan fungsi ini yg memproses URL mana yg tampil (1 form atau 2 form)
+            if(g) g.style.display='none'; 
+            if(h) h.style.display='block'; 
+            if(e) e.style.display='block'; 
+            if(aura) aura.style.display='flex';
+            if(dUrl) dUrl.style.display='block'; 
+            if(dApp) dApp.style.display='none';
         }
     }
 }
 
+
+// --- 3. FUNGSI TOGGLE SOURCE TYPE ---
 function toggleSourceType() {
     const isNative = window.Capacitor && window.Capacitor.isNative;
     const btnNative = document.getElementById('btnNativePicker');
     const btnCamGroup = document.getElementById('cameraButtonGroup');
     const btnFoto = document.getElementById('btnPhotoCaptureUI');
     const btnVideo = document.getElementById('btnVideoCaptureUI');
-    const tipe = document.getElementById('fSourceType').value;
-    const fT = document.getElementById('fFormatType') ? document.getElementById('fFormatType').value : 'auto';
+    const h = document.getElementById('fSourceType');
+    const tipe = h ? h.value : 'url';
 
     const setTampil = (urlDisp, locWebDisp, locNatDisp, camDisp) => {
-        // Tampilkan 2 form URL HANYA jika tipe URL dipilih DAN formatnya exe
-        if (fT === 'exe' && urlDisp === 'block') {
-            document.getElementById('fImgUrl').style.display = 'none';
-            if (document.getElementById('urlInputGroupApp')) document.getElementById('urlInputGroupApp').style.display = 'flex';
+        const isAplikasi = (typeof curFilter !== 'undefined' && curFilter.l0 === 'aplikasi');
+        const dUrl = document.getElementById('fImgUrl');
+        const dApp = document.getElementById('urlInputGroupApp');
+        
+        if (isAplikasi && urlDisp === 'block') {
+            if(dUrl) dUrl.style.display = 'none';
+            if(dApp) dApp.style.display = 'flex';
         } else {
-            document.getElementById('fImgUrl').style.display = urlDisp;
-            if (document.getElementById('urlInputGroupApp')) document.getElementById('urlInputGroupApp').style.display = 'none';
+            if(dUrl) dUrl.style.display = urlDisp;
+            if(dApp) dApp.style.display = 'none';
         }
-        document.getElementById('fLocalFile').style.display = locWebDisp;
+        
+        const fLoc = document.getElementById('fLocalFile');
+        if(fLoc) fLoc.style.display = locWebDisp;
         if (btnNative) btnNative.style.display = locNatDisp;
         if (btnCamGroup) btnCamGroup.style.display = camDisp;
     };
@@ -1654,13 +1674,16 @@ function toggleSourceType() {
         setTampil('block', 'none', 'none', 'none');
     } else if (tipe === 'camera') {
         setTampil('none', 'none', 'none', 'flex');
-        if (btnFoto && btnVideo) {
+        if (btnFoto && btnVideo && typeof curFilter !== 'undefined') {
             if (curFilter.l0 === 'foto') {
-                btnFoto.style.display = 'block'; btnVideo.style.display = 'none';
+                btnFoto.style.display = 'block';
+                btnVideo.style.display = 'none';
             } else if (curFilter.l0 === 'video') {
-                btnFoto.style.display = 'none'; btnVideo.style.display = 'block';
+                btnFoto.style.display = 'none';
+                btnVideo.style.display = 'block';
             } else {
-                btnFoto.style.display = 'block'; btnVideo.style.display = 'block';
+                btnFoto.style.display = 'block';
+                btnVideo.style.display = 'block';
             }
         }
     } else { 
@@ -1669,9 +1692,11 @@ function toggleSourceType() {
     }
 }
 
+
+// --- 4. FUNGSI SIMPAN (MENAMBAHKAN EKSTENSI GAMBAR & DOKUMEN) ---
 async function prosesSimpan(){
     const btnSimpan = document.getElementById('btnSimpan');
-    if (btnSimpan.disabled) return; 
+    if (!btnSimpan || btnSimpan.disabled) return; 
     
     btnSimpan.disabled = true;
     btnSimpan.innerText = "⏳ Memproses...";
@@ -1690,16 +1715,20 @@ async function prosesSimpan(){
         }
     };
 
-    const a = document.getElementById('fName').value || ('folder' === uploadMode ? "Folder Baru" : "Memori Baru"),
-          b = document.getElementById('fSourceType').value,
-          c = document.getElementById('fYear').value,
-          d = document.getElementById('fFontStyle').value, 
-          e = document.getElementById('fNote').value,
-          fT = document.getElementById('fFormatType') ? document.getElementById('fFormatType').value : 'auto'; 
+    // Helper pembacaan value aman
+    const getVal = (id, def = '') => { const el = document.getElementById(id); return el ? el.value : def; };
+
+    const a = getVal('fName') || ('folder' === uploadMode ? "Folder Baru" : "Memori Baru");
+    const b = getVal('fSourceType');
+    const c = getVal('fYear');
+    const d = getVal('fFontStyle');
+    const e = getVal('fNote');
+    const fT = document.getElementById('fFormatType') ? document.getElementById('fFormatType').value : 'auto'; 
     
     let finalName = a;
     const hasExt = /\.[a-z0-9]+$/i.test(finalName);
     if (!hasExt && fT !== 'auto') {
+        // MAP EKSTENSI DILENGKAPI GAMBAR & DOKUMEN
         const extMap = { 
             exe: '.exe', apk: '.apk', xapk: '.xapk', zip: '.zip', rar: '.rar', '7z': '.7z',
             jpg: '.jpg', png: '.png', webp: '.webp', gif: '.gif',
@@ -1710,97 +1739,103 @@ async function prosesSimpan(){
         if (extMap[fT]) finalName += extMap[fT];
     }
 
-    let tCat = curFilter.l0, tSub = curFilter.l1, tTyp = curFilter.l2, tDet = curFilter.l3;
-    if (currentFolderId && currentFolderId !== 'none') {
-        const pFld = document.querySelector(`.card[data-id="${currentFolderId}"]`);
-        if (pFld) {
-            tCat = pFld.getAttribute('data-cat') || curFilter.l0;
-            tSub = pFld.getAttribute('data-sub') || curFilter.l1;
-            tTyp = pFld.getAttribute('data-type') || curFilter.l2;
-            tDet = pFld.getAttribute('data-detail') || curFilter.l3;
+    let tCat=curFilter.l0, tSub=curFilter.l1, tTyp=curFilter.l2, tDet=curFilter.l3;
+    if(typeof currentFolderId !== 'undefined' && currentFolderId !== 'none'){
+        const pFld=document.querySelector(`.card[data-id="${currentFolderId}"]`);
+        if(pFld){
+            tCat=pFld.getAttribute('data-cat') || curFilter.l0;
+            tSub=pFld.getAttribute('data-sub') || curFilter.l1;
+            tTyp=pFld.getAttribute('data-type') || curFilter.l2;
+            tDet=pFld.getAttribute('data-detail') || curFilter.l3;
         }
     }
     
-    const f = {
-        cat: tCat, sub: tSub, type: tTyp, detail: tDet, folderId: currentFolderId, 
-        descaura: document.getElementById('fDescAura').checked ? 'true' : 'false', 
-        favorite: document.getElementById('fFavorite').value, 
-        android: (fT === 'exe') ? ((document.getElementById('fImgUrlAnd') ? document.getElementById('fImgUrlAnd').value : '') || 'none') : 'none', 
-        format: fT
-    };
+    const fDescAuraEl = document.getElementById('fDescAura');
+    const isAura = (fDescAuraEl && fDescAuraEl.checked) ? 'true' : 'false';
+    const isAndUrl = (tCat === 'aplikasi') ? (getVal('fImgUrlAnd') || 'none') : 'none';
     
+    const f = {cat:tCat, sub:tSub, type:tTyp, detail:tDet, folderId: (typeof currentFolderId !== 'undefined' ? currentFolderId : 'none'), descaura: isAura, favorite: getVal('fFavorite'), android: isAndUrl, format: fT};
     const coverInput = document.getElementById('fCustomCover');
 
-    if (editingCard) {
+    if(typeof editingCard !== 'undefined' && editingCard){
         const g = 'folder' === editingCard.getAttribute('data-itemType');
         editingCard.setAttribute('data-name', finalName.toLowerCase());
         editingCard.setAttribute('data-year', c);
-        editingCard.setAttribute('data-descaura', document.getElementById('fDescAura').checked ? 'true' : 'false');
-        editingCard.setAttribute('data-favorite', document.getElementById('fFavorite').value);
+        editingCard.setAttribute('data-descaura', isAura);
+        editingCard.setAttribute('data-favorite', getVal('fFavorite'));
         editingCard.setAttribute('data-format', fT);
         
-        if (!g) {
+        if(!g){
             editingCard.setAttribute('data-note', e);
             editingCard.setAttribute('data-font', d);
-            if ('url' === b) {
+            if('url' === b || tCat === 'aplikasi'){
                 let h = '';
-                if (fT === 'exe') {
-                    const winEl = document.getElementById('fImgUrlWin');
-                    const andEl = document.getElementById('fImgUrlAnd');
-                    h = winEl ? (winEl.value || 'none') : 'none';
-                    let andUrl = andEl ? (andEl.value || 'none') : 'none';
-                    if (h === 'none' && andUrl !== 'none') h = andUrl; 
-                    editingCard.setAttribute('data-android', andUrl);
+                if(tCat === 'aplikasi'){
+                    h = getVal('fImgUrlWin');
+                    editingCard.setAttribute('data-android', getVal('fImgUrlAnd') || 'none');
                 } else {
-                    const imgEl = document.getElementById('fImgUrl');
-                    h = imgEl ? (imgEl.value || 'none') : 'none';
-                    editingCard.setAttribute('data-android', 'none');
+                    h = getVal('fImgUrl');
                 }
                 h && editingCard.setAttribute('data-img', h);
             }
         }
 
-        if (document.getElementById('fHapusCoverFlag').value === 'true') {
-            dbHapusCover(editingCard.getAttribute('data-id'));
-            editingCard.setAttribute('data-customCover', 'false');
+        if(getVal('fHapusCoverFlag') === 'true'){
+            if(typeof dbHapusCover === 'function') dbHapusCover(editingCard.getAttribute('data-id'));
+            editingCard.setAttribute('data-customCover','false');
         }
-        if (coverInput && coverInput.files && coverInput.files.length > 0) {
-            try {
-                const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
-                await dbSimpanCover(editingCard.getAttribute('data-id'), compressedCover);
-                editingCard.setAttribute('data-customCover', 'true');
-            } catch(err) { console.error(err); }
+        if(coverInput && coverInput.files && coverInput.files.length > 0){
+            try{
+                if(typeof kompresiCoverToBlob === 'function' && typeof dbSimpanCover === 'function'){
+                    const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
+                    await dbSimpanCover(editingCard.getAttribute('data-id'), compressedCover);
+                    editingCard.setAttribute('data-customCover','true');
+                }
+            }catch(err){console.error(err)}
         }
 
-        editingCard.querySelector('.file-year').innerText = c;
-        editingCard.querySelector('.file-info').innerText = finalName;
-        refreshCardIcon(editingCard);
-        logActivity('Edit', `Mengedit ${g ? 'Folder' : 'Item'}: ${finalName}`);
-        tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+        const yearEl = editingCard.querySelector('.file-year');
+        if(yearEl) yearEl.innerText = c;
+        const infoEl = editingCard.querySelector('.file-info');
+        if(infoEl) infoEl.innerText = finalName;
+        
+        if(typeof refreshCardIcon === 'function') refreshCardIcon(editingCard);
+        if(typeof logActivity === 'function') logActivity('Edit', `Mengedit ${g ? 'Folder' : 'Item'}: ${finalName}`);
+        
+        if(typeof tutupModal === 'function') tutupModal(); 
+        if(typeof simpanKeLokal === 'function') simpanKeLokal(); 
+        if(typeof updateStats === 'function') updateStats(); 
+        if(typeof filterFiles === 'function') filterFiles();
         return;
     }
 
+    // --- (Bagian bawah / pembuatan item baru tetap sama, hanya dilindungi null check pada input element) ---
     let newItemId = ('folder' === uploadMode ? 'fld_' : 'file_') + Date.now();
     let hasCustomCover = false;
     
-    if (coverInput && coverInput.files && coverInput.files.length > 0) {
-        try {
-            const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
-            await dbSimpanCover(newItemId, compressedCover);
-            hasCustomCover = true;
-        } catch(err) { console.error("Gagal simpan cover: " + err); }
+    if(coverInput && coverInput.files && coverInput.files.length > 0){
+        try{
+            if(typeof kompresiCoverToBlob === 'function' && typeof dbSimpanCover === 'function'){
+                const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
+                await dbSimpanCover(newItemId, compressedCover);
+                hasCustomCover = true;
+            }
+        }catch(err){ console.error("Gagal simpan cover: "+err); }
     }
 
-    if ('folder' === uploadMode) {
-        buatKartu({ id: newItemId, itemType: 'folder', name: a, img: 'none', year: c, customCover: hasCustomCover ? 'true' : 'false', ...f }, true);
-        logActivity('Upload', `Membuat Folder: ${a}`);
-        tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+    if('folder' === uploadMode){
+        if(typeof buatKartu === 'function') buatKartu({id:newItemId, itemType:'folder', name:a, img:'none', year:c, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
+        if(typeof logActivity === 'function') logActivity('Upload', `Membuat Folder: ${a}`);
+        if(typeof tutupModal === 'function') tutupModal(); 
+        if(typeof simpanKeLokal === 'function') simpanKeLokal(); 
+        if(typeof updateStats === 'function') updateStats(); 
+        if(typeof filterFiles === 'function') filterFiles();
     } else {
         if ('camera' === b) {
-            if (!fileKameraTertunda) return gagalkanSimpan("Silakan ambil foto/video terlebih dahulu menggunakan tombol kamera!");
+            if (typeof fileKameraTertunda === 'undefined' || !fileKameraTertunda) return gagalkanSimpan("Silakan ambil foto/video terlebih dahulu menggunakan tombol kamera!");
             const isVideo = fileKameraTertunda.type.startsWith('video/');
             let finalNameCamera = finalName; 
-            const trueExt = getExtFromMime(fileKameraTertunda.type);
+            const trueExt = (typeof getExtFromMime === 'function') ? getExtFromMime(fileKameraTertunda.type) : (isVideo ? '.mp4' : '.jpg');
 
             if (trueExt && !finalNameCamera.toLowerCase().endsWith(trueExt)) {
                 finalNameCamera = finalNameCamera.replace(/\.[^/.]+$/, "") + trueExt;
@@ -1813,12 +1848,12 @@ async function prosesSimpan(){
                     safeBlob = new Blob([fileKameraTertunda], { type: correctMime });
                 }
                 
-                await dbSimpanFile(newItemId, safeBlob);
+                if(typeof dbSimpanFile === 'function') await dbSimpanFile(newItemId, safeBlob);
                 let linkAset = 'LOCAL_FILE';
                 let driveErrorMsg = null;
-                const gToken = await dapatkanTokenDriveAktif();
+                const gToken = (typeof dapatkanTokenDriveAktif === 'function') ? await dapatkanTokenDriveAktif() : null;
 
-                if (gToken && currentUser !== 'Guest') {
+                if (gToken && typeof currentUser !== 'undefined' && currentUser !== 'Guest') {
                     try {
                         const bufferData = await fileKameraTertunda.arrayBuffer();
                         const resMedia = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', {
@@ -1835,8 +1870,8 @@ async function prosesSimpan(){
                                 const folderId = inputFolder.includes('folders/') ? inputFolder.split('folders/')[1].split(/[?&/]/)[0] : inputFolder;
                                 patchUrl += `?addParents=${folderId}&removeParents=root`;
                             }
-                            await fetch(patchUrl, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' }, body: JSON.stringify({ name: finalNameCamera }) });
-                            await fetch(`https://www.googleapis.com/drive/v3/files/${dataMedia.id}/permissions`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + await dapatkanTokenDriveAktif(), 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'reader', type: 'anyone' }) });
+                            await fetch(patchUrl, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: finalNameCamera }) });
+                            await fetch(`https://www.googleapis.com/drive/v3/files/${dataMedia.id}/permissions`, { method: 'POST', headers: { 'Authorization': 'Bearer ' + gToken, 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'reader', type: 'anyone' }) });
                             linkAset = `https://drive.google.com/file/d/${dataMedia.id}/view`;
                         } else { driveErrorMsg = dataMedia.error ? `${dataMedia.error.code}: ${dataMedia.error.message}` : `HTTP Status ${resMedia.status}`; }
                     } catch (errDrive) { driveErrorMsg = errDrive.message || "Koneksi terputus saat mengirim binary"; }
@@ -1844,11 +1879,15 @@ async function prosesSimpan(){
 
                 let tCatFinal = (curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo') ? (isVideo ? 'video' : 'foto') : curFilter.l0;
                 if (isVideo) tCatFinal = 'video';
-                buatKartu({ id: newItemId, itemType: 'file', name: finalNameCamera, year: c, note: e, img: linkAset, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f, cat: tCatFinal }, true);
-                logActivity('Kamera', `Menambah ${isVideo ? 'video' : 'foto'}: ${finalNameCamera}`);
+                if(typeof buatKartu === 'function') buatKartu({ id: newItemId, itemType: 'file', name: finalNameCamera, year: c, note: e, img: linkAset, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f, cat: tCatFinal }, true);
+                if(typeof logActivity === 'function') logActivity('Kamera', `Menambah ${isVideo ? 'video' : 'foto'}: ${finalNameCamera}`);
                 fileKameraTertunda = null;
-                tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
-                if (linkAset === 'LOCAL_FILE' && currentUser !== 'Guest') { 
+                if(typeof tutupModal === 'function') tutupModal(); 
+                if(typeof simpanKeLokal === 'function') simpanKeLokal(); 
+                if(typeof updateStats === 'function') updateStats(); 
+                if(typeof filterFiles === 'function') filterFiles();
+                
+                if (linkAset === 'LOCAL_FILE' && typeof currentUser !== 'undefined' && currentUser !== 'Guest') { 
                     const msgDrive = `⚠️ Tersimpan di Aplikasi saja. Gagal ke Drive:\n"${driveErrorMsg || 'Akses ditolak Google'}"`;
                     typeof showModal === 'function' ? showModal('Gagal ke Drive', msgDrive) : window.alert(msgDrive); 
                 } 
@@ -1857,17 +1896,22 @@ async function prosesSimpan(){
             const isNative = window.Capacitor && window.Capacitor.isNative;
             
             if (isNative) {
-                const nativePath = document.getElementById('fNativePath') ? document.getElementById('fNativePath').value : '';
+                const nativePath = getVal('fNativePath');
                 if (!nativePath) return gagalkanSimpan("Pilih file dari HP Anda!");
-                buatKartu({id: newItemId, itemType: 'file', name: finalName, year: c, note: e, img: 'NATIVE:' + nativePath, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
-                safeSetVal('fNativePath', '');
-                const btnNative = document.getElementById('btnNativePicker');
-                if (btnNative) {
-                    btnNative.innerHTML = '📁 Pilih File dari HP (Native)';
-                    btnNative.style.background = 'var(--btn-bg)';
+                if(typeof buatKartu === 'function') buatKartu({id: newItemId, itemType: 'file', name: finalName, year: c, note: e, img: 'NATIVE:' + nativePath, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
+                
+                const natEl = document.getElementById('fNativePath');
+                if(natEl) natEl.value = '';
+                const btnNat = document.getElementById('btnNativePicker');
+                if(btnNat){
+                    btnNat.innerHTML = '📁 Pilih File dari HP (Native)';
+                    btnNat.style.background = 'var(--btn-bg)';
                 }
-                logActivity('Upload', `Menambah Item Native: ${finalName}`);
-                tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+                if(typeof logActivity === 'function') logActivity('Upload', `Menambah Item Native: ${finalName}`);
+                if(typeof tutupModal === 'function') tutupModal(); 
+                if(typeof simpanKeLokal === 'function') simpanKeLokal(); 
+                if(typeof updateStats === 'function') updateStats(); 
+                if(typeof filterFiles === 'function') filterFiles();
             } else {
                 const i = document.getElementById('fLocalFile');
                 if (!i || 0 === i.files.length) return gagalkanSimpan("Pilih file lokal!");
@@ -1877,32 +1921,43 @@ async function prosesSimpan(){
                     let loopItemId = 'file_' + Date.now() + '_' + idx;
                     let loopItemName = finalName ? (i.files.length > 1 ? finalName + " (" + (idx + 1) + ")" : finalName) : currentFile.name;
                     try {
-                        await dbSimpanFile(loopItemId, currentFile);
-                        buatKartu({id: loopItemId, itemType: 'file', name: loopItemName, year: c, note: e, img: 'LOCAL_FILE', font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
+                        if(typeof dbSimpanFile === 'function') await dbSimpanFile(loopItemId, currentFile);
+                        if(typeof buatKartu === 'function') buatKartu({id: loopItemId, itemType: 'file', name: loopItemName, year: c, note: e, img: 'LOCAL_FILE', font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
                         successCount++;
                     } catch (j) { console.error("Gagal menyimpan file lokal: " + j); }
                 }
-                if(successCount > 0) { logActivity('Upload', `Menambah ${successCount} Item`); tutupModal(); simpanKeLokal(); updateStats(); filterFiles(); } 
+                if(successCount > 0) { 
+                    if(typeof logActivity === 'function') logActivity('Upload', `Menambah ${successCount} Item`); 
+                    if(typeof tutupModal === 'function') tutupModal(); 
+                    if(typeof simpanKeLokal === 'function') simpanKeLokal(); 
+                    if(typeof updateStats === 'function') updateStats(); 
+                    if(typeof filterFiles === 'function') filterFiles(); 
+                } 
                 else { return gagalkanSimpan("Gagal mengupload file lokal."); }
             }
         } else {
             let g = 'none';
-            let andUrl = 'none';
             if ('catatan' !== curFilter.l0) {
-                if (fT === 'exe') {
-                    const winEl = document.getElementById('fImgUrlWin');
-                    const andEl = document.getElementById('fImgUrlAnd');
-                    g = winEl ? (winEl.value || 'none') : 'none';
-                    andUrl = andEl ? (andEl.value || 'none') : 'none';
-                    if (g === 'none' && andUrl !== 'none') g = andUrl; 
+                if (tCat === 'aplikasi') {
+                    g = getVal('fImgUrlWin') || 'none';
                 } else {
-                    const imgEl = document.getElementById('fImgUrl');
-                    g = imgEl ? (imgEl.value || 'none') : 'none';
+                    g = getVal('fImgUrl') || 'none';
+                    if (g.includes('drive.google.com') && !/\.[a-z0-9]+$/i.test(finalName)) {
+                        const validExts = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.mp3', '.wav', '.ogg', '.m4a', '.aac'];
+                        const hasExtension = validExts.some(ext => finalName.toLowerCase().endsWith(ext));
+                        if (!hasExtension) {
+                            if (tCat === 'audio' || curFilter.l0 === 'audio') finalName += '.mp3';
+                            else if (tCat === 'video' || curFilter.l0 === 'video' || curFilter.l0 === 'audiovideo') finalName += '.mp4';
+                        }
+                    }
                 }
             }
-            buatKartu({ id: newItemId, itemType: 'file', name: finalName, year: c, note: e, img: g, android: andUrl, font: d, customCover: hasCustomCover ? 'true' : 'false', format: fT, ...f }, true);
-            logActivity('Upload', `Menambah Item: ${finalName}`);
-            tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
+            if(typeof buatKartu === 'function') buatKartu({ id: newItemId, itemType: 'file', name: finalName, year: c, note: e, img: g, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f }, true);
+            if(typeof logActivity === 'function') logActivity('Upload', `Menambah Item: ${finalName}`);
+            if(typeof tutupModal === 'function') tutupModal(); 
+            if(typeof simpanKeLokal === 'function') simpanKeLokal(); 
+            if(typeof updateStats === 'function') updateStats(); 
+            if(typeof filterFiles === 'function') filterFiles();
         }
     }
 }
