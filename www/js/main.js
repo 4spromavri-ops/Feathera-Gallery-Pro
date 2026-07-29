@@ -1376,7 +1376,7 @@ function updateFormatDropdown() {
     const currentVal = dropdown.value;
     dropdown.innerHTML = ''; // Bersihkan opsi sebelumnya
 
-    let cat = curFilter.l0;
+    let cat = (typeof curFilter !== 'undefined' && curFilter.l0) ? curFilter.l0 : 'all';
     let options = [];
 
     // Tentukan opsi berdasarkan kategori yang sedang dibuka
@@ -1390,30 +1390,54 @@ function updateFormatDropdown() {
             { value: 'rar', text: '📚 RAR' },
             { value: '7z', text: '📦 7Z' }
         ];
+    } else if (cat === 'foto') {
+        options = [
+            { value: 'auto', text: '🤖 Auto' },
+            { value: 'jpg', text: '🖼️ JPG' },
+            { value: 'png', text: '🖼️ PNG' },
+            { value: 'webp', text: '🖼️ WEBP' },
+            { value: 'gif', text: '🎞️ GIF' }
+        ];
     } else if (cat === 'audio') {
         options = [
             { value: 'auto', text: '🤖 Auto' },
             { value: 'mp3', text: '🎵 MP3' },
-            { value: 'wav', text: '🎼 WAV' }
+            { value: 'wav', text: '🎼 WAV' },
+            { value: 'flac', text: '🎶 FLAC' },
+            { value: 'm4a', text: '🎧 M4A' }
         ];
     } else if (cat === 'video') {
         options = [
             { value: 'auto', text: '🤖 Auto' },
             { value: 'mp4', text: '🎬 MP4' },
-            { value: 'mkv', text: '🎞️ MKV' }
+            { value: 'mkv', text: '🎞️ MKV' },
+            { value: 'avi', text: '📹 AVI' },
+            { value: 'webm', text: '🌐 WEBM' }
+        ];
+    } else if (cat === 'dokumen') {
+        options = [
+            { value: 'auto', text: '🤖 Auto' },
+            { value: 'pdf', text: '📕 PDF' },
+            { value: 'doc', text: '📄 DOC / DOCX' },
+            { value: 'xls', text: '📊 XLS / XLSX' },
+            { value: 'ppt', text: '📊 PPT / PPTX' },
+            { value: 'txt', text: '📝 TXT' }
         ];
     } else {
-        // Opsi Global untuk kategori campuran (all, dsb)
+        // Opsi Campuran untuk Kategori 'all', 'favorite', dll.
         options = [
             { value: 'auto', text: '🤖 Auto' },
             { value: 'exe', text: '🖥️ EXE (Win/And)' },
             { value: 'apk', text: '📱 APK' },
-            { value: 'zip', text: '🗜️ ZIP' },
-            { value: 'rar', text: '📚 RAR' },
-            { value: 'audio', text: '🎧 Audio' },
-            { value: 'video', text: '🎬 Video' },
+            { value: 'jpg', text: '🖼️ JPG' },
+            { value: 'png', text: '🖼️ PNG' },
             { value: 'pdf', text: '📕 PDF' },
-            { value: 'doc', text: '📄 Word' }
+            { value: 'doc', text: '📄 Word (DOCX)' },
+            { value: 'xls', text: '📊 Excel (XLSX)' },
+            { value: 'ppt', text: '📊 PPT (PPTX)' },
+            { value: 'mp3', text: '🎵 Audio (MP3)' },
+            { value: 'mp4', text: '🎬 Video (MP4)' },
+            { value: 'zip', text: '🗜️ ZIP / RAR' }
         ];
     }
 
@@ -1425,11 +1449,16 @@ function updateFormatDropdown() {
         dropdown.appendChild(el);
     });
     
-    // Coba kembalikan value sebelumnya jika ada di list opsi yang baru
+    // Kembalikan value sebelumnya jika opsi tersebut ada di list baru
     const optionExists = Array.from(dropdown.options).some(opt => opt.value === currentVal);
     dropdown.value = optionExists ? currentVal : 'auto';
 }
 
+// --- HELPER AMAN UNTUK SET VALUE HTML ---
+function safeSetVal(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+}
 function bukaModalBaru(){
     if(curFilter.l0 === 'all' || curFilter.l0 === 'audiovideo' || curFilter.l0 === 'favorite') return alert("Buka folder atau kategori spesifik terlebih dahulu untuk membuat item baru."); 
     
@@ -1457,22 +1486,24 @@ function bukaModalBaru(){
 }
 
 function bukaEdit(a){
+    if (!a) return;
     tutupSemuaMenu();
-    editingCard=a;
-    const b='folder'===a.getAttribute('data-itemType');
-    const cImg=a.getAttribute('data-img');
-    const fName=a.querySelector('.file-info').innerText;
-    const mediaType=getMediaType(cImg, fName);
-    const isCat=a.getAttribute('data-cat')==='catatan' || mediaType==='text';
+    editingCard = a;
     
-    updateFormatDropdown(); // Dinamiskan dropdown sebelum menetapkan nilai
+    const b = 'folder' === a.getAttribute('data-itemType');
+    const cImg = a.getAttribute('data-img') || 'none';
+    const fNameEl = a.querySelector('.file-info');
+    const fName = fNameEl ? fNameEl.innerText : '';
+    const tCat = a.getAttribute('data-cat') || '';
+    const isCat = tCat === 'catatan';
+    
+    // Regenerasi dropdown berdasarkan kategori sebelum mengisi data
+    updateFormatDropdown(); 
     
     const fFormatDropdown = document.getElementById('fFormatType');
     let currentFormat = 'auto';
     if (fFormatDropdown) {
         const savedFormat = editingCard.getAttribute('data-format');
-        const tCat = a.getAttribute('data-cat');
-        // Fitur kompatibilitas: baca item aplikasi lama yg belum disetting berformat exe
         if (savedFormat && savedFormat !== 'null' && savedFormat !== 'none') {
             currentFormat = savedFormat;
             fFormatDropdown.value = savedFormat;
@@ -1484,42 +1515,50 @@ function bukaEdit(a){
         }
     }
     
-    document.getElementById('formTitle').innerText=b?"Edit Folder":"Edit Memori";
-    gantiTabUpload(b?'folder':'file', isCat);
+    const formTitle = document.getElementById('formTitle');
+    if (formTitle) formTitle.innerText = b ? "Edit Folder" : "Edit Memori";
     
-    document.getElementById('fName').value=fName;
-    document.getElementById('fCustomCover').value='';
-    const hasCover=a.getAttribute('data-customCover')==='true';
-    document.getElementById('btnHapusCover').style.display=hasCover?'block':'none';
-    document.getElementById('fHapusCoverFlag').value='false';
-    document.getElementById('fDescAura').checked = a.getAttribute('data-descaura') === 'true';
+    gantiTabUpload(b ? 'folder' : 'file', isCat);
+    
+    safeSetVal('fName', fName);
+    safeSetVal('fCustomCover', '');
+    
+    const hasCover = a.getAttribute('data-customCover') === 'true';
+    const btnHapusCover = document.getElementById('btnHapusCover');
+    if (btnHapusCover) btnHapusCover.style.display = hasCover ? 'block' : 'none';
+    safeSetVal('fHapusCoverFlag', 'false');
+    
+    const fDescAura = document.getElementById('fDescAura');
+    if (fDescAura) fDescAura.checked = a.getAttribute('data-descaura') === 'true';
     
     const isFav = a.getAttribute('data-favorite') === 'true';
-    document.getElementById('fFavorite').value = isFav ? 'true' : 'false';
+    safeSetVal('fFavorite', isFav ? 'true' : 'false');
+    
     const favBtn = document.getElementById('btnFavoriteToggle');
-    favBtn.innerHTML = isFav ? '★' : '☆';
-    favBtn.style.color = isFav ? '#FFD700' : '#ccc';
-    favBtn.style.textShadow = isFav ? '0 1px 2px rgba(0,0,0,0.5)' : 'none';
+    if (favBtn) {
+        favBtn.innerHTML = isFav ? '★' : '☆';
+        favBtn.style.color = isFav ? '#FFD700' : '#ccc';
+        favBtn.style.textShadow = isFav ? '0 1px 2px rgba(0,0,0,0.5)' : 'none';
+    }
 
-    if('LOCAL_FILE'===cImg){ 
-        document.getElementById('fSourceType').value='local'; 
+    if ('LOCAL_FILE' === cImg) { 
+        safeSetVal('fSourceType', 'local'); 
     } else { 
-        document.getElementById('fSourceType').value='url'; 
-        // Mengisi nilai URL ganda HANYA jika tipenya 'exe'
+        safeSetVal('fSourceType', 'url'); 
         if (currentFormat === 'exe') {
-            document.getElementById('fImgUrlWin').value = cImg !== 'none' ? cImg : ''; 
-            document.getElementById('fImgUrlAnd').value = a.getAttribute('data-android') !== 'none' ? a.getAttribute('data-android') : ''; 
+            safeSetVal('fImgUrlWin', cImg !== 'none' ? cImg : ''); 
+            safeSetVal('fImgUrlAnd', a.getAttribute('data-android') !== 'none' ? a.getAttribute('data-android') : ''); 
         } else {
-            document.getElementById('fImgUrl').value = cImg !== 'none' ? cImg : ''; 
+            safeSetVal('fImgUrl', cImg !== 'none' ? cImg : ''); 
         }
     }
 
-    if(!isCat && !b){ toggleSourceType(); }
+    if (!isCat && !b) { toggleSourceType(); }
     
-    document.getElementById('fYear').value=a.getAttribute('data-year');
-    if(!b){
-        document.getElementById('fNote').value=a.getAttribute('data-note')||"";
-        document.getElementById('fFontStyle').value=a.getAttribute('data-font')||"'Segoe UI', sans-serif";
+    safeSetVal('fYear', a.getAttribute('data-year') || '');
+    if (!b) {
+        safeSetVal('fNote', a.getAttribute('data-note') || "");
+        safeSetVal('fFontStyle', a.getAttribute('data-font') || "'Segoe UI', sans-serif");
     }
     toggleModal('modalForm', true);
 }
@@ -1651,28 +1690,34 @@ async function prosesSimpan(){
         }
     };
 
-    const a=document.getElementById('fName').value||('folder'===uploadMode?"Folder Baru":"Memori Baru"),
-          b=document.getElementById('fSourceType').value,
-          c=document.getElementById('fYear').value,
-          d=document.getElementById('fFontStyle').value, 
-          e=document.getElementById('fNote').value,
+    const a = document.getElementById('fName').value || ('folder' === uploadMode ? "Folder Baru" : "Memori Baru"),
+          b = document.getElementById('fSourceType').value,
+          c = document.getElementById('fYear').value,
+          d = document.getElementById('fFontStyle').value, 
+          e = document.getElementById('fNote').value,
           fT = document.getElementById('fFormatType') ? document.getElementById('fFormatType').value : 'auto'; 
     
     let finalName = a;
     const hasExt = /\.[a-z0-9]+$/i.test(finalName);
     if (!hasExt && fT !== 'auto') {
-        const extMap = { app: '.exe', exe: '.exe', apk: '.apk', xapk: '.xapk', audio: '.mp3', video: '.mp4', image: '.jpg', pdf: '.pdf', doc: '.doc', xls: '.xls', ppt: '.ppt', zip: '.zip', rar: '.rar', '7z': '.7z' };
+        const extMap = { 
+            exe: '.exe', apk: '.apk', xapk: '.xapk', zip: '.zip', rar: '.rar', '7z': '.7z',
+            jpg: '.jpg', png: '.png', webp: '.webp', gif: '.gif',
+            mp3: '.mp3', wav: '.wav', flac: '.flac', m4a: '.m4a',
+            mp4: '.mp4', mkv: '.mkv', avi: '.avi', webm: '.webm',
+            pdf: '.pdf', doc: '.docx', xls: '.xlsx', ppt: '.pptx', txt: '.txt'
+        };
         if (extMap[fT]) finalName += extMap[fT];
     }
 
-    let tCat=curFilter.l0, tSub=curFilter.l1, tTyp=curFilter.l2, tDet=curFilter.l3;
-    if(currentFolderId && currentFolderId !== 'none'){
-        const pFld=document.querySelector(`.card[data-id="${currentFolderId}"]`);
-        if(pFld){
-            tCat=pFld.getAttribute('data-cat') || curFilter.l0;
-            tSub=pFld.getAttribute('data-sub') || curFilter.l1;
-            tTyp=pFld.getAttribute('data-type') || curFilter.l2;
-            tDet=pFld.getAttribute('data-detail') || curFilter.l3;
+    let tCat = curFilter.l0, tSub = curFilter.l1, tTyp = curFilter.l2, tDet = curFilter.l3;
+    if (currentFolderId && currentFolderId !== 'none') {
+        const pFld = document.querySelector(`.card[data-id="${currentFolderId}"]`);
+        if (pFld) {
+            tCat = pFld.getAttribute('data-cat') || curFilter.l0;
+            tSub = pFld.getAttribute('data-sub') || curFilter.l1;
+            tTyp = pFld.getAttribute('data-type') || curFilter.l2;
+            tDet = pFld.getAttribute('data-detail') || curFilter.l3;
         }
     }
     
@@ -1680,75 +1725,78 @@ async function prosesSimpan(){
         cat: tCat, sub: tSub, type: tTyp, detail: tDet, folderId: currentFolderId, 
         descaura: document.getElementById('fDescAura').checked ? 'true' : 'false', 
         favorite: document.getElementById('fFavorite').value, 
-        android: (fT === 'exe') ? (document.getElementById('fImgUrlAnd').value || 'none') : 'none', 
+        android: (fT === 'exe') ? ((document.getElementById('fImgUrlAnd') ? document.getElementById('fImgUrlAnd').value : '') || 'none') : 'none', 
         format: fT
     };
     
-    const coverInput=document.getElementById('fCustomCover');
+    const coverInput = document.getElementById('fCustomCover');
 
-    if(editingCard){
-        const g='folder'===editingCard.getAttribute('data-itemType');
+    if (editingCard) {
+        const g = 'folder' === editingCard.getAttribute('data-itemType');
         editingCard.setAttribute('data-name', finalName.toLowerCase());
-        editingCard.setAttribute('data-year',c);
+        editingCard.setAttribute('data-year', c);
         editingCard.setAttribute('data-descaura', document.getElementById('fDescAura').checked ? 'true' : 'false');
         editingCard.setAttribute('data-favorite', document.getElementById('fFavorite').value);
         editingCard.setAttribute('data-format', fT);
         
-        if(!g){
-            editingCard.setAttribute('data-note',e);
-            editingCard.setAttribute('data-font',d);
-            if('url'===b){
+        if (!g) {
+            editingCard.setAttribute('data-note', e);
+            editingCard.setAttribute('data-font', d);
+            if ('url' === b) {
                 let h = '';
-                if(fT === 'exe'){
-                    h = document.getElementById('fImgUrlWin').value || 'none';
-                    let andUrl = document.getElementById('fImgUrlAnd').value || 'none';
-                    // Fix Bug: Jika form Win kosong tapi form Android isi, pakai URL Android sebagai tautan utama
+                if (fT === 'exe') {
+                    const winEl = document.getElementById('fImgUrlWin');
+                    const andEl = document.getElementById('fImgUrlAnd');
+                    h = winEl ? (winEl.value || 'none') : 'none';
+                    let andUrl = andEl ? (andEl.value || 'none') : 'none';
                     if (h === 'none' && andUrl !== 'none') h = andUrl; 
                     editingCard.setAttribute('data-android', andUrl);
                 } else {
-                    h = document.getElementById('fImgUrl').value || 'none';
+                    const imgEl = document.getElementById('fImgUrl');
+                    h = imgEl ? (imgEl.value || 'none') : 'none';
                     editingCard.setAttribute('data-android', 'none');
                 }
                 h && editingCard.setAttribute('data-img', h);
             }
         }
 
-        if(document.getElementById('fHapusCoverFlag').value==='true'){
+        if (document.getElementById('fHapusCoverFlag').value === 'true') {
             dbHapusCover(editingCard.getAttribute('data-id'));
-            editingCard.setAttribute('data-customCover','false');
+            editingCard.setAttribute('data-customCover', 'false');
         }
-        if(coverInput.files&&coverInput.files.length>0){
-            try{
+        if (coverInput && coverInput.files && coverInput.files.length > 0) {
+            try {
                 const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
                 await dbSimpanCover(editingCard.getAttribute('data-id'), compressedCover);
-                editingCard.setAttribute('data-customCover','true');
-            }catch(err){console.error(err)}
+                editingCard.setAttribute('data-customCover', 'true');
+            } catch(err) { console.error(err); }
         }
 
-        editingCard.querySelector('.file-year').innerText=c,editingCard.querySelector('.file-info').innerText=finalName,refreshCardIcon(editingCard);
-        logActivity('Edit',`Mengedit ${g?'Folder':'Item'}: ${finalName}`);
+        editingCard.querySelector('.file-year').innerText = c;
+        editingCard.querySelector('.file-info').innerText = finalName;
+        refreshCardIcon(editingCard);
+        logActivity('Edit', `Mengedit ${g ? 'Folder' : 'Item'}: ${finalName}`);
         tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
         return;
     }
 
-    let newItemId=('folder'===uploadMode?'fld_':'file_')+Date.now();
-    let hasCustomCover=false;
-    // ... [BAGIAN SIMPAN COVER SAMA SEPERTI ASLINYA] ...
-    if(coverInput.files&&coverInput.files.length>0){
-        try{
+    let newItemId = ('folder' === uploadMode ? 'fld_' : 'file_') + Date.now();
+    let hasCustomCover = false;
+    
+    if (coverInput && coverInput.files && coverInput.files.length > 0) {
+        try {
             const compressedCover = await kompresiCoverToBlob(coverInput.files[0]);
             await dbSimpanCover(newItemId, compressedCover);
-            hasCustomCover=true;
-        }catch(err){ console.error("Gagal simpan cover: "+err); }
+            hasCustomCover = true;
+        } catch(err) { console.error("Gagal simpan cover: " + err); }
     }
 
-    if('folder'===uploadMode){
-        buatKartu({id:newItemId,itemType:'folder',name:a,img:'none',year:c,customCover:hasCustomCover?'true':'false',...f},!0);
-        logActivity('Upload',`Membuat Folder: ${a}`);
+    if ('folder' === uploadMode) {
+        buatKartu({ id: newItemId, itemType: 'folder', name: a, img: 'none', year: c, customCover: hasCustomCover ? 'true' : 'false', ...f }, true);
+        logActivity('Upload', `Membuat Folder: ${a}`);
         tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
     } else {
         if ('camera' === b) {
-            // ... [LOGIKA PENYIMPANAN KAMERA SAMA SEPERTI ASLINYA, TIDAK DIUBAH] ...
             if (!fileKameraTertunda) return gagalkanSimpan("Silakan ambil foto/video terlebih dahulu menggunakan tombol kamera!");
             const isVideo = fileKameraTertunda.type.startsWith('video/');
             let finalNameCamera = finalName; 
@@ -1806,21 +1854,23 @@ async function prosesSimpan(){
                 } 
             } catch (error) { return gagalkanSimpan(`❌ Gagal memproses: ${error.message}`); }
         } else if ('catatan' !== curFilter.l0 && 'local' === b) {
-            // ... [LOGIKA FILE NATIVE / LOKAL SAMA SEPERTI ASLINYA, TIDAK DIUBAH] ...
             const isNative = window.Capacitor && window.Capacitor.isNative;
             
             if (isNative) {
-                const nativePath = document.getElementById('fNativePath').value;
+                const nativePath = document.getElementById('fNativePath') ? document.getElementById('fNativePath').value : '';
                 if (!nativePath) return gagalkanSimpan("Pilih file dari HP Anda!");
                 buatKartu({id: newItemId, itemType: 'file', name: finalName, year: c, note: e, img: 'NATIVE:' + nativePath, font: d, customCover: hasCustomCover ? 'true' : 'false', ...f}, true);
-                document.getElementById('fNativePath').value = '';
-                document.getElementById('btnNativePicker').innerHTML = '📁 Pilih File dari HP (Native)';
-                document.getElementById('btnNativePicker').style.background = 'var(--btn-bg)';
+                safeSetVal('fNativePath', '');
+                const btnNative = document.getElementById('btnNativePicker');
+                if (btnNative) {
+                    btnNative.innerHTML = '📁 Pilih File dari HP (Native)';
+                    btnNative.style.background = 'var(--btn-bg)';
+                }
                 logActivity('Upload', `Menambah Item Native: ${finalName}`);
                 tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
             } else {
                 const i = document.getElementById('fLocalFile');
-                if (0 === i.files.length) return gagalkanSimpan("Pilih file lokal!");
+                if (!i || 0 === i.files.length) return gagalkanSimpan("Pilih file lokal!");
                 let successCount = 0;
                 for (let idx = 0; idx < i.files.length; idx++) {
                     let currentFile = i.files[idx];
@@ -1839,25 +1889,17 @@ async function prosesSimpan(){
             let g = 'none';
             let andUrl = 'none';
             if ('catatan' !== curFilter.l0) {
-                // Fix Bug: Pengkondisian format EXE diletakkan di sini saat Buat Baru
                 if (fT === 'exe') {
-                    g = document.getElementById('fImgUrlWin').value || 'none';
-                    andUrl = document.getElementById('fImgUrlAnd').value || 'none';
-                    // Jika URL Windows kosong, paksa tautan Android sebagai gambar utama agar icon bisa terdeteksi
+                    const winEl = document.getElementById('fImgUrlWin');
+                    const andEl = document.getElementById('fImgUrlAnd');
+                    g = winEl ? (winEl.value || 'none') : 'none';
+                    andUrl = andEl ? (andEl.value || 'none') : 'none';
                     if (g === 'none' && andUrl !== 'none') g = andUrl; 
                 } else {
-                    g = document.getElementById('fImgUrl').value || 'none';
-                    if (g.includes('drive.google.com') && !/\.[a-z0-9]+$/i.test(finalName)) {
-                        const validExts = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.mp3', '.wav', '.ogg', '.m4a', '.aac'];
-                        const hasExtension = validExts.some(ext => finalName.toLowerCase().endsWith(ext));
-                        if (!hasExtension) {
-                            if (tCat === 'audio' || curFilter.l0 === 'audio') finalName += '.mp3';
-                            else if (tCat === 'video' || curFilter.l0 === 'video' || curFilter.l0 === 'audiovideo') finalName += '.mp4';
-                        }
-                    }
+                    const imgEl = document.getElementById('fImgUrl');
+                    g = imgEl ? (imgEl.value || 'none') : 'none';
                 }
             }
-            // Kirim objek parameter ke buatKartu() dengan formasi img & android yg sudah fix
             buatKartu({ id: newItemId, itemType: 'file', name: finalName, year: c, note: e, img: g, android: andUrl, font: d, customCover: hasCustomCover ? 'true' : 'false', format: fT, ...f }, true);
             logActivity('Upload', `Menambah Item: ${finalName}`);
             tutupModal(); simpanKeLokal(); updateStats(); filterFiles();
