@@ -1785,7 +1785,7 @@ async function prosesSimpan(){
             if('url'===b || tCat==='aplikasi'){
                 if (isTwoFormApp) {
                     let winVal = document.getElementById('fImgUrlWin').value || 'none';
-                    // Pemaksaan update attribute 'data-img' (menyelesaikan bug viewer crash jika windows dikosongkan)
+                    if (winVal === 'none' && androidVal !== 'none') winVal = 'ONLY_ANDROID'; 
                     editingCard.setAttribute('data-img', winVal);
                     editingCard.setAttribute('data-android', androidVal);
                 } else {
@@ -1920,6 +1920,8 @@ async function prosesSimpan(){
             if ('catatan' !== curFilter.l0) {
                 if (isTwoFormApp) {
                     g = document.getElementById('fImgUrlWin').value || 'none';
+                    // INI KUNCINYA: Cegah sistem menganggapnya 'none' jika Android terisi
+                    if (g === 'none' && androidVal !== 'none') g = 'ONLY_ANDROID';
                 } else {
                     g = document.getElementById('fImgUrl').value || 'none';
                     if (g !== 'none' && g.includes('drive.google.com') && !/\.[a-z0-9]+$/i.test(finalName)) {
@@ -2000,7 +2002,14 @@ function cekScrollLayar() {
 async function showFileViewer(a,b,c,d,origImg,fileId,hasCover,linkAndroid){
     document.getElementById('fileTitleDisplay').innerHTML=`<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-left:5px;">${a}</span>`;
     document.getElementById('fileDesc').innerHTML=linkify(b)||"Tidak ada deskripsi.";
-    document.getElementById('fileIconDisplay').innerHTML=getExtIcon(d,a);
+    
+    // [PERBAIKAN ICON XAPK DI DALAM VIEWER]
+    let iconHtml = getExtIcon(d,a);
+    const nameLower = (a || '').toLowerCase();
+    if(nameLower.endsWith('.xapk') || nameLower.endsWith('.apk') || d === 'xapk' || d === 'apk') {
+        iconHtml = `<svg class="feather-icon" viewBox="0 0 50 50" style="width:40px; height:40px; fill:currentColor; color:#00adef;"><use href="#icon-apk-def"></use></svg>`;
+    }
+    document.getElementById('fileIconDisplay').innerHTML = iconHtml;
 
     if(hasCover && fileId) {
         try {
@@ -2013,40 +2022,67 @@ async function showFileViewer(a,b,c,d,origImg,fileId,hasCover,linkAndroid){
     }
 
     const btnContainer = document.getElementById('downloadBtnContainer');
-    const f=document.getElementById('iframeContainer'),g=document.getElementById('fileIframe'),h=getDownloadUrl(c);
+    const f=document.getElementById('iframeContainer'), g=document.getElementById('fileIframe');
     f.style.display='none'; g.removeAttribute('src'); btnContainer.style.display='flex';
     
     const isLocal = origImg === 'LOCAL_FILE' || (origImg && origImg.startsWith('NATIVE:'));
     
-    if (c && c !== 'none' && linkAndroid && linkAndroid !== 'none' && !isLocal) {
-        const andUrl = getDownloadUrl(linkAndroid);
+    // [PERBAIKAN LOGIKA TOMBOL DOWNLOAD WINDOWS/ANDROID]
+    // Filter out 'ONLY_ANDROID' yang akan kita buat di prosesSimpan untuk menghindari bug Catatan
+    const hasWin = c && c !== 'none' && c !== 'ONLY_ANDROID'; 
+    const hasAnd = linkAndroid && linkAndroid !== 'none';
+    const urlWin = hasWin ? getDownloadUrl(c) : '#';
+    const urlAnd = hasAnd ? getDownloadUrl(linkAndroid) : '#';
+    
+    if (!isLocal && (hasWin || hasAnd) && (nameLower.endsWith('.exe') || nameLower.endsWith('.apk') || nameLower.endsWith('.xapk') || nameLower.endsWith('.zip') || nameLower.endsWith('.rar') || nameLower.endsWith('.7z'))) {
+        
+        let btnHtml = '';
+        if (hasWin && hasAnd) {
+            btnHtml = `
+                <button class="btn-full btn-blue" onclick="window.open('${urlWin}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; flex:1; margin-top:0;">
+                    <svg width="18" height="18" viewBox="0 0 48 48" fill="#fff"><path d="M0 7.32l16.89-2.4v18.06h-16.89zM18.89 4.31l29.11-4.31v22.98h-29.11zM0 24.96h16.89v18.06l-16.89-2.4zM18.89 24.96h29.11v22.98l-29.11-4.31z"/></svg> Windows
+                </button>
+                <button class="btn-full btn-real-blue" onclick="window.open('${urlAnd}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; flex:1; margin-top:0; background:linear-gradient(to bottom, #444, #222); border-color:#111; color:#fff;">
+                    <svg width="18" height="18" viewBox="0 0 50 50"><use href="#icon-apk-def"></use></svg> Android
+                </button>
+            `;
+        } else if (hasWin) {
+            btnHtml = `
+                <button class="btn-full btn-blue" onclick="window.open('${urlWin}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; width:100%; margin-top:0;">
+                    <svg width="18" height="18" viewBox="0 0 48 48" fill="#fff"><path d="M0 7.32l16.89-2.4v18.06h-16.89zM18.89 4.31l29.11-4.31v22.98h-29.11zM0 24.96h16.89v18.06l-16.89-2.4zM18.89 24.96h29.11v22.98l-29.11-4.31z"/></svg> Download Windows
+                </button>
+            `;
+        } else if (hasAnd) {
+            btnHtml = `
+                <button class="btn-full btn-real-blue" onclick="window.open('${urlAnd}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; width:100%; margin-top:0; background:linear-gradient(to bottom, #444, #222); border-color:#111; color:#fff;">
+                    <svg width="18" height="18" viewBox="0 0 50 50"><use href="#icon-apk-def"></use></svg> Download Android
+                </button>
+            `;
+        }
+
         btnContainer.innerHTML = `
             <div style="text-align:center; font-size:16px; font-weight:bold; margin-bottom:12px; width:100%; letter-spacing:1.5px; color:var(--primary-dark); display:flex; align-items:center; justify-content:center; gap:6px;">${SVG_DOWNLOAD} DOWNLOAD</div>
             <div style="display:flex; gap:10px; width:100%;">
-                <button class="btn-full btn-blue" onclick="window.open('${h}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; flex:1; margin-top:0;">
-                    <svg width="18" height="18" viewBox="0 0 48 48" fill="#fff"><path d="M0 7.32l16.89-2.4v18.06h-16.89zM18.89 4.31l29.11-4.31v22.98h-29.11zM0 24.96h16.89v18.06l-16.89-2.4zM18.89 24.96h29.11v22.98l-29.11-4.31z"/></svg> Windows
-                </button>
-                <button class="btn-full btn-real-blue" onclick="window.open('${andUrl}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; flex:1; margin-top:0; background:linear-gradient(to bottom, #444, #222); border-color:#111; color:#fff;">
-                    <svg width="18" height="18" viewBox="0 0 50 50"><use href="#icon-apk-def"></use></svg> Android
-                </button>
+                ${btnHtml}
             </div>
         `;
     } else {
         btnContainer.innerHTML = `<button id="btnDownloadFile" class="btn-full btn-blue" style="display:flex; align-items:center; justify-content:center; gap:5px;">Download / Buka File</button>`;
         const e = document.getElementById('btnDownloadFile');
-        if('doc'===d && c.includes('drive.google.com')){
+        if('doc'===d && hasWin && c.includes('drive.google.com')){
             f.style.display='block'; g.src=getPreviewUrl(c);
             e.innerHTML=SVG_SHARE + " Buka di Tab Baru"; e.onclick=()=>window.open(c,'_blank');
         } else {
             e.innerHTML=SVG_DOWNLOAD + " Download / Buka File";
             e.onclick = () => {
+                const targetLink = hasWin ? urlWin : (hasAnd ? urlAnd : c);
                 const link = document.createElement('a');
                 link.download = a; 
                 if (isLocal) {
                     link.href = c; 
                     document.body.appendChild(link); link.click(); document.body.removeChild(link);
                 } else {
-                    link.href = h; link.target = '_blank';
+                    link.href = targetLink; link.target = '_blank';
                     document.body.appendChild(link); link.click(); document.body.removeChild(link);
                 }
             };
