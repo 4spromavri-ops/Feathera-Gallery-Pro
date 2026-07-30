@@ -346,7 +346,9 @@
                 </div>
                 
                 <div id="formatDropdownContainer" style="display: block;">
-                    <select id="fFormatType" onchange="toggleSourceType()" style="width: 115px; padding: 8px 10px; border-radius: 5px; border: 1px solid rgba(0,0,0,0.15); outline: none; margin: 0; font-size: 13px; font-weight: bold; cursor: pointer; background-color: var(--input-bg); color: var(--text);" title="Pilih Format Kartu">
+                    <select id="fFormatType" onchange="if(typeof gantiTabUpload === 'function') gantiTabUpload(typeof uploadMode !== 'undefined' ? uploadMode : 'file')" style="width: 115px; padding: 8px 10px; border-radius: 5px; border: 1px solid rgba(0,0,0,0.15); outline: none; margin: 0; font-size: 13px; font-weight: bold; cursor: pointer; background-color: var(--input-bg); color: var(--text);" title="Pilih Format Kartu">
+                        <option value="auto">🤖 Auto</option>
+                        <!-- Pilihan lainnya dirender otomatis via JavaScript -->
                     </select>
                 </div>
             </div>
