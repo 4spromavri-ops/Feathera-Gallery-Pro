@@ -204,9 +204,11 @@ function getStorageIcon(imgStr) {
 
 function getExtIcon(a,b=""){
     const c=b.toLowerCase();
+    
+    if(c.endsWith('.xapk') || c.endsWith('.apk')) return SVG_ICON_APK;
+    
     if('unknown_local'===a || 'unknown'===a)return SVG_ICON_UNKNOWN;
     if('app'===a){
-        if(c.endsWith('.apk')) return SVG_ICON_APK;
         if(c.endsWith('.exe')) return SVG_ICON_EXE;
         return '📦';
     }
