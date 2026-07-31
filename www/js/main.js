@@ -1747,10 +1747,19 @@ async function prosesSimpan(){
           fT = document.getElementById('fFormatType') ? document.getElementById('fFormatType').value : 'auto'; 
     
     let finalName = a;
-    const hasExt = /\.[a-z0-9]+$/i.test(finalName);
-    if (!hasExt && fT !== 'auto') {
+    if (fT !== 'auto') {
         const extMap = { app: '.exe', apk: '.apk', xapk: '.xapk', audio: '.mp3', wav: '.wav', video: '.mp4', mkv: '.mkv', image: '.jpg', png: '.png', pdf: '.pdf', doc: '.doc', xls: '.xls', ppt: '.ppt', zip: '.zip', rar: '.rar', '7z': '.7z' };
-        if (extMap[fT]) finalName += extMap[fT];
+        
+        if (extMap[fT]) {
+            const newExt = extMap[fT];
+            const extRegex = /\.[a-z0-9]+$/i;
+            
+            if (extRegex.test(finalName)) {
+                finalName = finalName.replace(extRegex, newExt);
+            } else {
+                finalName += newExt;
+            }
+        }
     }
 
     let tCat=curFilter.l0, tSub=curFilter.l1, tTyp=curFilter.l2, tDet=curFilter.l3;
@@ -2049,9 +2058,12 @@ async function showFileViewer(a,b,c,d,origImg,fileId,hasCover,linkAndroid){
             `;
         } else {
             let targetUrl = hasWin ? urlWin : urlAnd;
-            let btnText = hasWin ? ((nameLower.endsWith('.apk') || nameLower.endsWith('.xapk')) ? "Download Android" : "Download Windows") : "Download Android";
+            let btnText = hasWin 
+                ? ((nameLower.endsWith('.apk') || nameLower.endsWith('.xapk')) ? "Download Android" : "Download Windows") 
+                : "Download Android";
+                
             let btnHtml = `
-                <button class="btn-full" onclick="window.open('${targetUrl}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; width:100%; margin-top:0; background-color:#ffc107; color:#000; border:none; font-weight:bold; text-shadow:none;">
+                <button class="btn-full" onclick="window.open('${targetUrl}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; width:100%; margin-top:0; background:linear-gradient(to bottom, #ffca28, #f57f17); color:#ffffff; border:1px solid #f57f17; font-weight:bold; text-shadow:0 1px 2px rgba(0,0,0,0.5); box-shadow:0 1px 3px rgba(0,0,0,0.2);">
                     ${SVG_DOWNLOAD} ${btnText}
                 </button>
             `;
