@@ -27,7 +27,7 @@ const MEDIA_EXTS = {
     audio: ['mp3','wav','ogg','m4a','aac','flac','wma'],
     image: ['jpeg','jpg','gif','png','webp','bmp','svg','ico','tiff'],
     text: ['txt','json','md','js','css','html','xml','log','csv'],
-    app: ['apk','exe','dmg','iso','bat','sh','bin','msi'],
+    app: ['apk','xapk','exe','dmg','iso','bat','sh','bin','msi'],
     archive: ['zip','rar','7z','tar','gz','bz2'],
     doc: ['pdf','doc','docx','xls','xlsx','ppt','pptx']
 };
@@ -114,18 +114,3 @@ const SVG_PLAY_CIRCLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24
       SVG_FILTER_ALL = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>`,
       SVG_FILTER_LOCAL = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path><path d="M8 2v4"></path><path d="M12 2v4"></path><path d="M16 4v2"></path></svg>`,
       SVG_FILTER_ONLINE = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
-
-// ======================================================
-// SECTION 4: GLOBAL PATCHES & OVERRIDES
-// ======================================================
-document.addEventListener('DOMContentLoaded', () => {
-    if (typeof window.getExtIcon === 'function') {
-        const _bawaanGetExtIcon = window.getExtIcon;
-        window.getExtIcon = function(ext, fileName) {
-            if (ext === 'xapk' || (fileName && fileName.toLowerCase().endsWith('.xapk'))) {
-                return `<svg class="feather-icon" viewBox="0 0 50 50" style="width:24px; height:24px; flex-shrink:0;"><use href="#icon-apk-def"></use></svg>`;
-            }
-            return _bawaanGetExtIcon(ext, fileName);
-        };
-    }
-});
