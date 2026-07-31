@@ -1528,7 +1528,7 @@ function bukaEdit(a){
     else { 
         document.getElementById('fSourceType').value='url'; 
         const fT = fFormatDropdown ? fFormatDropdown.value : 'auto';
-        const isTwoFormApp = (tCat === 'aplikasi') && ['app', 'zip', 'rar', '7z'].includes(fT);
+        const isTwoFormApp = (tCat === 'aplikasi') && ['app', 'apk', 'xapk', 'zip', 'rar', '7z'].includes(fT);
         
         if (isTwoFormApp) {
             document.getElementById('fImgUrlWin').value = cImg !== 'none' ? cImg : ''; 
@@ -1553,7 +1553,7 @@ function gantiTabUpload(a, isCatatan = false){
     const b=isCatatan||(curFilter&&'catatan'===curFilter.l0);
     const tCat = editingCard ? (editingCard.getAttribute('data-cat') || curFilter.l0) : (curFilter ? curFilter.l0 : '');
     const fT = document.getElementById('fFormatType') ? document.getElementById('fFormatType').value : 'auto';
-    const isTwoFormApp = (tCat === 'aplikasi') && ['app', 'zip', 'rar', '7z'].includes(fT);
+    const isTwoFormApp = (tCat === 'aplikasi') && ['app', 'apk', 'xapk', 'zip', 'rar', '7z'].includes(fT);
     
     const c=document.getElementById('tabFile'),dUrl=document.getElementById('fImgUrl'),dApp=document.getElementById('urlInputGroupApp'),e=document.getElementById('fNote'),f=document.getElementById('inputForFile'),g=document.getElementById('fFontStyle'),h=document.getElementById('fSourceType'),aura=document.getElementById('descAuraToggleArea');
     const tabText=document.getElementById('tabFileText'),tabIcon=document.getElementById('tabFileIcon');
@@ -1617,7 +1617,7 @@ function toggleSourceType() {
     const setTampil = (urlDisp, locWebDisp, locNatDisp, camDisp) => {
         const fT = document.getElementById('fFormatType') ? document.getElementById('fFormatType').value : 'auto';
         const tCat = editingCard ? (editingCard.getAttribute('data-cat') || curFilter.l0) : (curFilter ? curFilter.l0 : '');
-        const isTwoFormApp = (tCat === 'aplikasi') && ['app', 'zip', 'rar', '7z'].includes(fT);
+        const isTwoFormApp = (tCat === 'aplikasi') && ['app', 'apk', 'xapk', 'zip', 'rar', '7z'].includes(fT);
         
         if (isTwoFormApp && urlDisp === 'block') {
             document.getElementById('fImgUrl').style.display = 'none';
@@ -1749,7 +1749,7 @@ async function prosesSimpan(){
     let finalName = a;
     const hasExt = /\.[a-z0-9]+$/i.test(finalName);
     if (!hasExt && fT !== 'auto') {
-        const extMap = { app: '.exe', apk: '.apk', xapk: '.xapk', audio: '.mp3', video: '.mp4', image: '.jpg', pdf: '.pdf', doc: '.doc', xls: '.xls', ppt: '.ppt', zip: '.zip', rar: '.rar', '7z': '.7z' };
+        const extMap = { app: '.exe', apk: '.apk', xapk: '.xapk', audio: '.mp3', wav: '.wav', video: '.mp4', mkv: '.mkv', image: '.jpg', png: '.png', pdf: '.pdf', doc: '.doc', xls: '.xls', ppt: '.ppt', zip: '.zip', rar: '.rar', '7z': '.7z' };
         if (extMap[fT]) finalName += extMap[fT];
     }
 
@@ -1764,7 +1764,7 @@ async function prosesSimpan(){
         }
     }
     
-    const isTwoFormApp = (tCat === 'aplikasi') && ['app', 'zip', 'rar', '7z'].includes(fT);
+    const isTwoFormApp = (tCat === 'aplikasi') && ['app', 'apk', 'xapk', 'zip', 'rar', '7z'].includes(fT);
     let androidVal = 'none';
     if (isTwoFormApp) {
         androidVal = document.getElementById('fImgUrlAnd').value || 'none';
@@ -2003,7 +2003,6 @@ async function showFileViewer(a,b,c,d,origImg,fileId,hasCover,linkAndroid){
     document.getElementById('fileTitleDisplay').innerHTML=`<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-left:5px;">${a}</span>`;
     document.getElementById('fileDesc').innerHTML=linkify(b)||"Tidak ada deskripsi.";
     
-    // [PERBAIKAN ICON XAPK DI DALAM VIEWER]
     let iconHtml = getExtIcon(d,a);
     const nameLower = (a || '').toLowerCase();
     if(nameLower.endsWith('.xapk') || nameLower.endsWith('.apk') || d === 'xapk' || d === 'apk') {
@@ -2026,9 +2025,6 @@ async function showFileViewer(a,b,c,d,origImg,fileId,hasCover,linkAndroid){
     f.style.display='none'; g.removeAttribute('src'); btnContainer.style.display='flex';
     
     const isLocal = origImg === 'LOCAL_FILE' || (origImg && origImg.startsWith('NATIVE:'));
-    
-    // [PERBAIKAN LOGIKA TOMBOL DOWNLOAD WINDOWS/ANDROID]
-    // Filter out 'ONLY_ANDROID' yang akan kita buat di prosesSimpan untuk menghindari bug Catatan
     const hasWin = c && c !== 'none' && c !== 'ONLY_ANDROID'; 
     const hasAnd = linkAndroid && linkAndroid !== 'none';
     const urlWin = hasWin ? getDownloadUrl(c) : '#';
@@ -2036,9 +2032,8 @@ async function showFileViewer(a,b,c,d,origImg,fileId,hasCover,linkAndroid){
     
     if (!isLocal && (hasWin || hasAnd) && (nameLower.endsWith('.exe') || nameLower.endsWith('.apk') || nameLower.endsWith('.xapk') || nameLower.endsWith('.zip') || nameLower.endsWith('.rar') || nameLower.endsWith('.7z'))) {
         
-        let btnHtml = '';
         if (hasWin && hasAnd) {
-            btnHtml = `
+            let btnHtml = `
                 <button class="btn-full btn-blue" onclick="window.open('${urlWin}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; flex:1; margin-top:0;">
                     <svg width="18" height="18" viewBox="0 0 48 48" fill="#fff"><path d="M0 7.32l16.89-2.4v18.06h-16.89zM18.89 4.31l29.11-4.31v22.98h-29.11zM0 24.96h16.89v18.06l-16.89-2.4zM18.89 24.96h29.11v22.98l-29.11-4.31z"/></svg> Windows
                 </button>
@@ -2046,26 +2041,26 @@ async function showFileViewer(a,b,c,d,origImg,fileId,hasCover,linkAndroid){
                     <svg width="18" height="18" viewBox="0 0 50 50"><use href="#icon-apk-def"></use></svg> Android
                 </button>
             `;
-        } else if (hasWin) {
-            btnHtml = `
-                <button class="btn-full btn-blue" onclick="window.open('${urlWin}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; width:100%; margin-top:0;">
-                    <svg width="18" height="18" viewBox="0 0 48 48" fill="#fff"><path d="M0 7.32l16.89-2.4v18.06h-16.89zM18.89 4.31l29.11-4.31v22.98h-29.11zM0 24.96h16.89v18.06l-16.89-2.4zM18.89 24.96h29.11v22.98l-29.11-4.31z"/></svg> Download Windows
+            btnContainer.innerHTML = `
+                <div style="text-align:center; font-size:16px; font-weight:bold; margin-bottom:12px; width:100%; letter-spacing:1.5px; color:var(--primary-dark); display:flex; align-items:center; justify-content:center; gap:6px;">${SVG_DOWNLOAD} DOWNLOAD</div>
+                <div style="display:flex; gap:10px; width:100%;">
+                    ${btnHtml}
+                </div>
+            `;
+        } else {
+            let targetUrl = hasWin ? urlWin : urlAnd;
+            let btnText = hasWin ? ((nameLower.endsWith('.apk') || nameLower.endsWith('.xapk')) ? "Download Android" : "Download Windows") : "Download Android";
+            let btnHtml = `
+                <button class="btn-full" onclick="window.open('${targetUrl}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; width:100%; margin-top:0; background-color:#ffc107; color:#000; border:none; font-weight:bold; text-shadow:none;">
+                    ${SVG_DOWNLOAD} ${btnText}
                 </button>
             `;
-        } else if (hasAnd) {
-            btnHtml = `
-                <button class="btn-full btn-real-blue" onclick="window.open('${urlAnd}', '_blank')" style="display:flex; align-items:center; justify-content:center; gap:5px; width:100%; margin-top:0; background:linear-gradient(to bottom, #444, #222); border-color:#111; color:#fff;">
-                    <svg width="18" height="18" viewBox="0 0 50 50"><use href="#icon-apk-def"></use></svg> Download Android
-                </button>
+            btnContainer.innerHTML = `
+                <div style="display:flex; gap:10px; width:100%;">
+                    ${btnHtml}
+                </div>
             `;
         }
-
-        btnContainer.innerHTML = `
-            <div style="text-align:center; font-size:16px; font-weight:bold; margin-bottom:12px; width:100%; letter-spacing:1.5px; color:var(--primary-dark); display:flex; align-items:center; justify-content:center; gap:6px;">${SVG_DOWNLOAD} DOWNLOAD</div>
-            <div style="display:flex; gap:10px; width:100%;">
-                ${btnHtml}
-            </div>
-        `;
     } else {
         btnContainer.innerHTML = `<button id="btnDownloadFile" class="btn-full btn-blue" style="display:flex; align-items:center; justify-content:center; gap:5px;">Download / Buka File</button>`;
         const e = document.getElementById('btnDownloadFile');
